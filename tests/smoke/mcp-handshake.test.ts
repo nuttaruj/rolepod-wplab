@@ -140,12 +140,15 @@ describe('MCP smoke', () => {
       const names = tools.map((t) => t.name).sort()
       expect(names).toEqual([
         'rolepod_wp_acf_read',
+        'rolepod_wp_acf_write',
+        'rolepod_wp_bricks_read',
         'rolepod_wp_cli_run',
         'rolepod_wp_connect_local',
         'rolepod_wp_connect_rest',
         'rolepod_wp_db_query',
         'rolepod_wp_disconnect',
         'rolepod_wp_elementor_read',
+        'rolepod_wp_elementor_write',
         'rolepod_wp_execute_php',
         'rolepod_wp_file_read',
         'rolepod_wp_file_write',
@@ -164,6 +167,7 @@ describe('MCP smoke', () => {
         'rolepod_wp_rest_request',
         'rolepod_wp_user_list',
         'rolepod_wp_woo_read',
+        'rolepod_wp_woo_write',
       ])
     })
   })

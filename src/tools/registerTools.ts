@@ -34,6 +34,10 @@ import { wpMemoryListHandler, wpMemoryListToolDef } from './atomic/wp_memory_lis
 import { wpExecutePhpHandler, wpExecutePhpToolDef } from './companion/wp_execute_php.js'
 import { wpIntrospectHandler, wpIntrospectToolDef } from './companion/wp_introspect.js'
 import { wpHookStateHandler, wpHookStateToolDef } from './companion/wp_hook_state.js'
+import { wpElementorWriteHandler, wpElementorWriteToolDef } from './adapter/wp_elementor_write.js'
+import { wpWooWriteHandler, wpWooWriteToolDef } from './adapter/wp_woo_write.js'
+import { wpAcfWriteHandler, wpAcfWriteToolDef } from './adapter/wp_acf_write.js'
+import { wpBricksReadHandler, wpBricksReadToolDef } from './adapter/wp_bricks_read.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -148,6 +152,22 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpHookStateToolDef,
     handler: (d, raw) => wpHookStateHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorWriteToolDef,
+    handler: (d, raw) => wpElementorWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpWooWriteToolDef,
+    handler: (d, raw) => wpWooWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpAcfWriteToolDef,
+    handler: (d, raw) => wpAcfWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpBricksReadToolDef,
+    handler: (d, raw) => wpBricksReadHandler(d.registry, raw),
   },
 ]
 

@@ -470,6 +470,83 @@ export const AcfReadOutputSchema = z.object({
 })
 export type AcfReadOutput = z.infer<typeof AcfReadOutputSchema>
 
+// --- Adapter writes (v0.2) ---
+
+export const ElementorWriteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  widget_tree: z.array(z.unknown()),
+  allow_destructive: z.literal(true),
+  confirm: z.boolean().default(false),
+})
+export type ElementorWriteInput = z.infer<typeof ElementorWriteInputSchema>
+
+export const ElementorWriteOutputSchema = z.object({
+  bytes_written: z.number().int().nonnegative(),
+  backup_path: z.string().nullable(),
+})
+export type ElementorWriteOutput = z.infer<typeof ElementorWriteOutputSchema>
+
+export const WooWriteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  op: z.enum(['update_product', 'bulk_update_prices']),
+  product_id: z.number().int().positive().optional(),
+  fields: z.record(z.string(), z.unknown()).optional(),
+  price_updates: z
+    .array(
+      z.object({
+        id: z.number().int().positive(),
+        regular_price: z.string().optional(),
+        sale_price: z.string().optional(),
+      }),
+    )
+    .optional(),
+  allow_destructive: z.literal(true),
+  confirm: z.boolean().default(false),
+})
+export type WooWriteInput = z.infer<typeof WooWriteInputSchema>
+
+export const WooWriteOutputSchema = z.object({
+  op: z.string(),
+  result: z.unknown(),
+})
+export type WooWriteOutput = z.infer<typeof WooWriteOutputSchema>
+
+export const AcfWriteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  field_name: z.string().min(1),
+  value: z.unknown(),
+  allow_destructive: z.literal(true),
+  confirm: z.boolean().default(false),
+})
+export type AcfWriteInput = z.infer<typeof AcfWriteInputSchema>
+
+export const AcfWriteOutputSchema = z.object({
+  source: z.enum(['rest_acf_pro', 'wp_cli']),
+  post_id: z.number().int().positive(),
+  field_name: z.string(),
+})
+export type AcfWriteOutput = z.infer<typeof AcfWriteOutputSchema>
+
+// --- Bricks read (v0.2) ---
+
+export const BricksReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  page_id: z.number().int().positive().optional(),
+  type: z.string().default('page'),
+  per_page: z.number().int().min(1).max(100).default(50),
+})
+export type BricksReadInput = z.infer<typeof BricksReadInputSchema>
+
+export const BricksReadOutputSchema = z.object({
+  mode: z.enum(['list', 'page']),
+  detected: z.boolean(),
+  pages: z.array(z.unknown()).optional(),
+  page: z.unknown().optional(),
+})
+export type BricksReadOutput = z.infer<typeof BricksReadOutputSchema>
+
 // ---------------------------------------------------------------------------
 // rolepod_wp_file_read
 // ---------------------------------------------------------------------------
