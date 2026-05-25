@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { createServer } from '../server.js'
 import { runDoctor } from './doctor.js'
+import { runCredentials } from './credentials.js'
 import { log } from '../util/log.js'
 
 async function main(): Promise<void> {
@@ -11,6 +12,12 @@ async function main(): Promise<void> {
       const code = await runDoctor()
       process.exit(code)
       // unreachable, but TS doesn't know
+      return
+    }
+    case 'credentials':
+    case 'creds': {
+      const code = await runCredentials(process.argv.slice(3))
+      process.exit(code)
       return
     }
     case 'smoke': {
