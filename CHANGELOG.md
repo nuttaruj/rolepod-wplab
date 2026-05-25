@@ -2,6 +2,63 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] — 2026-05-25
+
+### Added — Companion online + Memory + Power tools
+
+**Memory (W-028):**
+- `MemoryStore` — per-site file-based storage at `~/.config/rolepod-wplab/memory/<site-slug>/` (mode 0700 dir, 0600 files). Layout: meta.json + site.md + notes.md (append-only) + conventions.md (versioned append) + runbooks/*.md.
+- `rolepod_wp_memory_recall { target_id, query?, kind? }` — substring + kind filter.
+- `rolepod_wp_memory_note { target_id, content, kind?, runbook_name?, tags? }` — append note / version convention / replace runbook.
+- `rolepod_wp_memory_list { target_id }` — metadata-only file listing.
+- CLI: `rolepod-wplab memory show | list | clear | export`.
+
+**Companion bridge + power tools (W-003R, W-004R):**
+- `src/companion/Bridge.ts` — handshake + session token mgmt + AST pre-screen + auto-refresh on 401.
+- `src/safety/AstScreen.ts` — token-blocklist screen (defence in depth with companion v0.1+ PHP-side screen). Rejects eval/assert/system/exec/shell_exec/proc_open/popen/pcntl_*/dl/backtick/dynamic-include.
+- `rolepod_wp_execute_php { target_id, payload, timeout_ms?, confirm:true }` — requires `ROLEPOD_WPLAB_PROFILE=power`.
+- `rolepod_wp_introspect { target_id, scope, include_values? }`.
+- `rolepod_wp_hook_state { target_id, hook, kind? }` — specialized wrapper over introspect(scope=hooks).
+
+**Adapter writes + Bricks (W-023 extended):**
+- `elementor/write.updatePageData` — auto-backup `_elementor_data` before overwrite.
+- `woocommerce/write.updateProduct` + `bulkUpdatePrices` (via /wc/v3/products/batch).
+- `acf/write.setPostMeta` — ACF Pro REST first, wp-cli fallback.
+- `bricks/read` adapter — listPages + getPage (parses `_bricks_page_content_2`). supportedRange 1.8 — 1.10.
+- 4 new MCP tools: `wp_elementor_write`, `wp_woo_write`, `wp_acf_write`, `wp_bricks_read`. All writes enforce production guard.
+
+**Composites (5 total):**
+- `rolepod_wp_scaffold_block` — generates block.json + index.js + render.php (or save) + style.css.
+- `rolepod_wp_scaffold_plugin` — main PHP + readme + uninstall + optional rest_endpoint/admin_page/cli_command stubs.
+- `rolepod_wp_scaffold_theme` — block-theme skeleton (style.css + theme.json + functions.php + templates).
+- `rolepod_wp_audit_security` — chains wp-cli checks + writes audit-report.md/.json.
+- `rolepod_wp_migrate_dryrun` — diffs two targets across plugin_versions / options / users / posts.
+
+**Shipped skills (6 new — total 10):**
+- `wp-execute-php` (companion-gated, power profile required)
+- `wp-introspect` (companion-gated)
+- `wp-edit-elementor` (adapter)
+- `wp-audit-woo` (adapter composite)
+- `wp-scaffold-theme`
+- `wp-migrate-dryrun`
+
+**MCP tools: 34 total** (was 19 in v0.1). All registered + tools/list smoke updated to assert exact list.
+
+### Changed
+
+- `Target` interface: `TargetKind` unchanged but bridge layer now exercises `Target.rest()` for companion communication on all target kinds (RestTarget today; v0.3 SSH/Docker via companion remote install).
+- `loadProfile()` recognizes `power` profile (was placeholder in v0.1 schema).
+
+### Pairs with
+
+- `rolepod-wplab-companion` v0.2 — adds `/wp-cli` (bundled wp-cli proxy), `/fs-read`, `/fs-write`, `/php-session`, `/request-observer`. `execute-php` default-enabled.
+
+### Tests
+
+- 117 unit + smoke tests green (memory 17 + AstScreen 13 added).
+- `claude plugin validate ./ --strict` passes.
+- Lint + prettier + typecheck all clean.
+
 ## [0.1.0] — 2026-05-25
 
 ### Added — PoC complete (Path C foundation)
