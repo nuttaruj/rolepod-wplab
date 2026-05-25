@@ -2,6 +2,44 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] — 2026-05-25
+
+### Added — Multi-target + cross-target composites + SEO/i18n adapters
+
+**New target kinds (W-009):**
+- `SshTarget` — node-ssh based. Supports private_key_path or password auth. wp-cli via ssh exec; fileRead/fileWrite via SFTP.
+- `DockerTarget` — dockerode based. `docker exec` per call. File ops via stdin-piped tee. Demuxes docker stream multiplex header.
+- `factory.openTarget` handles 4 kinds: local | rest | ssh | docker.
+
+**New MCP tools (8 — total 46, was 34 in v0.2):**
+- `rolepod_wp_connect_ssh { host, user, wp_path, port?, private_key_path?, password? }`
+- `rolepod_wp_connect_docker { container_name, wp_path?, docker_host?, docker_socket_path? }`
+- `rolepod_wp_audit_many { target_ids[], report_format? }` — fan out audit across N targets, consolidate.
+- `rolepod_wp_migrate_data { source_target_id, dest_target_id, scope, allow_destructive:true, confirm? }` — v0.3 supports plugin_versions only (install/upgrade dest to match source).
+- `rolepod_wp_wpml_read { target_id, scope, domain?, post_id? }` — languages / string_translations / post_translations.
+- `rolepod_wp_yoast_read { target_id, scope, post_id? }` — post_meta / settings.
+- `rolepod_wp_rankmath_read { target_id, scope, post_id? }` — post_meta / settings.
+
+**Adapters (3 new):**
+- `wpml/read` — supportedRange 4.5 — 4.7.
+- `yoast/read` — supportedRange 21.0 — 23.5.
+- `rankmath/read` — supportedRange 1.0.200 — 1.0.220.
+
+### Deps
+
+- `@types/dockerode` added to devDependencies.
+- `node-ssh` + `dockerode` (optionalDependencies from v0.0) now actually pulled.
+
+### Pairs with
+
+- `rolepod-wplab-companion` v0.2 (unchanged for v0.3).
+
+### Tests
+
+- 117 unit + smoke green (smoke asserts 46 tools).
+- claude plugin validate --strict pass.
+- Lint + prettier + typecheck clean.
+
 ## [0.2.0] — 2026-05-25
 
 ### Added — Companion online + Memory + Power tools

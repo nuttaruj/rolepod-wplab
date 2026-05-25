@@ -170,6 +170,7 @@ describe('MCP smoke', () => {
         'rolepod_wp_post_get',
         'rolepod_wp_post_list',
         'rolepod_wp_post_update',
+        'rolepod_wp_rankmath_read',
         'rolepod_wp_rest_request',
         'rolepod_wp_scaffold_block',
         'rolepod_wp_scaffold_plugin',
@@ -177,6 +178,8 @@ describe('MCP smoke', () => {
         'rolepod_wp_user_list',
         'rolepod_wp_woo_read',
         'rolepod_wp_woo_write',
+        'rolepod_wp_wpml_read',
+        'rolepod_wp_yoast_read',
       ])
     })
   })

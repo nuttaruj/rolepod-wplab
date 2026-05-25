@@ -743,6 +743,51 @@ export const BricksReadOutputSchema = z.object({
 })
 export type BricksReadOutput = z.infer<typeof BricksReadOutputSchema>
 
+// --- v0.3 adapters: WPML / Yoast / Rank Math ---
+
+export const WpmlReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(['languages', 'string_translations', 'post_translations']),
+  domain: z.string().optional(),
+  post_id: z.number().int().positive().optional(),
+})
+export type WpmlReadInput = z.infer<typeof WpmlReadInputSchema>
+
+export const WpmlReadOutputSchema = z.object({
+  scope: z.string(),
+  detected: z.boolean(),
+  data: z.unknown(),
+})
+export type WpmlReadOutput = z.infer<typeof WpmlReadOutputSchema>
+
+export const YoastReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(['post_meta', 'settings']),
+  post_id: z.number().int().positive().optional(),
+})
+export type YoastReadInput = z.infer<typeof YoastReadInputSchema>
+
+export const YoastReadOutputSchema = z.object({
+  scope: z.string(),
+  detected: z.boolean(),
+  data: z.unknown(),
+})
+export type YoastReadOutput = z.infer<typeof YoastReadOutputSchema>
+
+export const RankMathReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(['post_meta', 'settings']),
+  post_id: z.number().int().positive().optional(),
+})
+export type RankMathReadInput = z.infer<typeof RankMathReadInputSchema>
+
+export const RankMathReadOutputSchema = z.object({
+  scope: z.string(),
+  detected: z.boolean(),
+  data: z.unknown(),
+})
+export type RankMathReadOutput = z.infer<typeof RankMathReadOutputSchema>
+
 // ---------------------------------------------------------------------------
 // rolepod_wp_file_read
 // ---------------------------------------------------------------------------

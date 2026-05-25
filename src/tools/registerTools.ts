@@ -47,6 +47,9 @@ import { wpAuditSecurityHandler, wpAuditSecurityToolDef } from './composite/wp_a
 import { wpMigrateDryrunHandler, wpMigrateDryrunToolDef } from './composite/wp_migrate_dryrun.js'
 import { wpAuditManyHandler, wpAuditManyToolDef } from './composite/wp_audit_many.js'
 import { wpMigrateDataHandler, wpMigrateDataToolDef } from './composite/wp_migrate_data.js'
+import { wpWpmlReadHandler, wpWpmlReadToolDef } from './adapter/wp_wpml_read.js'
+import { wpYoastReadHandler, wpYoastReadToolDef } from './adapter/wp_yoast_read.js'
+import { wpRankMathReadHandler, wpRankMathReadToolDef } from './adapter/wp_rankmath_read.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -213,6 +216,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMigrateDataToolDef,
     handler: (d, raw) => wpMigrateDataHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpWpmlReadToolDef,
+    handler: (d, raw) => wpWpmlReadHandler(d.registry, raw),
+  },
+  {
+    def: wpYoastReadToolDef,
+    handler: (d, raw) => wpYoastReadHandler(d.registry, raw),
+  },
+  {
+    def: wpRankMathReadToolDef,
+    handler: (d, raw) => wpRankMathReadHandler(d.registry, raw),
   },
 ]
 
