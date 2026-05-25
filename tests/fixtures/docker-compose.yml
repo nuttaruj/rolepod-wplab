@@ -1,0 +1,60 @@
+# Fixture WordPress for rolepod-wplab dogfood / smoke testing.
+#
+# Topology:
+#   - mariadb bound to 127.0.0.1:3307 (avoids clashes with any local mysql/mariadb)
+#   - wordpress on 127.0.0.1:8989, files bind-mounted to ./wp-data/ for host wp-cli access
+#   - wp-config.php uses a SAPI-conditional DB_HOST:
+#       * web SAPI (Apache inside container)  → db:3306    (docker internal network)
+#       * cli SAPI (host wp-cli)               → 127.0.0.1:3307 (host port → mariadb)
+#     The conditional is injected by install-wp.sh after first boot — no /etc/hosts
+#     edit needed and host wp-cli works without sudo.
+#
+# Usage:
+#   cd tests/fixtures
+#   docker compose up -d
+#   ./install-wp.sh            # idempotent
+#   docker compose down -v     # full teardown (drops DB + WP files)
+
+services:
+  db:
+    image: mariadb:11
+    container_name: wplab-fixture-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpass
+      MARIADB_DATABASE: wplab
+      MARIADB_USER: wplab
+      MARIADB_PASSWORD: wplabpass
+    ports:
+      - "127.0.0.1:3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  wordpress:
+    image: wordpress:6.6-php8.3-apache
+    container_name: wplab-fixture-wp
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      # Container WP (Apache, non-CLI SAPI) reaches DB via docker network as db:3306.
+      # install-wp.sh patches wp-config.php after boot to add a CLI-SAPI branch that
+      # uses 127.0.0.1:3307 so host wp-cli can talk to the same DB. No /etc/hosts edit.
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wplab
+      WORDPRESS_DB_USER: wplab
+      WORDPRESS_DB_PASSWORD: wplabpass
+      WORDPRESS_DEBUG: 1
+    ports:
+      - "127.0.0.1:8989:80"
+    volumes:
+      - ./wp-data:/var/www/html
+
+volumes:
+  db_data:
