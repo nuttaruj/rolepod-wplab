@@ -11,6 +11,8 @@ import { WplabError } from '../util/errors.js'
 import { log } from '../util/log.js'
 import { wpConnectLocalHandler, wpConnectLocalToolDef } from './atomic/wp_connect_local.js'
 import { wpConnectRestHandler, wpConnectRestToolDef } from './atomic/wp_connect_rest.js'
+import { wpConnectSshHandler, wpConnectSshToolDef } from './atomic/wp_connect_ssh.js'
+import { wpConnectDockerHandler, wpConnectDockerToolDef } from './atomic/wp_connect_docker.js'
 import { wpDisconnectHandler, wpDisconnectToolDef } from './atomic/wp_disconnect.js'
 import { wpCliRunHandler, wpCliRunToolDef } from './atomic/wp_cli_run.js'
 import { wpHealthCheckHandler, wpHealthCheckToolDef } from './atomic/wp_health_check.js'
@@ -65,6 +67,14 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpConnectRestToolDef,
     handler: (d, raw) => wpConnectRestHandler(d.registry, raw),
+  },
+  {
+    def: wpConnectSshToolDef,
+    handler: (d, raw) => wpConnectSshHandler(d.registry, raw),
+  },
+  {
+    def: wpConnectDockerToolDef,
+    handler: (d, raw) => wpConnectDockerHandler(d.registry, raw),
   },
   {
     def: wpDisconnectToolDef,

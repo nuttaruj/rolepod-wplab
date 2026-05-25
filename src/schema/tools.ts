@@ -71,6 +71,46 @@ export const ConnectRestOutputSchema = z.object({
 export type ConnectRestOutput = z.infer<typeof ConnectRestOutputSchema>
 
 // ---------------------------------------------------------------------------
+// rolepod_wp_connect_ssh (v0.3)
+// ---------------------------------------------------------------------------
+
+export const ConnectSshInputSchema = z.object({
+  host: z.string().min(1),
+  user: z.string().min(1),
+  wp_path: z.string().min(1),
+  port: z.number().int().min(1).max(65535).default(22),
+  private_key_path: z.string().optional(),
+  password: z.string().optional(),
+})
+export type ConnectSshInput = z.infer<typeof ConnectSshInputSchema>
+
+export const ConnectSshOutputSchema = z.object({
+  target_id: TargetIdSchema,
+  siteurl: z.string(),
+  wp_version: z.string(),
+})
+export type ConnectSshOutput = z.infer<typeof ConnectSshOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_connect_docker (v0.3)
+// ---------------------------------------------------------------------------
+
+export const ConnectDockerInputSchema = z.object({
+  container_name: z.string().min(1),
+  wp_path: z.string().default('/var/www/html'),
+  docker_host: z.string().optional(),
+  docker_socket_path: z.string().optional(),
+})
+export type ConnectDockerInput = z.infer<typeof ConnectDockerInputSchema>
+
+export const ConnectDockerOutputSchema = z.object({
+  target_id: TargetIdSchema,
+  siteurl: z.string(),
+  wp_version: z.string(),
+})
+export type ConnectDockerOutput = z.infer<typeof ConnectDockerOutputSchema>
+
+// ---------------------------------------------------------------------------
 // rolepod_wp_disconnect
 // ---------------------------------------------------------------------------
 
