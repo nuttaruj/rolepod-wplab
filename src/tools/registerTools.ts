@@ -16,6 +16,15 @@ import { wpCliRunHandler, wpCliRunToolDef } from './atomic/wp_cli_run.js'
 import { wpHealthCheckHandler, wpHealthCheckToolDef } from './atomic/wp_health_check.js'
 import { wpFileReadHandler, wpFileReadToolDef } from './atomic/wp_file_read.js'
 import { wpFileWriteHandler, wpFileWriteToolDef } from './atomic/wp_file_write.js'
+import { wpPostGetHandler, wpPostGetToolDef } from './atomic/wp_post_get.js'
+import { wpPostListHandler, wpPostListToolDef } from './atomic/wp_post_list.js'
+import { wpPostCreateHandler, wpPostCreateToolDef } from './atomic/wp_post_create.js'
+import { wpPostUpdateHandler, wpPostUpdateToolDef } from './atomic/wp_post_update.js'
+import { wpOptionGetHandler, wpOptionGetToolDef } from './atomic/wp_option_get.js'
+import { wpOptionSetHandler, wpOptionSetToolDef } from './atomic/wp_option_set.js'
+import { wpUserListHandler, wpUserListToolDef } from './atomic/wp_user_list.js'
+import { wpDbQueryHandler, wpDbQueryToolDef } from './atomic/wp_db_query.js'
+import { wpRestRequestHandler, wpRestRequestToolDef } from './atomic/wp_rest_request.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -58,6 +67,42 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpFileWriteToolDef,
     handler: (d, raw) => wpFileWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpPostGetToolDef,
+    handler: (d, raw) => wpPostGetHandler(d.registry, raw),
+  },
+  {
+    def: wpPostListToolDef,
+    handler: (d, raw) => wpPostListHandler(d.registry, raw),
+  },
+  {
+    def: wpPostCreateToolDef,
+    handler: (d, raw) => wpPostCreateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpPostUpdateToolDef,
+    handler: (d, raw) => wpPostUpdateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpOptionGetToolDef,
+    handler: (d, raw) => wpOptionGetHandler(d.registry, raw),
+  },
+  {
+    def: wpOptionSetToolDef,
+    handler: (d, raw) => wpOptionSetHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpUserListToolDef,
+    handler: (d, raw) => wpUserListHandler(d.registry, raw),
+  },
+  {
+    def: wpDbQueryToolDef,
+    handler: (d, raw) => wpDbQueryHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpRestRequestToolDef,
+    handler: (d, raw) => wpRestRequestHandler(d.registry, raw),
   },
 ]
 

@@ -142,10 +142,19 @@ describe('MCP smoke', () => {
         'rolepod_wp_cli_run',
         'rolepod_wp_connect_local',
         'rolepod_wp_connect_rest',
+        'rolepod_wp_db_query',
         'rolepod_wp_disconnect',
         'rolepod_wp_file_read',
         'rolepod_wp_file_write',
         'rolepod_wp_health_check',
+        'rolepod_wp_option_get',
+        'rolepod_wp_option_set',
+        'rolepod_wp_post_create',
+        'rolepod_wp_post_get',
+        'rolepod_wp_post_list',
+        'rolepod_wp_post_update',
+        'rolepod_wp_rest_request',
+        'rolepod_wp_user_list',
       ])
     })
   })

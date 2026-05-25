@@ -126,6 +126,176 @@ export const WpHealthCheckOutputSchema = z.object({
 export type WpHealthCheckOutput = z.infer<typeof WpHealthCheckOutputSchema>
 
 // ---------------------------------------------------------------------------
+// rolepod_wp_post_get / list / create / update
+// ---------------------------------------------------------------------------
+
+export const PostGetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  id: z.number().int().positive(),
+  context: z.enum(['view', 'edit', 'embed']).default('view'),
+  type: z.string().default('posts').describe('REST collection slug (posts, pages, etc.)'),
+})
+export type PostGetInput = z.infer<typeof PostGetInputSchema>
+
+export const PostGetOutputSchema = z.object({
+  status: z.number().int(),
+  post: z.unknown(),
+})
+export type PostGetOutput = z.infer<typeof PostGetOutputSchema>
+
+export const PostListInputSchema = z.object({
+  target_id: TargetIdSchema,
+  type: z.string().default('posts'),
+  per_page: z.number().int().min(1).max(100).default(20),
+  page: z.number().int().positive().default(1),
+  search: z.string().optional(),
+  status: z.string().optional(),
+  orderby: z.string().optional(),
+  order: z.enum(['asc', 'desc']).optional(),
+})
+export type PostListInput = z.infer<typeof PostListInputSchema>
+
+export const PostListOutputSchema = z.object({
+  status: z.number().int(),
+  items: z.array(z.unknown()),
+  total: z.number().int().nonnegative().optional(),
+  total_pages: z.number().int().nonnegative().optional(),
+})
+export type PostListOutput = z.infer<typeof PostListOutputSchema>
+
+export const PostCreateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  type: z.string().default('posts'),
+  title: z.string(),
+  content: z.string(),
+  status: z.enum(['publish', 'future', 'draft', 'pending', 'private']).default('draft'),
+  excerpt: z.string().optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+})
+export type PostCreateInput = z.infer<typeof PostCreateInputSchema>
+
+export const PostCreateOutputSchema = z.object({
+  status: z.number().int(),
+  id: z.number().int().positive(),
+  link: z.string().url().optional(),
+})
+export type PostCreateOutput = z.infer<typeof PostCreateOutputSchema>
+
+export const PostUpdateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  type: z.string().default('posts'),
+  id: z.number().int().positive(),
+  title: z.string().optional(),
+  content: z.string().optional(),
+  status: z.enum(['publish', 'future', 'draft', 'pending', 'private']).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+})
+export type PostUpdateInput = z.infer<typeof PostUpdateInputSchema>
+
+export const PostUpdateOutputSchema = z.object({
+  status: z.number().int(),
+  id: z.number().int().positive(),
+  modified: z.string().optional(),
+})
+export type PostUpdateOutput = z.infer<typeof PostUpdateOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_option_get / set
+// ---------------------------------------------------------------------------
+
+export const OptionGetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  name: z.string().min(1),
+})
+export type OptionGetInput = z.infer<typeof OptionGetInputSchema>
+
+export const OptionGetOutputSchema = z.object({
+  name: z.string(),
+  value: z.unknown(),
+  source: z.enum(['wp_cli', 'rest_settings']).describe('which transport actually returned the value'),
+})
+export type OptionGetOutput = z.infer<typeof OptionGetOutputSchema>
+
+export const OptionSetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  name: z.string().min(1),
+  value: z.union([z.string(), z.number(), z.boolean(), z.record(z.string(), z.unknown()), z.array(z.unknown())]),
+  confirm: z.boolean().default(false).describe('Required true on production-matched targets'),
+})
+export type OptionSetInput = z.infer<typeof OptionSetInputSchema>
+
+export const OptionSetOutputSchema = z.object({
+  name: z.string(),
+  changed: z.boolean(),
+  source: z.enum(['wp_cli', 'rest_settings']),
+})
+export type OptionSetOutput = z.infer<typeof OptionSetOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_user_list
+// ---------------------------------------------------------------------------
+
+export const UserListInputSchema = z.object({
+  target_id: TargetIdSchema,
+  per_page: z.number().int().min(1).max(100).default(20),
+  page: z.number().int().positive().default(1),
+  search: z.string().optional(),
+  role: z.string().optional(),
+})
+export type UserListInput = z.infer<typeof UserListInputSchema>
+
+export const UserListOutputSchema = z.object({
+  status: z.number().int(),
+  users: z.array(z.unknown()),
+})
+export type UserListOutput = z.infer<typeof UserListOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_db_query
+// ---------------------------------------------------------------------------
+
+export const DbQueryInputSchema = z.object({
+  target_id: TargetIdSchema,
+  sql: z.string().min(1),
+  allow_write: z.boolean().default(false).describe(
+    'Override SELECT-only guard. Production guard still applies on top.',
+  ),
+  confirm: z.boolean().default(false).describe(
+    'Required true on production-matched targets when allow_write=true',
+  ),
+})
+export type DbQueryInput = z.infer<typeof DbQueryInputSchema>
+
+export const DbQueryOutputSchema = z.object({
+  rows: z.array(z.record(z.string(), z.unknown())).optional(),
+  stdout: z.string(),
+  stderr: z.string(),
+  exit_code: z.number().int(),
+})
+export type DbQueryOutput = z.infer<typeof DbQueryOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_rest_request — generic REST passthrough
+// ---------------------------------------------------------------------------
+
+export const RestRequestInputSchema = z.object({
+  target_id: TargetIdSchema,
+  method: z.enum(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']).default('GET'),
+  path: z.string().min(1).describe('REST route, e.g. "/wp/v2/posts" — leading slash optional'),
+  query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional(),
+  body: z.unknown().optional(),
+  headers: z.record(z.string(), z.string()).optional(),
+})
+export type RestRequestInput = z.infer<typeof RestRequestInputSchema>
+
+export const RestRequestOutputSchema = z.object({
+  status: z.number().int(),
+  body: z.unknown(),
+  headers: z.record(z.string(), z.string()),
+})
+export type RestRequestOutput = z.infer<typeof RestRequestOutputSchema>
+
+// ---------------------------------------------------------------------------
 // rolepod_wp_file_read
 // ---------------------------------------------------------------------------
 
