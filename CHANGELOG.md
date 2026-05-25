@@ -2,6 +2,48 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] — 2026-05-25 — Stable (schema-frozen)
+
+### Schema-freeze promise
+
+All MCP tool **names** and **required input fields** locked. Breaking changes require a **major bump**. Adding optional input fields, adding output fields, adding new tools = minor. Bug fixes + dep bumps = patch.
+
+The frozen schema:
+- **46 MCP tools** with `rolepod_wp_*` prefix (connect + lifecycle + atomic + typed CRUD + adapters + composites + memory + companion-gated power).
+- Schema source: `src/schema/tools.ts` (zod). Exported to `dist/schemas/tools.json` on build.
+- Replay bundle format `v1` (`src/bin/replay.ts`).
+- Companion REST namespace `/wp-json/wplab/v1/` with 8 endpoints.
+
+### Locked
+
+- Tool names + required fields.
+- Profile names: strict / personal / power.
+- Target kinds: local / rest / ssh / docker.
+- Allow-list categories + never-allowed list (W-005).
+- Filesystem scope rules (W-006).
+- DB SELECT-only guard (W-007).
+- Production guard semantics (W-008).
+- Credential vault layout (W-018).
+- Memory directory layout (W-028).
+- Replay bundle JSON shape.
+
+### Not locked
+
+- Internal Target interface methods may grow (additive only).
+- Composite implementations may improve.
+- Adapter slate may expand (new plugins post-v1.0 are minor bumps).
+- Companion v1.0+ may add new endpoints (additive).
+
+### Pairs with
+
+- `rolepod-wplab-companion` **v1.0** — schema-frozen alongside; audit log format frozen, capability map locked.
+
+### Maintainer next actions (post-tag)
+
+- npm publish `@rolepod/wplab`.
+- Submit `rolepod-wplab-companion` to wordpress.org plugin directory (gated on WP review).
+- External security audit per `SECURITY.md` "v1.0 audit scope" section.
+
 ## [0.5.0] — 2026-05-25 — OSS launch
 
 ### Added — Governance + docs
