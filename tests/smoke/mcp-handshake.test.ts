@@ -141,6 +141,7 @@ describe('MCP smoke', () => {
       expect(names).toEqual([
         'rolepod_wp_acf_read',
         'rolepod_wp_acf_write',
+        'rolepod_wp_audit_many',
         'rolepod_wp_audit_security',
         'rolepod_wp_bricks_read',
         'rolepod_wp_cli_run',
@@ -161,6 +162,7 @@ describe('MCP smoke', () => {
         'rolepod_wp_memory_list',
         'rolepod_wp_memory_note',
         'rolepod_wp_memory_recall',
+        'rolepod_wp_migrate_data',
         'rolepod_wp_migrate_dryrun',
         'rolepod_wp_option_get',
         'rolepod_wp_option_set',

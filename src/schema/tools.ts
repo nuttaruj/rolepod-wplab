@@ -433,6 +433,64 @@ export const MigrateDryrunOutputSchema = z.object({
 })
 export type MigrateDryrunOutput = z.infer<typeof MigrateDryrunOutputSchema>
 
+// --- Cross-target composites (v0.3) ---
+
+export const AuditManyInputSchema = z.object({
+  target_ids: z.array(TargetIdSchema).min(1),
+  report_format: z.enum(['markdown', 'json']).default('markdown'),
+})
+export type AuditManyInput = z.infer<typeof AuditManyInputSchema>
+
+export const AuditManyOutputSchema = z.object({
+  run_id: RunIdShape,
+  reports: z.array(
+    z.object({
+      target_id: TargetIdSchema,
+      siteurl: z.string(),
+      ok: z.boolean(),
+      error: z.string().optional(),
+      report_path: z.string().optional(),
+      summary: z
+        .object({
+          wp_core_outdated: z.boolean(),
+          outdated_plugin_count: z.number().int().nonnegative(),
+          outdated_theme_count: z.number().int().nonnegative(),
+          weak_admin_count: z.number().int().nonnegative(),
+          wp_debug_on: z.boolean(),
+        })
+        .optional(),
+    }),
+  ),
+  consolidated_path: z.string(),
+})
+export type AuditManyOutput = z.infer<typeof AuditManyOutputSchema>
+
+export const MigrateDataInputSchema = z.object({
+  source_target_id: TargetIdSchema,
+  dest_target_id: TargetIdSchema,
+  scope: z.enum(['plugin_versions']).default('plugin_versions'),
+  allow_destructive: z.literal(true),
+  confirm: z.boolean().default(false),
+})
+export type MigrateDataInput = z.infer<typeof MigrateDataInputSchema>
+
+export const MigrateDataOutputSchema = z.object({
+  run_id: RunIdShape,
+  scope: z.string(),
+  applied: z.array(
+    z.object({
+      action: z.enum(['install', 'upgrade', 'downgrade', 'noop']),
+      slug: z.string(),
+      from: z.string().optional(),
+      to: z.string(),
+      ok: z.boolean(),
+      error: z.string().optional(),
+    }),
+  ),
+  report_path: z.string(),
+})
+export type MigrateDataOutput = z.infer<typeof MigrateDataOutputSchema>
+
 // ---------------------------------------------------------------------------
 // Companion-gated power tools — v0.2 (W-003R, W-004R)
 // ---------------------------------------------------------------------------

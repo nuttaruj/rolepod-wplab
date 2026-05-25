@@ -45,6 +45,8 @@ import { wpScaffoldPluginHandler, wpScaffoldPluginToolDef } from './composite/wp
 import { wpScaffoldThemeHandler, wpScaffoldThemeToolDef } from './composite/wp_scaffold_theme.js'
 import { wpAuditSecurityHandler, wpAuditSecurityToolDef } from './composite/wp_audit_security.js'
 import { wpMigrateDryrunHandler, wpMigrateDryrunToolDef } from './composite/wp_migrate_dryrun.js'
+import { wpAuditManyHandler, wpAuditManyToolDef } from './composite/wp_audit_many.js'
+import { wpMigrateDataHandler, wpMigrateDataToolDef } from './composite/wp_migrate_data.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -203,6 +205,14 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMigrateDryrunToolDef,
     handler: (d, raw) => wpMigrateDryrunHandler(d.registry, raw),
+  },
+  {
+    def: wpAuditManyToolDef,
+    handler: (d, raw) => wpAuditManyHandler(d.registry, raw),
+  },
+  {
+    def: wpMigrateDataToolDef,
+    handler: (d, raw) => wpMigrateDataHandler(d.registry, d.prodGuard, raw),
   },
 ]
 
