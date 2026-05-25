@@ -1,0 +1,21 @@
+{
+  "name": "rolepod-wplab",
+  "displayName": "Rolepod WPLab",
+  "version": "0.1.0",
+  "description": "Multi-target WordPress automation for AI agents — scaffold, audit, verify, safe ops via wp-cli + REST + scoped fs. Optional companion plugin unlocks execute-php + runtime introspection. MIT, rolepod ecosystem.",
+  "author": {
+    "name": "nuttaruj",
+    "url": "https://github.com/nuttaruj"
+  },
+  "homepage": "https://github.com/nuttaruj/rolepod-wplab",
+  "repository": "https://github.com/nuttaruj/rolepod-wplab",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "wordpress",
+    "wp-cli",
+    "automation",
+    "rolepod",
+    "ai-agents"
+  ]
+}

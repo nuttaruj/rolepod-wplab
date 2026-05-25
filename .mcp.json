@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "rolepod-wplab": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/bin/rolepod-wplab.js"],
+      "env": {}
+    }
+  }
+}
