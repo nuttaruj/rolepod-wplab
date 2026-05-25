@@ -296,6 +296,104 @@ export const RestRequestOutputSchema = z.object({
 export type RestRequestOutput = z.infer<typeof RestRequestOutputSchema>
 
 // ---------------------------------------------------------------------------
+// Composites — v0.2 (phase-aware orchestrations)
+// ---------------------------------------------------------------------------
+
+const RunIdShape = z.string().regex(/^wplab_\d{8}T\d{6}_[a-z0-9]{8}$/)
+
+export const ScaffoldBlockInputSchema = z.object({
+  target_id: TargetIdSchema,
+  plugin_slug: z.string().min(1),
+  block_slug: z.string().regex(/^[a-z0-9_-]+\/[a-z0-9_-]+$/, {
+    message: 'block_slug must be namespaced like "my-team/testimonial-card"',
+  }),
+  title: z.string().min(1),
+  description: z.string().optional(),
+  category: z.string().default('design'),
+  icon: z.string().default('star-filled'),
+  render_strategy: z.enum(['dynamic', 'static']).default('dynamic'),
+  allow_destructive: z.literal(true),
+})
+export type ScaffoldBlockInput = z.infer<typeof ScaffoldBlockInputSchema>
+
+export const ScaffoldBlockOutputSchema = z.object({
+  run_id: RunIdShape,
+  files_written: z.array(z.string()),
+  next_steps: z.array(z.string()),
+})
+export type ScaffoldBlockOutput = z.infer<typeof ScaffoldBlockOutputSchema>
+
+export const ScaffoldPluginInputSchema = z.object({
+  target_id: TargetIdSchema,
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  author: z.string().default('AI-generated'),
+  features: z
+    .array(z.enum(['rest_endpoint', 'admin_page', 'gutenberg_block', 'cli_command']))
+    .default([]),
+  allow_destructive: z.literal(true),
+})
+export type ScaffoldPluginInput = z.infer<typeof ScaffoldPluginInputSchema>
+
+export const ScaffoldPluginOutputSchema = z.object({
+  run_id: RunIdShape,
+  plugin_path: z.string(),
+  files_written: z.array(z.string()),
+  activate_command: z.string(),
+})
+export type ScaffoldPluginOutput = z.infer<typeof ScaffoldPluginOutputSchema>
+
+export const ScaffoldThemeInputSchema = z.object({
+  target_id: TargetIdSchema,
+  slug: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  author: z.string().default('AI-generated'),
+  allow_destructive: z.literal(true),
+})
+export type ScaffoldThemeInput = z.infer<typeof ScaffoldThemeInputSchema>
+
+export const ScaffoldThemeOutputSchema = z.object({
+  run_id: RunIdShape,
+  theme_path: z.string(),
+  files_written: z.array(z.string()),
+  activate_command: z.string(),
+})
+export type ScaffoldThemeOutput = z.infer<typeof ScaffoldThemeOutputSchema>
+
+export const AuditSecurityInputSchema = z.object({
+  target_id: TargetIdSchema,
+  report_format: z.enum(['markdown', 'json']).default('markdown'),
+})
+export type AuditSecurityInput = z.infer<typeof AuditSecurityInputSchema>
+
+export const AuditSecurityOutputSchema = z.object({
+  run_id: RunIdShape,
+  wp_core_outdated: z.boolean(),
+  outdated_plugins: z.array(z.object({ slug: z.string(), current: z.string(), latest: z.string() })),
+  outdated_themes: z.array(z.object({ slug: z.string(), current: z.string(), latest: z.string() })),
+  weak_admin_users: z.array(z.object({ login: z.string(), reason: z.string() })),
+  wp_debug_on: z.boolean(),
+  report_path: z.string(),
+})
+export type AuditSecurityOutput = z.infer<typeof AuditSecurityOutputSchema>
+
+export const MigrateDryrunInputSchema = z.object({
+  source_target_id: TargetIdSchema,
+  dest_target_id: TargetIdSchema,
+  scope: z.array(z.enum(['posts', 'options', 'users', 'plugin_versions'])).default(['plugin_versions']),
+})
+export type MigrateDryrunInput = z.infer<typeof MigrateDryrunInputSchema>
+
+export const MigrateDryrunOutputSchema = z.object({
+  run_id: RunIdShape,
+  plan: z.record(z.string(), z.unknown()),
+  plan_path: z.string(),
+})
+export type MigrateDryrunOutput = z.infer<typeof MigrateDryrunOutputSchema>
+
+// ---------------------------------------------------------------------------
 // Companion-gated power tools — v0.2 (W-003R, W-004R)
 // ---------------------------------------------------------------------------
 

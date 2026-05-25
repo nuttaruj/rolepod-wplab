@@ -38,6 +38,11 @@ import { wpElementorWriteHandler, wpElementorWriteToolDef } from './adapter/wp_e
 import { wpWooWriteHandler, wpWooWriteToolDef } from './adapter/wp_woo_write.js'
 import { wpAcfWriteHandler, wpAcfWriteToolDef } from './adapter/wp_acf_write.js'
 import { wpBricksReadHandler, wpBricksReadToolDef } from './adapter/wp_bricks_read.js'
+import { wpScaffoldBlockHandler, wpScaffoldBlockToolDef } from './composite/wp_scaffold_block.js'
+import { wpScaffoldPluginHandler, wpScaffoldPluginToolDef } from './composite/wp_scaffold_plugin.js'
+import { wpScaffoldThemeHandler, wpScaffoldThemeToolDef } from './composite/wp_scaffold_theme.js'
+import { wpAuditSecurityHandler, wpAuditSecurityToolDef } from './composite/wp_audit_security.js'
+import { wpMigrateDryrunHandler, wpMigrateDryrunToolDef } from './composite/wp_migrate_dryrun.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -168,6 +173,26 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpBricksReadToolDef,
     handler: (d, raw) => wpBricksReadHandler(d.registry, raw),
+  },
+  {
+    def: wpScaffoldBlockToolDef,
+    handler: (d, raw) => wpScaffoldBlockHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpScaffoldPluginToolDef,
+    handler: (d, raw) => wpScaffoldPluginHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpScaffoldThemeToolDef,
+    handler: (d, raw) => wpScaffoldThemeHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpAuditSecurityToolDef,
+    handler: (d, raw) => wpAuditSecurityHandler(d.registry, raw),
+  },
+  {
+    def: wpMigrateDryrunToolDef,
+    handler: (d, raw) => wpMigrateDryrunHandler(d.registry, raw),
   },
 ]
 
