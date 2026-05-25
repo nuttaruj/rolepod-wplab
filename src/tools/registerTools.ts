@@ -25,6 +25,9 @@ import { wpOptionSetHandler, wpOptionSetToolDef } from './atomic/wp_option_set.j
 import { wpUserListHandler, wpUserListToolDef } from './atomic/wp_user_list.js'
 import { wpDbQueryHandler, wpDbQueryToolDef } from './atomic/wp_db_query.js'
 import { wpRestRequestHandler, wpRestRequestToolDef } from './atomic/wp_rest_request.js'
+import { wpElementorReadHandler, wpElementorReadToolDef } from './adapter/wp_elementor_read.js'
+import { wpWooReadHandler, wpWooReadToolDef } from './adapter/wp_woo_read.js'
+import { wpAcfReadHandler, wpAcfReadToolDef } from './adapter/wp_acf_read.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -103,6 +106,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpRestRequestToolDef,
     handler: (d, raw) => wpRestRequestHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorReadToolDef,
+    handler: (d, raw) => wpElementorReadHandler(d.registry, raw),
+  },
+  {
+    def: wpWooReadToolDef,
+    handler: (d, raw) => wpWooReadHandler(d.registry, raw),
+  },
+  {
+    def: wpAcfReadToolDef,
+    handler: (d, raw) => wpAcfReadHandler(d.registry, raw),
   },
 ]
 

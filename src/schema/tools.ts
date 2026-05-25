@@ -296,6 +296,66 @@ export const RestRequestOutputSchema = z.object({
 export type RestRequestOutput = z.infer<typeof RestRequestOutputSchema>
 
 // ---------------------------------------------------------------------------
+// Adapters — Elementor / WooCommerce / ACF (read-only, v0.1, W-023)
+// ---------------------------------------------------------------------------
+
+export const ElementorReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  page_id: z.number().int().positive().optional().describe('Single page to dump; omit to list.'),
+  type: z.string().default('page').describe('Post type to query when listing.'),
+  per_page: z.number().int().min(1).max(100).default(50),
+})
+export type ElementorReadInput = z.infer<typeof ElementorReadInputSchema>
+
+export const ElementorReadOutputSchema = z.object({
+  mode: z.enum(['list', 'page']),
+  detected: z.boolean(),
+  pages: z.array(z.unknown()).optional(),
+  page: z.unknown().optional(),
+})
+export type ElementorReadOutput = z.infer<typeof ElementorReadOutputSchema>
+
+export const WooReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum([
+    'products',
+    'orders',
+    'settings_groups',
+    'settings_in_group',
+    'shipping_zones',
+    'payment_gateways',
+  ]),
+  group: z.string().optional().describe('Required when scope=settings_in_group'),
+  per_page: z.number().int().min(1).max(100).optional(),
+  search: z.string().optional(),
+  status: z.string().optional(),
+})
+export type WooReadInput = z.infer<typeof WooReadInputSchema>
+
+export const WooReadOutputSchema = z.object({
+  scope: z.string(),
+  detected: z.boolean(),
+  items: z.array(z.unknown()),
+})
+export type WooReadOutput = z.infer<typeof WooReadOutputSchema>
+
+export const AcfReadInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(['field_groups', 'fields_in_group', 'post_meta']),
+  group_key: z.string().optional().describe('Required when scope=fields_in_group'),
+  post_id: z.number().int().positive().optional().describe('Required when scope=post_meta'),
+})
+export type AcfReadInput = z.infer<typeof AcfReadInputSchema>
+
+export const AcfReadOutputSchema = z.object({
+  scope: z.string(),
+  detected: z.boolean(),
+  items: z.array(z.unknown()).optional(),
+  meta: z.record(z.string(), z.unknown()).optional(),
+})
+export type AcfReadOutput = z.infer<typeof AcfReadOutputSchema>
+
+// ---------------------------------------------------------------------------
 // rolepod_wp_file_read
 // ---------------------------------------------------------------------------
 
