@@ -1,0 +1,65 @@
+import { openTarget } from '../../runtime/factory.js'
+import { makeVault } from '../../credentials/factory.js'
+import { canonicalizeSite } from '../../credentials/types.js'
+import { WplabError } from '../../util/errors.js'
+import {
+  ConnectRestInputSchema,
+  ConnectRestOutputSchema,
+  type ConnectRestInput,
+  type ConnectRestOutput,
+} from '../../schema/tools.js'
+import type { TargetRegistry } from '../../target/TargetRegistry.js'
+
+export const wpConnectRestToolDef = {
+  name: 'rolepod_wp_connect_rest',
+  description:
+    'Open a remote WordPress target over HTTPS + REST. Resolves credentials from the credential vault by canonical hostname of the url. Refuses non-https URLs. Companion is optional but probed at connect; if absent, power tools + wpCli + file ops are unavailable on this target.',
+  inputSchema: ConnectRestInputSchema,
+}
+
+export async function wpConnectRestHandler(
+  registry: TargetRegistry,
+  raw: unknown,
+): Promise<ConnectRestOutput> {
+  const input: ConnectRestInput = ConnectRestInputSchema.parse(raw)
+  const lookupKey = input.credential_ref ?? canonicalizeSite(input.url)
+
+  const vault = await makeVault()
+  const cred = await vault.get(lookupKey)
+  if (!cred) {
+    throw new WplabError(
+      'CREDENTIALS_MISSING',
+      `No credentials stored for ${lookupKey}. Run: rolepod-wplab credentials add ${lookupKey}`,
+      { site: lookupKey },
+    )
+  }
+
+  const target = await openTarget({ kind: 'rest', url: input.url, credential: cred })
+
+  if (input.require_companion && !target.companion) {
+    await target.close()
+    throw new WplabError(
+      'COMPANION_REQUIRED_BUT_MISSING',
+      `Companion not detected on ${lookupKey} but require_companion=true. Install rolepod-wplab-companion on this WP install.`,
+      { site: lookupKey },
+    )
+  }
+
+  registry.register(target)
+  await vault.touch(lookupKey)
+
+  return ConnectRestOutputSchema.parse({
+    target_id: target.id,
+    siteurl: target.siteurl,
+    wp_version: target.wpVersion,
+    ...(target.phpVersion !== undefined ? { php_version: target.phpVersion } : {}),
+    companion: target.companion
+      ? {
+          installed: target.companion.installed,
+          enabled: target.companion.enabled,
+          version: target.companion.version,
+          capabilities: [...target.companion.capabilities],
+        }
+      : null,
+  })
+}

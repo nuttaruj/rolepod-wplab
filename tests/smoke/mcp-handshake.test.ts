@@ -141,6 +141,8 @@ describe('MCP smoke', () => {
       expect(names).toEqual([
         'rolepod_wp_cli_run',
         'rolepod_wp_connect_local',
+        'rolepod_wp_connect_rest',
+        'rolepod_wp_disconnect',
         'rolepod_wp_file_read',
         'rolepod_wp_file_write',
         'rolepod_wp_health_check',

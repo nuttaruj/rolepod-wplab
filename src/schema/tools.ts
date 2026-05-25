@@ -35,6 +35,56 @@ export const ConnectLocalOutputSchema = z.object({
 export type ConnectLocalOutput = z.infer<typeof ConnectLocalOutputSchema>
 
 // ---------------------------------------------------------------------------
+// rolepod_wp_connect_rest (W-027)
+// ---------------------------------------------------------------------------
+
+export const ConnectRestInputSchema = z.object({
+  url: z.string().url().refine((u) => u.startsWith('https://'), {
+    message: 'URL must use https:// (refuses plaintext App Password transport)',
+  }),
+  credential_ref: z.string().optional().describe(
+    'Override default keychain lookup. If omitted, runtime resolves credentials by canonical hostname of url.',
+  ),
+  require_companion: z.boolean().default(false).describe(
+    'Abort connect if companion handshake fails. Default: allow target open without companion (RestTarget still works for built-in REST routes).',
+  ),
+})
+export type ConnectRestInput = z.infer<typeof ConnectRestInputSchema>
+
+export const ConnectRestOutputSchema = z.object({
+  target_id: TargetIdSchema,
+  siteurl: z.string().url(),
+  wp_version: z.string(),
+  php_version: z.string().optional(),
+  companion: z
+    .object({
+      installed: z.boolean(),
+      enabled: z.boolean(),
+      version: z.string().nullable(),
+      capabilities: z.array(z.string()),
+    })
+    .nullable(),
+  memory_summary: z.string().optional().describe(
+    'Populated when per-site memory directory exists (W-028, v0.2+). Brief recap of stored notes.',
+  ),
+})
+export type ConnectRestOutput = z.infer<typeof ConnectRestOutputSchema>
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_disconnect
+// ---------------------------------------------------------------------------
+
+export const DisconnectInputSchema = z.object({
+  target_id: TargetIdSchema,
+})
+export type DisconnectInput = z.infer<typeof DisconnectInputSchema>
+
+export const DisconnectOutputSchema = z.object({
+  closed: z.literal(true),
+})
+export type DisconnectOutput = z.infer<typeof DisconnectOutputSchema>
+
+// ---------------------------------------------------------------------------
 // rolepod_wp_cli_run
 // ---------------------------------------------------------------------------
 

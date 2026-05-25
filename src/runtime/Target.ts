@@ -1,4 +1,4 @@
-export type TargetKind = 'local' | 'ssh' | 'docker'
+export type TargetKind = 'local' | 'rest' | 'ssh' | 'docker'
 
 export type CompanionStatus = {
   installed: boolean

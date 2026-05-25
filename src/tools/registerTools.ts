@@ -10,6 +10,8 @@ import type { TargetRegistry } from '../target/TargetRegistry.js'
 import { WplabError } from '../util/errors.js'
 import { log } from '../util/log.js'
 import { wpConnectLocalHandler, wpConnectLocalToolDef } from './atomic/wp_connect_local.js'
+import { wpConnectRestHandler, wpConnectRestToolDef } from './atomic/wp_connect_rest.js'
+import { wpDisconnectHandler, wpDisconnectToolDef } from './atomic/wp_disconnect.js'
 import { wpCliRunHandler, wpCliRunToolDef } from './atomic/wp_cli_run.js'
 import { wpHealthCheckHandler, wpHealthCheckToolDef } from './atomic/wp_health_check.js'
 import { wpFileReadHandler, wpFileReadToolDef } from './atomic/wp_file_read.js'
@@ -32,6 +34,14 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpConnectLocalToolDef,
     handler: (d, raw) => wpConnectLocalHandler(d.registry, raw),
+  },
+  {
+    def: wpConnectRestToolDef,
+    handler: (d, raw) => wpConnectRestHandler(d.registry, raw),
+  },
+  {
+    def: wpDisconnectToolDef,
+    handler: (d, raw) => wpDisconnectHandler(d.registry, raw),
   },
   {
     def: wpCliRunToolDef,
