@@ -31,6 +31,9 @@ import { wpAcfReadHandler, wpAcfReadToolDef } from './adapter/wp_acf_read.js'
 import { wpMemoryRecallHandler, wpMemoryRecallToolDef } from './atomic/wp_memory_recall.js'
 import { wpMemoryNoteHandler, wpMemoryNoteToolDef } from './atomic/wp_memory_note.js'
 import { wpMemoryListHandler, wpMemoryListToolDef } from './atomic/wp_memory_list.js'
+import { wpExecutePhpHandler, wpExecutePhpToolDef } from './companion/wp_execute_php.js'
+import { wpIntrospectHandler, wpIntrospectToolDef } from './companion/wp_introspect.js'
+import { wpHookStateHandler, wpHookStateToolDef } from './companion/wp_hook_state.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -133,6 +136,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMemoryListToolDef,
     handler: (d, raw) => wpMemoryListHandler(d.registry, raw),
+  },
+  {
+    def: wpExecutePhpToolDef,
+    handler: (d, raw) => wpExecutePhpHandler(d.registry, raw),
+  },
+  {
+    def: wpIntrospectToolDef,
+    handler: (d, raw) => wpIntrospectHandler(d.registry, raw),
+  },
+  {
+    def: wpHookStateToolDef,
+    handler: (d, raw) => wpHookStateHandler(d.registry, raw),
   },
 ]
 

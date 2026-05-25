@@ -296,6 +296,61 @@ export const RestRequestOutputSchema = z.object({
 export type RestRequestOutput = z.infer<typeof RestRequestOutputSchema>
 
 // ---------------------------------------------------------------------------
+// Companion-gated power tools — v0.2 (W-003R, W-004R)
+// ---------------------------------------------------------------------------
+
+export const ExecutePhpInputSchema = z.object({
+  target_id: TargetIdSchema,
+  payload: z.string().min(1),
+  timeout_ms: z.number().int().min(100).max(30_000).default(5000),
+  confirm: z.literal(true),
+})
+export type ExecutePhpInput = z.infer<typeof ExecutePhpInputSchema>
+
+export const ExecutePhpOutputSchema = z.object({
+  ok: z.boolean(),
+  return_value: z.unknown().optional(),
+  stdout: z.string().optional(),
+  duration_ms: z.number().optional(),
+  php_warnings: z.array(z.string()).optional(),
+  audit_id: z.string(),
+  error_message: z.string().optional(),
+})
+export type ExecutePhpOutput = z.infer<typeof ExecutePhpOutputSchema>
+
+export const IntrospectInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(['hooks', 'transients', 'options_full', 'request_state']),
+  include_values: z.boolean().default(false),
+})
+export type IntrospectInput = z.infer<typeof IntrospectInputSchema>
+
+export const IntrospectOutputSchema = z.object({
+  scope: z.string(),
+  report: z.unknown(),
+})
+export type IntrospectOutput = z.infer<typeof IntrospectOutputSchema>
+
+export const HookStateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  hook: z.string().min(1),
+  kind: z.enum(['action', 'filter']).default('action'),
+})
+export type HookStateInput = z.infer<typeof HookStateInputSchema>
+
+export const HookStateOutputSchema = z.object({
+  hook: z.string(),
+  kind: z.enum(['action', 'filter']),
+  callbacks: z.array(
+    z.object({
+      priority: z.number().int(),
+      callback_identifier: z.string(),
+    }),
+  ),
+})
+export type HookStateOutput = z.infer<typeof HookStateOutputSchema>
+
+// ---------------------------------------------------------------------------
 // Memory tools — W-028, v0.2
 // ---------------------------------------------------------------------------
 
