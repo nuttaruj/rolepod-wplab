@@ -2,6 +2,33 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] — 2026-05-25 — OSS launch
+
+### Added — Governance + docs
+
+- **CONTRIBUTING.md** — clean-room policy (W-002), quality gates, contribution checklist for new tools / adapters / companion endpoints, single-backend rule (W-011), DCO sign-off.
+- **CODE_OF_CONDUCT.md** — Contributor Covenant v2.1.
+- **SECURITY.md** — supported-versions matrix, 90-day private disclosure window, threat model for Node MCP + companion, in-scope items for v1.0 external audit.
+- **docs/MIGRATION-FROM-THIRD-PARTY.md** — feature parity matrix, coexistence flow (Phase 0 → 4), key behavioral differences, "use which" honest framing.
+- **.github/ISSUE_TEMPLATE/{bug_report,feature_request}.md** — structured intake.
+
+### Pairs with
+
+- `rolepod-wplab-companion` v0.2 (unchanged for v0.5).
+
+### Tests
+
+- 117 unit + smoke green. 46 MCP tools. `claude plugin validate ./ --strict` pass.
+
+### Not in v0.5 (deferred to v1.0)
+
+- npm publish to `@rolepod/wplab` — requires npm org claim + publish workflow.
+- wordpress.org plugin directory submission for companion — requires WP review.
+- Astro docs site (RECIPES.md remains the primary doc surface).
+- Real replay tool dispatch (currently stub).
+- External security audit.
+- Conformance test suite for 3rd-party adapters.
+
 ## [0.4.0] — 2026-05-25
 
 ### Added — Polish
