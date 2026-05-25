@@ -3,6 +3,7 @@ import { createServer } from '../server.js'
 import { runDoctor } from './doctor.js'
 import { runCredentials } from './credentials.js'
 import { runMemory } from './memory.js'
+import { runReplay } from './replay.js'
 import { log } from '../util/log.js'
 
 async function main(): Promise<void> {
@@ -27,9 +28,15 @@ async function main(): Promise<void> {
       process.exit(code)
       return
     }
+    case 'replay': {
+      const code = await runReplay(process.argv.slice(3))
+      process.exit(code)
+      return
+    }
     case 'smoke': {
-      // v0.1+ — needs docker fixture
-      console.error('[wplab] smoke test lands in v0.1')
+      // Smoke test against fixture WP — v0.4 stub. Use tests/fixtures/install-wp.sh
+      // + manual MCP probe via test runner for now.
+      console.error('[wplab] smoke not yet wired into CLI — use `npm test` for the MCP smoke suite')
       process.exit(2)
       return
     }
@@ -54,7 +61,7 @@ async function main(): Promise<void> {
     }
     default: {
       console.error(`[wplab] unknown command: ${cmd}`)
-      console.error('Usage: rolepod-wplab [serve|doctor|smoke]')
+      console.error('Usage: rolepod-wplab [serve|doctor|credentials|memory|replay|smoke]')
       process.exit(2)
     }
   }

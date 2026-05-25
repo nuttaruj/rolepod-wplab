@@ -2,6 +2,26 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] — 2026-05-25
+
+### Added — Polish
+
+- **Replay bundle format v1.** Schema in `src/bin/replay.ts`. CLI: `rolepod-wplab replay <bundle.json>`. v0.4 stub-dispatches calls (logs only); v0.5 wires actual in-process MCP CallTool dispatch loop.
+- **Dockerfile** for ghcr.io publish target. Multi-stage (build node20 → runtime node20-alpine). Entrypoint = `rolepod-wplab serve`.
+- **GitHub Actions CI** (`.github/workflows/ci.yml`) — Node 20+22 × ubuntu+macos matrix; typecheck + build + test + lint + prettier + docker build (no push).
+- **docs/RECIPES.md** — 10 concrete end-to-end recipes (connect local/remote, scaffold block, audit multi-site, migrate plugins, hook debug, bulk Woo update, memory recall, execute-php, docker fixture).
+
+### Changed
+
+- `rolepod-wplab` CLI usage line lists all subcommands: serve | doctor | credentials | memory | replay | smoke.
+
+### Not yet implemented (deferred to v0.5)
+
+- Replay actually executes tool calls (currently stubs to logs).
+- Docs site (Astro). RECIPES.md serves as v0.4 doc surface.
+- WooCommerce optional pack (existing adapter writes cover most use cases).
+- Adapter test framework with real fixture coverage.
+
 ## [0.3.0] — 2026-05-25
 
 ### Added — Multi-target + cross-target composites + SEO/i18n adapters
