@@ -1,0 +1,76 @@
+{
+  "name": "@rolepod/wplab",
+  "version": "0.0.0",
+  "description": "a third-party plugin-class WordPress operations toolkit for AI coding agents — default-safe wp-cli + REST + scoped fs, opt-in companion for execute-php + runtime introspection. MIT, rolepod ecosystem.",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "wordpress",
+    "wp-cli",
+    "rolepod",
+    "ai-agents",
+    "claude-code",
+    "cursor",
+    "codex"
+  ],
+  "homepage": "https://github.com/nuttaruj/rolepod-wplab",
+  "bugs": "https://github.com/nuttaruj/rolepod-wplab/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuttaruj/rolepod-wplab.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "nuttaruj",
+    "url": "https://github.com/nuttaruj"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "rolepod-wplab": "./dist/bin/rolepod-wplab.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    ".claude-plugin",
+    ".cursor-plugin",
+    ".codex-plugin",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "lint": "oxlint src tests/unit tests/smoke",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/unit/**/*.ts\" \"tests/smoke/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\" \"tests/unit/**/*.ts\" \"tests/smoke/**/*.ts\"",
+    "doctor": "node ./dist/bin/rolepod-wplab.js doctor",
+    "smoke": "node ./dist/bin/rolepod-wplab.js smoke",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "execa": "^9.0.0",
+    "zod": "^3.23.0"
+  },
+  "optionalDependencies": {
+    "node-ssh": "^13.2.0",
+    "dockerode": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "oxlint": "^0.9.0",
+    "prettier": "^3.3.0",
+    "tsup": "^8.2.0",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0"
+  }
+}
