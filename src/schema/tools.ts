@@ -296,6 +296,66 @@ export const RestRequestOutputSchema = z.object({
 export type RestRequestOutput = z.infer<typeof RestRequestOutputSchema>
 
 // ---------------------------------------------------------------------------
+// Memory tools — W-028, v0.2
+// ---------------------------------------------------------------------------
+
+export const MemoryRecallInputSchema = z.object({
+  target_id: TargetIdSchema,
+  query: z.string().optional(),
+  kind: z.enum(['note', 'convention', 'runbook', 'all']).default('all'),
+})
+export type MemoryRecallInput = z.infer<typeof MemoryRecallInputSchema>
+
+export const MemoryRecallOutputSchema = z.object({
+  site_slug: z.string(),
+  summary: z.string(),
+  notes: z.array(
+    z.object({
+      kind: z.enum(['note', 'convention', 'runbook']),
+      name: z.string(),
+      content: z.string(),
+      written_at: z.string(),
+    }),
+  ),
+})
+export type MemoryRecallOutput = z.infer<typeof MemoryRecallOutputSchema>
+
+export const MemoryNoteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  content: z.string().min(1),
+  kind: z.enum(['note', 'convention', 'runbook']).default('note'),
+  runbook_name: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+})
+export type MemoryNoteInput = z.infer<typeof MemoryNoteInputSchema>
+
+export const MemoryNoteOutputSchema = z.object({
+  saved_at: z.string(),
+  file_path: z.string(),
+  site_slug: z.string(),
+})
+export type MemoryNoteOutput = z.infer<typeof MemoryNoteOutputSchema>
+
+export const MemoryListInputSchema = z.object({
+  target_id: TargetIdSchema,
+})
+export type MemoryListInput = z.infer<typeof MemoryListInputSchema>
+
+export const MemoryListOutputSchema = z.object({
+  site_slug: z.string(),
+  files: z.array(
+    z.object({
+      kind: z.enum(['meta', 'site', 'note', 'convention', 'runbook']),
+      name: z.string(),
+      size_bytes: z.number().int().nonnegative(),
+      mtime: z.string(),
+    }),
+  ),
+  total_bytes: z.number().int().nonnegative(),
+})
+export type MemoryListOutput = z.infer<typeof MemoryListOutputSchema>
+
+// ---------------------------------------------------------------------------
 // Adapters — Elementor / WooCommerce / ACF (read-only, v0.1, W-023)
 // ---------------------------------------------------------------------------
 

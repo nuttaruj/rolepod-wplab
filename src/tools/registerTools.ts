@@ -28,6 +28,9 @@ import { wpRestRequestHandler, wpRestRequestToolDef } from './atomic/wp_rest_req
 import { wpElementorReadHandler, wpElementorReadToolDef } from './adapter/wp_elementor_read.js'
 import { wpWooReadHandler, wpWooReadToolDef } from './adapter/wp_woo_read.js'
 import { wpAcfReadHandler, wpAcfReadToolDef } from './adapter/wp_acf_read.js'
+import { wpMemoryRecallHandler, wpMemoryRecallToolDef } from './atomic/wp_memory_recall.js'
+import { wpMemoryNoteHandler, wpMemoryNoteToolDef } from './atomic/wp_memory_note.js'
+import { wpMemoryListHandler, wpMemoryListToolDef } from './atomic/wp_memory_list.js'
 
 type RegisterDeps = {
   registry: TargetRegistry
@@ -118,6 +121,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpAcfReadToolDef,
     handler: (d, raw) => wpAcfReadHandler(d.registry, raw),
+  },
+  {
+    def: wpMemoryRecallToolDef,
+    handler: (d, raw) => wpMemoryRecallHandler(d.registry, raw),
+  },
+  {
+    def: wpMemoryNoteToolDef,
+    handler: (d, raw) => wpMemoryNoteHandler(d.registry, raw),
+  },
+  {
+    def: wpMemoryListToolDef,
+    handler: (d, raw) => wpMemoryListHandler(d.registry, raw),
   },
 ]
 

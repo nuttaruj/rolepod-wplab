@@ -2,6 +2,7 @@
 import { createServer } from '../server.js'
 import { runDoctor } from './doctor.js'
 import { runCredentials } from './credentials.js'
+import { runMemory } from './memory.js'
 import { log } from '../util/log.js'
 
 async function main(): Promise<void> {
@@ -17,6 +18,12 @@ async function main(): Promise<void> {
     case 'credentials':
     case 'creds': {
       const code = await runCredentials(process.argv.slice(3))
+      process.exit(code)
+      return
+    }
+    case 'memory':
+    case 'mem': {
+      const code = await runMemory(process.argv.slice(3))
       process.exit(code)
       return
     }
