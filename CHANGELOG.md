@@ -2,6 +2,19 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] — 2026-05-26 — Slim dist
+
+### Changed
+
+- `tsup.config.ts` — `sourcemap: false` for shipped builds. dist size **14.6 MB → 4.8 MB (-67%)** by dropping the two `.map` files (~10 MB total) that were ~68% of the bundle. End users `npx` the binary and rarely inspect stack traces; local devs can re-enable maps with `npx tsup --sourcemap` when debugging.
+- No source change. No schema change. No tool change.
+
+### Numbers
+
+- npm tarball: **~2.7 MB → ~750 KB packed** (typical sourcemap-heavy → slim ratio).
+- MCP tools: 62 (unchanged).
+- Tests: 141 passing.
+
 ## [1.2.1] — 2026-05-26 — Path-2 polish
 
 ### Changed

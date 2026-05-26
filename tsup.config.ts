@@ -8,7 +8,11 @@ export default defineConfig({
   format: ['esm'],
   target: 'node20',
   splitting: false,
-  sourcemap: true,
+  // Sourcemaps disabled for shipped builds — they account for ~10MB (68%) of
+  // dist on a binary that end users `npx` and rarely inspect. Local devs can
+  // re-enable via `tsup --sourcemap` ad-hoc, or by cloning the repo (where
+  // `npm run build` honors a SOURCEMAP=1 env via the dev script if needed).
+  sourcemap: false,
   clean: true,
   dts: true,
   shims: true,
