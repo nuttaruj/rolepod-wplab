@@ -2,6 +2,24 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] — 2026-05-26 — Install path fixes + README rewrite
+
+### Fixed
+
+- `.mcp.json` previously pointed at `${CLAUDE_PLUGIN_ROOT}/dist/bin/rolepod-wplab.js`. `dist/` is gitignored, so users who installed via `claude plugin install nuttaruj/rolepod-wplab` got a server that wouldn't spawn. Now uses `npx -y @rolepod/wplab@latest serve` — pulls from npm, always works.
+- `.claude-plugin/plugin.json` version was stuck at `0.1.0`. Now `1.2.2` (will sync to package.json version on each release).
+- `package.json` `files` referenced `.cursor-plugin` + `.codex-plugin` directories that never existed. Replaced with the real `.mcp.json` + `.cursor/mcp.json` configs.
+
+### Added
+
+- `.cursor/mcp.json` — drop-in workspace MCP config for Cursor IDE (per-project or global via `~/.cursor/mcp.json`).
+- New README written in [`rolepod-uiproof`](https://github.com/nuttaruj/rolepod-uiproof) style — concise headline, "What it helps with" action list, skills table, per-CLI install (Claude Code / Cursor / Codex / Gemini / Direct npm), Path A (pair) + Path B (manual) quick start, doctor output, "What's inside" tech summary.
+
+### Numbers
+
+- MCP tools: 62 (unchanged).
+- Tests: 141 passing.
+
 ## [1.2.2] — 2026-05-26 — Slim dist
 
 ### Changed

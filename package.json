@@ -1,6 +1,6 @@
 {
   "name": "@rolepod/wplab",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "a third-party plugin-class WordPress operations toolkit for AI coding agents — default-safe wp-cli + REST + scoped fs, opt-in companion for execute-php + runtime introspection. MIT, rolepod ecosystem.",
   "keywords": [
     "mcp",
@@ -34,8 +34,8 @@
     "dist",
     "skills",
     ".claude-plugin",
-    ".cursor-plugin",
-    ".codex-plugin",
+    ".mcp.json",
+    ".cursor/mcp.json",
     "README.md",
     "LICENSE",
     "CHANGELOG.md"
