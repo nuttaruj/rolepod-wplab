@@ -2,6 +2,62 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] — 2026-05-26 — Lean 11-skill rewrite per Rolepod parent contract
+
+### Changed — full skill-set restructure
+
+The 11 skills are rewritten end-to-end per the [Rolepod parent skill-authoring contract](https://github.com/nuttaruj/rolepod/tree/main/core/skills). Each `SKILL.md` now follows the mandatory shape (frontmatter with `tier` + `phase`, `Iron Rule`, `When to use` + `Skip when`, `Boundary` with Owns / Does not own / Hand off, `Workflow`, `Output`, `Examples` pointer, `References` pointer, `Hard stops`, `Full Rolepod enhancement`, `Next phase`). Each skill ≤ 144 lines.
+
+Supporting files (16 total — under the 36-file cap):
+- `wp-pair-setup/examples/pair-examples.md`
+- `wp-connect/references/connect-kinds.md`
+- `wp-health-check/templates/health-report.md`
+- `wp-content/examples/content-examples.md`
+- `wp-edit-design/references/builder-formats.md` + `examples/design-examples.md`
+- `wp-edit-plugin/references/adapter-detection.md`
+- `wp-scaffold/templates/scaffold-manifest.md` + `examples/scaffold-examples.md`
+- `wp-introspect/references/introspect-scopes.md`
+- `wp-diagnose/templates/diagnose-report.md` + `examples/diagnose-examples.md`
+- `wp-migrate/templates/migrate-plan.md` + `examples/migrate-examples.md`
+- `wp-execute-php/references/ast-rules.md` + `examples/php-examples.md`
+- `wp-full/` (alias, zero supporting files)
+
+### Skill set, by phase
+
+| Phase | Skill |
+|---|---|
+| define | wp-pair-setup, wp-connect |
+| verify | wp-health-check |
+| build | wp-content, wp-edit-design, wp-edit-plugin, wp-scaffold |
+| debug | wp-introspect, wp-diagnose |
+| ship | wp-migrate |
+| power | wp-execute-php |
+| alias | wp-full |
+
+### Coverage
+
+The new 11 cover all 62 MCP tools with zero overlap:
+- **wp-pair-setup** owns the single-use pair_token redemption flow.
+- **wp-connect** owns target-kind selection (local / rest / ssh / docker) post-pair.
+- **wp-health-check** owns the sub-5s readiness ping.
+- **wp-content** owns core REST CRUD (posts, pages, users, options, db SELECT).
+- **wp-edit-design** owns visual layouts (Elementor + Divi + Oxygen + Bricks + theme.json + global-styles).
+- **wp-edit-plugin** owns SEO / i18n / e-commerce / custom-fields / forms (Yoast, RankMath, WPML, WooCommerce, ACF, Gravity / CF7 / WPForms).
+- **wp-scaffold** owns bootstrap of new block / plugin / theme / pattern.
+- **wp-introspect** owns read-only runtime snapshots.
+- **wp-diagnose** owns multi-probe sweep + audit + audit_many.
+- **wp-migrate** owns dryrun + apply + backup + restore + clone across targets.
+- **wp-execute-php** owns last-resort PHP eval with the five-layer safety chain.
+- **wp-full** is a zero-supporting-file alias listing every skill.
+
+### Removed (subsumed)
+
+- `wp-audit-security` → folded into `wp-diagnose`.
+- `wp-audit-woo` → folded into `wp-diagnose` + `wp-edit-plugin` (read scope).
+- `wp-edit-elementor` → generalized to `wp-edit-design` (all 4 builders).
+- `wp-scaffold-block` + `wp-scaffold-plugin` + `wp-scaffold-theme` → unified to `wp-scaffold`.
+- `wp-migrate-dryrun` → expanded to full `wp-migrate` (dryrun + apply + rollback).
+
 ## [1.4.0] — 2026-05-26 — RestTarget full shell capability via companion
 
 ### Added — `RestTarget` now shell-capable via the `rolepod-wp` v2.1+ companion

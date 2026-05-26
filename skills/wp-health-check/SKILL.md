@@ -1,50 +1,107 @@
 ---
 name: wp-health-check
-description: Return a lightweight diagnostic of a WordPress target — versions, DB connectivity, REST reachability, active plugins/theme, companion presence, warnings.
+description: Run a sub-5s diagnostic of a connected WordPress target — versions, db_ok, rest_ok, companion_ok, plugins/theme active set, warnings. Phase = Verify.
+when_to_use: user asks "ping the site / is it healthy / what version is it / is the companion live", OR after a connect / pair / migration before continuing
+tier: 1
+phase: verify
 ---
+
+# WP Health Check
+
+Lightweight sanity probe. Cheap (<5s), idempotent, no writes. Answers "is this target workable for the next operation?" — NOT "what is wrong with this site overall" (that is `wp-diagnose`).
+
+## Iron Rule
+
+<EXTREMELY-IMPORTANT>
+1. NEVER substitute `wp-health-check` for `wp-diagnose` — health-check is a sub-5s ping; deep probes (slow queries, plugin conflicts, php errors) belong to diagnose.
+2. NEVER skip health-check after `wp-pair-setup` or `wp-migrate` apply — the pair/migrate's own success response does not prove the next-request side of the contract holds.
+3. ALWAYS report the warnings array verbatim — warnings frequently identify the EXACT host config that breaks downstream tools (permalinks, exec disabled, mod_security stripping headers).
+</EXTREMELY-IMPORTANT>
 
 ## When to use
 
-- After installing rolepod-wplab to confirm a target connects.
-- Inside `check-work` workflow to provide WP-context evidence.
-- Before invoking other wplab tools to confirm the target is reachable.
-- After any wp-cli / REST change to verify nothing broke.
+- After `wp-pair-setup` or `wp-connect`.
+- Before `wp-migrate` apply (verify destination reachable).
+- After installing/activating a plugin.
+- User asks any of: "is it up", "is it healthy", "what version", "is the companion working".
 
-## When NOT to use
+Skip when:
+- User wants a full audit → `wp-diagnose`.
+- User wants raw runtime state (hooks/transients/options) → `wp-introspect`.
 
-- For deep performance profiling. Use APM tools (New Relic, Query Monitor inside WP).
-- For security audits — use `/wp-audit-security` instead.
+## Boundary
 
-## Inputs
+Owns:
+- Single call to `rolepod_wp_health_check { target_id }`.
+- Surfacing the structured output (versions, *_ok flags, warnings).
+- Sub-5s budget per call.
 
-- `target_id` — connected WP target (from `rolepod_wp_connect_local` or `rolepod_wp_connect_rest`).
+Does not own:
+- Multi-probe diagnostic sweep (plugin conflicts, slow queries, php errors) → `wp-diagnose`.
+- Runtime state snapshot → `wp-introspect`.
+- Security audit (outdated/weak users/WP_DEBUG) → `wp-diagnose`.
 
-## Outputs
+Return / hand off:
+- Any `*_ok: false` with a fixable warning → suggest the fix inline.
+- Multiple warnings or unclear cause → hand off to `wp-diagnose`.
 
-- `wp_version`, `php_version`, `db_ok`, `wp_cli_ok`, `rest_ok`, `companion_ok`, `site_url`, `warnings[]`.
+## Inputs to gather
 
-## Process
+- `target_id` — required, must come from a prior connect/pair.
 
-1. Call `rolepod_wp_health_check { target_id }`.
-2. Surface any `warnings[]` prominently — they often indicate misconfig the user can fix in 1 minute.
-3. If `companion_ok=false` but the user wants power tools, hint at companion install.
+## Workflow
 
-## If the tool is unavailable
+### 1. Call
 
-The rolepod-wplab MCP server is not registered or is not responding.
+Single tool call. The output template is in `templates/health-report.md`.
 
-- Confirm the plugin is installed: `claude plugin list | grep wplab` (or analogue for Cursor / Codex / Gemini).
-- Run `rolepod-wplab doctor` to diagnose.
+### 2. Interpret
 
-Do NOT attempt the work via wp-cli direct, a third-party plugin, or any other backend.
+| Flag | Meaning | Fix |
+|---|---|---|
+| `db_ok: false` | wp-cli probe could not reach DB | check site is up; if companion missing, install for wp-cli-via-companion |
+| `rest_ok: false` | REST probe failed | flush permalinks (`Settings → Permalinks → Save`) |
+| `wp_cli_ok: false` on RestTarget | companion missing OR `/wp-cli` endpoint disabled | install/upgrade `rolepod-wp` v2.1+ |
+| `companion_ok: false` | endpoints disabled OR plugin not active | enable in `Settings → Rolepod for WordPress` |
+| `warnings: [...]` | host quirks | report all, fix or defer per item |
+
+### 3. Surface
+
+Fill `templates/health-report.md`. If the user just asked "is it healthy?" — a one-line YES/NO with the failing flag is enough; do not over-format.
+
+## If a matching Rolepod agent is available
+
+- `rolepod:qa-tester` for verification chains across multiple sites.
+- `rolepod:devops-sre` for host-side warnings (exec disabled, mod_security, perm rules).
+
+## If no matching agent is available
+
+1. Call `rolepod_wp_health_check`.
+2. Surface per `templates/health-report.md`.
+3. If any flag false → quote the fix; do not retry automatically.
+
+## Output
+
+Health report — `templates/health-report.md` is the canonical shape. Do not restate inline.
 
 ## Examples
 
-```
-User: "WP health"
-Lead → rolepod_wp_health_check { target_id: "tgt_8585f975d001" }
-Lead reply: "WP 6.6.2 / PHP 8.2.10
-              ✓ db_ok, wp_cli_ok, rest_ok
-              ✗ companion_ok=false (install companion for power tools)
-              warnings: REST check deferred to v0.1"
-```
+No examples file. The decision tree is single-layer (interpret table covers all cases).
+
+## References
+
+Inline only. The 5 flags + warnings are documented in the interpret table above.
+
+## Hard stops
+
+- `target_id` not found → STOP, ask user to re-connect via `wp-connect` or `wp-pair-setup`.
+- Health-check itself times out (>30s) → STOP, surface the timeout, do not retry; usually means the host blocked the IP or the site is fully down.
+
+## Full Rolepod enhancement
+
+Full Rolepod adds historical health tracking (per-site `~/.config/rolepod-wplab/memory/<site>/health.jsonl`) so trends across days are visible; standalone, each call is point-in-time.
+
+## Next phase
+
+- All green → continue with the user's intended skill (`wp-content`, `wp-edit-*`, etc.).
+- Any flag false → `wp-diagnose` for the full probe, OR the inline fix from the interpret table.
