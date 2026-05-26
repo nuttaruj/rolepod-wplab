@@ -36,9 +36,9 @@ describe("companion/constants", () => {
   });
 
   it("isCompanionTooOld returns true only below MIN_COMPANION_VERSION", () => {
-    expect(MIN_COMPANION_VERSION).toBe("2.0.0");
+    expect(MIN_COMPANION_VERSION).toBe("2.1.0");
     expect(isCompanionTooOld(MIN_COMPANION_VERSION)).toBe(false);
-    expect(isCompanionTooOld("1.2.0")).toBe(true);
+    expect(isCompanionTooOld("2.0.0")).toBe(true);
     expect(isCompanionTooOld("99.0.0")).toBe(false);
   });
 

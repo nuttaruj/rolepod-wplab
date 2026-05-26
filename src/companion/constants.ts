@@ -33,7 +33,7 @@ export const COMPANION_INSTALL_URL = `${COMPANION_REPO_URL}/releases/latest/down
  * installs still respond on `/wplab/v1/*` endpoints, but the install URL +
  * directory layout changed; the warning below catches that drift.
  */
-export const MIN_COMPANION_VERSION = "2.0.0";
+export const MIN_COMPANION_VERSION = "2.1.0";
 
 /**
  * Build the wp-admin URL of the setup wizard for a given site. Used in

@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { RestClient } from "./restClient.js";
 import { WplabError } from "../util/errors.js";
+import { CompanionBridge } from "../companion/Bridge.js";
 import { setupWizardUrlFor } from "../companion/constants.js";
 import { log } from "../util/log.js";
 import type { Credential } from "../credentials/types.js";
@@ -38,6 +39,13 @@ export class RestTarget implements Target {
 
   private readonly _client: RestClient;
   private readonly _credentialSite: string;
+  /**
+   * Lazy companion bridge — only constructed on first companion-gated call
+   * (wpCli / fileRead / fileWrite / introspect / executePhp). Reuses the
+   * same handshake/session token across calls, with auto-refresh via
+   * ensureFreshToken() inside the bridge.
+   */
+  private _bridge: CompanionBridge | null = null;
 
   private constructor(args: {
     id: string;
@@ -168,14 +176,32 @@ export class RestTarget implements Target {
   }
 
   async wpCli(
-    _args: readonly string[],
-    _opts?: WpCliOpts,
+    args: readonly string[],
+    opts?: WpCliOpts,
   ): Promise<WpCliResult> {
-    throw new WplabError(
-      "COMPANION_REQUIRED_V0_2",
-      "wpCli via RestTarget requires companion v0.2+ (bundled wp-cli endpoint not yet shipped). Use LocalTarget or SshTarget for wp-cli access in v0.1.",
-      { targetId: this.id, kind: this.kind },
-    );
+    const bridge = await this.getBridge();
+    const timeoutSeconds =
+      opts?.timeoutMs !== undefined ? Math.ceil(opts.timeoutMs / 1000) : 30;
+    const result = await bridge.wpCli(args, { timeoutSeconds });
+    return {
+      exitCode: result.exitCode,
+      stdout: result.stdout,
+      stderr: result.stderr,
+      durationMs: result.durationMs,
+    };
+  }
+
+  /**
+   * Lazy-init the companion bridge. Reuses one handshake + session token
+   * across calls within the target's lifetime. Throws CompanionUnavailableError
+   * if the companion is not installed or endpoints are disabled.
+   */
+  private async getBridge(): Promise<CompanionBridge> {
+    if (this._bridge) return this._bridge;
+    const bridge = new CompanionBridge(this);
+    await bridge.handshake();
+    this._bridge = bridge;
+    return bridge;
   }
 
   async rest(req: RestRequest): Promise<RestResponse> {
@@ -189,37 +215,45 @@ export class RestTarget implements Target {
   }
 
   async fileRead(
-    _path: string,
+    path: string,
   ): Promise<{ content: string; bytes: number; absolutePath: string }> {
-    throw new WplabError(
-      "COMPANION_REQUIRED_V0_2",
-      "fileRead via RestTarget requires companion v0.2+ (fs-read endpoint not yet shipped).",
-      { targetId: this.id },
-    );
+    const bridge = await this.getBridge();
+    return bridge.fileRead(path);
   }
 
   async fileWrite(
-    _path: string,
-    _content: string,
-    _opts?: FileWriteOpts,
+    path: string,
+    content: string,
+    opts?: FileWriteOpts,
   ): Promise<{
     bytesWritten: number;
     backupPath: string | null;
     absolutePath: string;
   }> {
-    throw new WplabError(
-      "COMPANION_REQUIRED_V0_2",
-      "fileWrite via RestTarget requires companion v0.2+ (fs-write endpoint not yet shipped).",
-      { targetId: this.id },
-    );
+    const bridge = await this.getBridge();
+    const bridgeOpts: {
+      mode?: "overwrite" | "append";
+      backup?: boolean;
+      confirmUnsafePath?: boolean;
+    } = {};
+    if (opts?.mode !== undefined) bridgeOpts.mode = opts.mode;
+    if (opts?.backup !== undefined) bridgeOpts.backup = opts.backup;
+    if (opts?.confirmUnsafePath !== undefined)
+      bridgeOpts.confirmUnsafePath = opts.confirmUnsafePath;
+    return bridge.fileWrite(path, content, bridgeOpts);
   }
 
-  async fileExists(_path: string): Promise<boolean> {
-    throw new WplabError(
-      "COMPANION_REQUIRED_V0_2",
-      "fileExists via RestTarget requires companion v0.2+.",
-      { targetId: this.id },
-    );
+  async fileExists(path: string): Promise<boolean> {
+    try {
+      await this.fileRead(path);
+      return true;
+    } catch (err) {
+      const e = err as { code?: string };
+      if (e.code === "FS_READ_HTTP_404" || e.code === "FS_NOT_FOUND") {
+        return false;
+      }
+      throw err;
+    }
   }
 
   async close(): Promise<void> {

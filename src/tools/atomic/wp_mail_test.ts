@@ -52,17 +52,9 @@ export async function wpMailTestHandler(
     });
   }
 
-  if (
-    target.kind !== "local" &&
-    target.kind !== "ssh" &&
-    target.kind !== "docker"
-  ) {
-    throw new WplabError(
-      "MAIL_TEST_NO_TRANSPORT",
-      "mail_test requires companion execute-php OR shell-capable target for wp eval.",
-      { kind: target.kind, companion: !!target.companion?.installed },
-    );
-  }
+  // No kind gate since v1.4 — RestTarget routes wp eval through the
+  // companion's /wp-cli endpoint. If companion is missing, wpCli() itself
+  // surfaces CompanionUnavailableError with install URL.
   const r = await target.wpCli(["eval", payload], {
     allowDestructive: true,
     timeoutMs: 15_000,

@@ -20,17 +20,7 @@ export async function wpUserSessionListHandler(
 ): Promise<UserSessionListOutput> {
   const input: UserSessionListInput = UserSessionListInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  if (
-    target.kind !== "local" &&
-    target.kind !== "ssh" &&
-    target.kind !== "docker"
-  ) {
-    throw new WplabError(
-      "USER_SESSION_REQUIRES_SHELL",
-      "wp_user_session_list requires shell target (wp-cli user meta).",
-      { kind: target.kind },
-    );
-  }
+  // No kind gate since v1.4 — RestTarget routes wp-cli through companion.
 
   const usersR = await target.wpCli([
     "user",

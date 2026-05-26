@@ -7,7 +7,6 @@ import {
   type DiagnoseInput,
   type DiagnoseOutput,
 } from "../../schema/tools.js";
-import { WplabError } from "../../util/errors.js";
 import type { Target } from "../../runtime/Target.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -31,17 +30,9 @@ export async function wpDiagnoseHandler(
 ): Promise<DiagnoseOutput> {
   const input: DiagnoseInput = DiagnoseInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  if (
-    target.kind !== "local" &&
-    target.kind !== "ssh" &&
-    target.kind !== "docker"
-  ) {
-    throw new WplabError(
-      "DIAGNOSE_REQUIRES_SHELL",
-      "wp_diagnose requires shell-capable target.",
-      { kind: target.kind },
-    );
-  }
+  // No kind gate — RestTarget now routes wpCli through the companion's
+  // /wp-cli endpoint (v1.4). If the companion is missing on a RestTarget,
+  // wpCli() itself surfaces CompanionUnavailableError with install URL.
 
   const findings: Finding[] = [];
 

@@ -15,18 +15,8 @@ export const wpCacheToolToolDef = {
   inputSchema: CacheToolInputSchema,
 };
 
-async function ensureShellTarget(target: Target): Promise<void> {
-  if (
-    target.kind !== "local" &&
-    target.kind !== "ssh" &&
-    target.kind !== "docker"
-  ) {
-    throw new WplabError(
-      "CACHE_REQUIRES_SHELL",
-      "wp_cache_tool requires shell target (wp-cli).",
-      { kind: target.kind },
-    );
-  }
+async function ensureShellTarget(_target: Target): Promise<void> {
+  // No-op since v1.4 — RestTarget routes wp-cli through companion endpoint.
 }
 
 export async function wpCacheToolHandler(

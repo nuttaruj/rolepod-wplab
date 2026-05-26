@@ -11,22 +11,13 @@ import type { Target } from "../../runtime/Target.js";
 export const wpCronToolToolDef = {
   name: "rolepod_wp_cron_tool",
   description:
-    "WP-Cron: op=list (read scheduled events), op=run (fire a specific hook now), op=delete (unschedule a hook). Run/delete require hook + confirm=true. Shell-capable targets only (wp-cli cron event).",
+    "WP-Cron: op=list (read scheduled events), op=run (fire a specific hook now), op=delete (unschedule a hook). Run/delete require hook + confirm=true. Routes via wp-cli (local/ssh/docker direct, RestTarget via companion v2.1+).",
   inputSchema: CronToolInputSchema,
 };
 
-async function ensureShellTarget(target: Target): Promise<void> {
-  if (
-    target.kind !== "local" &&
-    target.kind !== "ssh" &&
-    target.kind !== "docker"
-  ) {
-    throw new WplabError(
-      "CRON_REQUIRES_SHELL",
-      "wp_cron_tool requires shell-capable target (wp-cli cron event).",
-      { kind: target.kind },
-    );
-  }
+async function ensureShellTarget(_target: Target): Promise<void> {
+  // No-op since v1.4 — RestTarget routes wp-cli through companion endpoint.
+  // Kept as a stable injection point in case future target kinds need a guard.
 }
 
 export async function wpCronToolHandler(

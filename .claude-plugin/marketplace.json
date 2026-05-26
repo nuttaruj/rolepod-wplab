@@ -10,7 +10,7 @@
       "name": "rolepod-wplab",
       "source": "./",
       "description": "62 MCP tools (rolepod_wp_*) + 11 skills (/wp-pair-setup, /wp-health-check, /wp-scaffold-{block,plugin,theme}, /wp-audit-{security,woo}, /wp-edit-elementor, /wp-introspect, /wp-execute-php, /wp-migrate-dryrun). 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair flow.",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "nuttaruj"
       },

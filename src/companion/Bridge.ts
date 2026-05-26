@@ -192,6 +192,149 @@ export class CompanionBridge {
     );
   }
 
+  /**
+   * Run a wp-cli command through the companion's bundled phar.
+   *
+   * Companion executes via PHP `exec()` against `wp-content/uploads/wplab-bin/wp-cli.phar`.
+   * The phar may not be installed yet — in that case the companion returns
+   * 503 with `WP_CLI_NOT_BUNDLED`; callers can fetch the phar via fileWrite()
+   * to bootstrap.
+   *
+   * Mirrors the WpCliResult shape used by LocalTarget/SshTarget/DockerTarget
+   * so composite tools (audit_security, diagnose, cron_tool, cache_tool) work
+   * uniformly across target kinds.
+   */
+  async wpCli(
+    args: readonly string[],
+    opts: { timeoutSeconds?: number } = {},
+  ): Promise<{
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+    durationMs: number;
+    auditId: string;
+  }> {
+    const startedAt = Date.now();
+    const res = await this.postWpCli(args, opts);
+
+    // Auto-bootstrap wp-cli.phar on first call if missing (idempotent on
+    // companion side). Then retry the original wp-cli call once.
+    if (res.status === 503) {
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+      };
+      if (b.error_code === "WP_CLI_NOT_BUNDLED") {
+        log.info("companion wp-cli.phar missing — bootstrapping from upstream");
+        const ok = await this.bootstrapWpCli();
+        if (ok) {
+          const retry = await this.postWpCli(args, opts);
+          return this.coerceWpCliResponse(
+            retry.status,
+            retry.body,
+            Date.now() - startedAt,
+          );
+        }
+      }
+    }
+
+    if (res.status === 401) {
+      // Token may have expired between local TTL check and server check.
+      // Re-handshake once + retry.
+      const fresh = await this.handshake();
+      const retry = await this.target.rest({
+        method: "POST",
+        path: "/wplab/v1/wp-cli",
+        body: {
+          session_token: fresh.session_token,
+          args: [...args],
+          timeout_seconds: Math.min(120, Math.max(1, opts.timeoutSeconds ?? 30)),
+        },
+      });
+      return this.coerceWpCliResponse(
+        retry.status,
+        retry.body,
+        Date.now() - startedAt,
+      );
+    }
+
+    return this.coerceWpCliResponse(
+      res.status,
+      res.body,
+      Date.now() - startedAt,
+    );
+  }
+
+  private async postWpCli(
+    args: readonly string[],
+    opts: { timeoutSeconds?: number } = {},
+  ) {
+    const token = await this.ensureFreshToken();
+    return this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/wp-cli",
+      body: {
+        session_token: token,
+        args: [...args],
+        timeout_seconds: Math.min(120, Math.max(1, opts.timeoutSeconds ?? 30)),
+      },
+    });
+  }
+
+  /**
+   * Ask the companion to pull wp-cli.phar from upstream and stash it at
+   * wp-content/uploads/wplab-bin/wp-cli.phar. Idempotent. Returns true if the
+   * phar is present after the call (already-present OR just-fetched).
+   */
+  private async bootstrapWpCli(): Promise<boolean> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/wp-cli/bootstrap",
+      body: { session_token: token },
+    });
+    if (res.status === 200) {
+      log.debug("companion wp-cli bootstrap ok", { body: res.body });
+      return true;
+    }
+    log.warn("companion wp-cli bootstrap failed", {
+      status: res.status,
+      body: res.body,
+    });
+    return false;
+  }
+
+  private coerceWpCliResponse(
+    status: number,
+    body: unknown,
+    durationMs: number,
+  ): { exitCode: number; stdout: string; stderr: string; durationMs: number; auditId: string } {
+    const b = (body ?? {}) as {
+      ok?: boolean;
+      exit_code?: number;
+      stdout?: string;
+      stderr?: string;
+      error_code?: string;
+      error_message?: string;
+      audit_id?: string;
+    };
+
+    if (status >= 200 && status < 300) {
+      return {
+        exitCode: b.exit_code ?? 0,
+        stdout: b.stdout ?? "",
+        // Companion's WpCli endpoint merges stderr into stdout (2>&1); preserve that.
+        stderr: b.stderr ?? "",
+        durationMs,
+        auditId: b.audit_id ?? "",
+      };
+    }
+    throw new WplabError(
+      b.error_code ?? `WP_CLI_HTTP_${status}`,
+      b.error_message ?? `wp-cli via companion returned HTTP ${status}`,
+      { audit_id: b.audit_id ?? "", status },
+    );
+  }
+
   async introspect(
     scope: string,
     opts: { includeValues?: boolean } = {},
@@ -240,6 +383,123 @@ export class CompanionBridge {
       );
     }
     return (res.body ?? {}) as IntrospectResponse;
+  }
+
+  /**
+   * Read a file under ABSPATH via the companion's /fs-read endpoint.
+   * Scope guard runs server-side (mirrors Node-side FileScope rules).
+   */
+  async fileRead(
+    path: string,
+  ): Promise<{ content: string; bytes: number; absolutePath: string }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/fs-read",
+      body: { session_token: token, path },
+    });
+    if (res.status === 401) {
+      const fresh = await this.handshake();
+      const retry = await this.target.rest({
+        method: "POST",
+        path: "/wplab/v1/fs-read",
+        body: { session_token: fresh.session_token, path },
+      });
+      return this.coerceFsReadResponse(retry.status, retry.body);
+    }
+    return this.coerceFsReadResponse(res.status, res.body);
+  }
+
+  private coerceFsReadResponse(
+    status: number,
+    body: unknown,
+  ): { content: string; bytes: number; absolutePath: string } {
+    const b = (body ?? {}) as {
+      ok?: boolean;
+      content?: string;
+      bytes?: number;
+      absolute_path?: string;
+      error_code?: string;
+      error_message?: string;
+    };
+    if (status >= 200 && status < 300) {
+      return {
+        content: b.content ?? "",
+        bytes: b.bytes ?? 0,
+        absolutePath: b.absolute_path ?? "",
+      };
+    }
+    throw new WplabError(
+      b.error_code ?? `FS_READ_HTTP_${status}`,
+      b.error_message ?? `fs-read via companion returned HTTP ${status}`,
+      { status },
+    );
+  }
+
+  /**
+   * Write a file under wp-content/{themes,plugins,uploads} (or wp-config.php
+   * with confirmUnsafePath) via the companion's /fs-write endpoint.
+   * Optional backup writes `.wplab-bak-YYYYMMDD-HHMMSS` next to the target.
+   */
+  async fileWrite(
+    path: string,
+    content: string,
+    opts: {
+      mode?: "overwrite" | "append";
+      backup?: boolean;
+      confirmUnsafePath?: boolean;
+    } = {},
+  ): Promise<{ bytesWritten: number; backupPath: string | null; absolutePath: string }> {
+    const token = await this.ensureFreshToken();
+    const body = {
+      session_token: token,
+      path,
+      content,
+      mode: opts.mode ?? "overwrite",
+      backup: opts.backup ?? true,
+      confirm_unsafe_path: opts.confirmUnsafePath ?? false,
+    };
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/fs-write",
+      body,
+    });
+    if (res.status === 401) {
+      const fresh = await this.handshake();
+      const retry = await this.target.rest({
+        method: "POST",
+        path: "/wplab/v1/fs-write",
+        body: { ...body, session_token: fresh.session_token },
+      });
+      return this.coerceFsWriteResponse(retry.status, retry.body);
+    }
+    return this.coerceFsWriteResponse(res.status, res.body);
+  }
+
+  private coerceFsWriteResponse(
+    status: number,
+    body: unknown,
+  ): { bytesWritten: number; backupPath: string | null; absolutePath: string } {
+    const b = (body ?? {}) as {
+      ok?: boolean;
+      bytes_written?: number;
+      backup_path?: string | null;
+      absolute_path?: string;
+      error_code?: string;
+      error_message?: string;
+    };
+    if (status >= 200 && status < 300) {
+      return {
+        bytesWritten: b.bytes_written ?? 0,
+        backupPath: b.backup_path ?? null,
+        absolutePath: b.absolute_path ?? "",
+      };
+    }
+    throw new WplabError(
+      b.error_code ?? `FS_WRITE_HTTP_${status}`,
+      b.error_message ?? `fs-write via companion returned HTTP ${status}`,
+      { status },
+    );
   }
 }
 

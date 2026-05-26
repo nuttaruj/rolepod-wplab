@@ -2,6 +2,44 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] — 2026-05-26 — RestTarget full shell capability via companion
+
+### Added — `RestTarget` now shell-capable via the `rolepod-wp` v2.1+ companion
+
+- `Bridge.wpCli(args, opts)` — POSTs `/wplab/v1/wp-cli` with session_token, parses
+  the JSON response into the standard `WpCliResult` shape. Auto-refreshes the
+  session token on 401, auto-bootstraps `wp-cli.phar` from upstream on first
+  `WP_CLI_NOT_BUNDLED` (via the new `/wp-cli/bootstrap` companion endpoint), then
+  retries the original call once.
+- `Bridge.fileRead(path)` — POSTs `/wplab/v1/fs-read`; scope guard runs server-side.
+- `Bridge.fileWrite(path, content, opts)` — POSTs `/wplab/v1/fs-write`; supports
+  mode/backup/confirmUnsafePath opts, mirrors the LocalTarget signature.
+- `RestTarget` now lazy-caches a single `CompanionBridge` instance per target,
+  reusing one handshake/session across all companion-gated calls.
+- `RestTarget.wpCli` delegates to `Bridge.wpCli` (was: hard error `COMPANION_REQUIRED_V0_2`).
+- `RestTarget.fileRead` / `.fileWrite` / `.fileExists` likewise delegate.
+
+### Changed — composite tools drop their `kind!==local|ssh|docker` gates
+
+`wp_diagnose`, `wp_cron_tool`, `wp_cache_tool`, `wp_mail_test`, `wp_user_session_list`
+all used to throw `*_REQUIRES_SHELL` upfront. They now call `target.wpCli` directly;
+on a RestTarget without companion, `CompanionUnavailableError` with the stable
+install URL surfaces from `Bridge.handshake` (better message than the old gate
+because it tells the user how to fix it).
+
+`audit_security` already used `target.wpCli` without a kind gate — it now works
+over RestTarget transparently.
+
+### Bumped
+
+- `MIN_COMPANION_VERSION` = `2.1.0` (companion v2.0.0 had the wp_cache_* session
+  token bug; v2.1 uses transients so the handshake-then-act flow actually works
+  on shared hosting). MCP warns post-pair if the detected companion is older.
+
+### Pairs with
+
+- `rolepod-wp` v2.1.0 — adds `/wp-cli/bootstrap` + SessionToken transient backend.
+
 ## [1.3.0] — 2026-05-26 — Cross-component contract + rolepod-wp companion rename
 
 ### Added
