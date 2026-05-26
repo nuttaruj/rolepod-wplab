@@ -110,6 +110,26 @@ import {
   wpChangesPanicToolDef,
 } from "./companion/wp_changes_panic.js";
 import {
+  wpThemeSnapshotHandler,
+  wpThemeSnapshotToolDef,
+} from "./composite/wp_theme_snapshot.js";
+import {
+  wpThemeRestoreHandler,
+  wpThemeRestoreToolDef,
+} from "./composite/wp_theme_restore.js";
+import {
+  wpChildThemeCreateHandler,
+  wpChildThemeCreateToolDef,
+} from "./composite/wp_child_theme_create.js";
+import {
+  wpThemeSwitchSafeHandler,
+  wpThemeSwitchSafeToolDef,
+} from "./composite/wp_theme_switch_safe.js";
+import {
+  wpSessionStartHandler,
+  wpSessionStartToolDef,
+} from "./atomic/wp_session_start.js";
+import {
   wpElementorWriteHandler,
   wpElementorWriteToolDef,
 } from "./adapter/wp_elementor_write.js";
@@ -374,6 +394,26 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpChangesPanicToolDef,
     handler: (d, raw) => wpChangesPanicHandler(d.registry, raw),
+  },
+  {
+    def: wpThemeSnapshotToolDef,
+    handler: (d, raw) => wpThemeSnapshotHandler(d.registry, raw),
+  },
+  {
+    def: wpThemeRestoreToolDef,
+    handler: (d, raw) => wpThemeRestoreHandler(d.registry, raw),
+  },
+  {
+    def: wpChildThemeCreateToolDef,
+    handler: (d, raw) => wpChildThemeCreateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpThemeSwitchSafeToolDef,
+    handler: (d, raw) => wpThemeSwitchSafeHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpSessionStartToolDef,
+    handler: (d, raw) => wpSessionStartHandler(d.registry, raw),
   },
   {
     def: wpElementorWriteToolDef,

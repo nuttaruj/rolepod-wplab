@@ -10,7 +10,7 @@ phase: alias
 
 Pointer skill. Owns nothing. Has nothing under it. Exists so a single invocation surfaces the entire wp-* skill map.
 
-The 12 skills, by phase:
+The 13 skills, by phase:
 
 ## Define
 
@@ -24,7 +24,8 @@ The 12 skills, by phase:
 ## Build
 
 - **`wp-content`** — core REST CRUD: posts, pages, users, options, db SELECT, rest_request.
-- **`wp-edit-design`** — Elementor / Divi / Oxygen / Bricks layouts + theme.json + global-styles.
+- **`wp-edit-design`** — Elementor / Divi / Oxygen / Bricks page-builder layouts.
+- **`wp-edit-theme`** — theme files, theme.json, global-styles, child themes, theme switch (with snapshot + auto-rollback).
 - **`wp-edit-plugin`** — Yoast / RankMath / WPML / WooCommerce / ACF / Forms read+write.
 - **`wp-scaffold`** — bootstrap new block / plugin / theme / pattern.
 

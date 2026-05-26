@@ -1,14 +1,14 @@
 ---
 name: wp-edit-design
-description: Read or modify visual layouts on a connected target — Elementor, Divi, Oxygen, Bricks widget trees + theme.json + global-styles. Phase = Build.
-when_to_use: user wants to design / change a page visually, edit a builder layout, set theme colors/typography, modify block-theme global styles, OR mentions any of "elementor / divi / oxygen / bricks / theme.json"
+description: Read or modify page-builder layouts on a connected target — Elementor, Divi, Oxygen, Bricks widget trees. Phase = Build.
+when_to_use: user wants to design / change a page visually via a page builder, OR mentions any of "elementor / divi / oxygen / bricks"
 tier: 1
 phase: build
 ---
 
 # WP Edit Design
 
-Visual / layout writes. Auto-detects the active page builder, backs up before overwrite, and writes the builder-native data shape. Also covers block-theme `theme.json` + Site Editor global-styles.
+Page-builder layout writes. Auto-detects the active builder, backs up before overwrite, and writes the builder-native data shape. Theme-level config (theme.json, global-styles, child themes, theme switch) lives in `wp-edit-theme`.
 
 ## Iron Rule
 
@@ -24,10 +24,9 @@ Visual / layout writes. Auto-detects the active page builder, backs up before ov
 - "Change the Divi hero section"
 - "Update Oxygen breakpoints"
 - "Modify Bricks widget order"
-- "Set theme.json palette to ..."
-- "Edit global styles"
 
 Skip when:
+- "Set theme.json palette" / "edit global styles" / "switch theme" / "make a child theme" → `wp-edit-theme`.
 - The content is core (paragraphs/headings in classic or Gutenberg) → `wp-content`.
 - The plugin's own settings (Yoast post meta, ACF fields) → `wp-edit-plugin`.
 - Creating a new block/theme from scratch → `wp-scaffold`.
@@ -39,10 +38,9 @@ Owns:
 - `rolepod_wp_divi_{read,write}` — `et_pb_*` shortcode tree in post_content.
 - `rolepod_wp_oxygen_{read,write}` — Oxygen JSON in `ct_builder_*` post meta.
 - `rolepod_wp_bricks_{read,write}` — Bricks JSON in `_bricks_page_content_2` meta.
-- `theme.json` writes via `file_write` to the active theme.
-- Global styles via `rest_request POST /wp/v2/global-styles/<id>`.
 
 Does not own:
+- theme.json / global-styles / child-theme / theme-switch → `wp-edit-theme`.
 - Plugin settings (Yoast / RankMath / WPML / WooCommerce / ACF / Forms) → `wp-edit-plugin`.
 - Block-pattern registration in PHP → `wp-scaffold`.
 - New theme bootstrap → `wp-scaffold`.

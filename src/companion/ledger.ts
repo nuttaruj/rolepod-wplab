@@ -45,6 +45,14 @@ export async function recordChange(
     return null;
   }
 
+  // Auto-fill source_session from env if the caller didn't pass one.
+  // `wp_session_start` sets ROLEPOD_WPLAB_SESSION so all subsequent writes
+  // in the same MCP process get grouped without per-call wiring.
+  const envSession = process.env["ROLEPOD_WPLAB_SESSION"];
+  if (record.sourceSession === undefined && envSession) {
+    record = { ...record, sourceSession: envSession };
+  }
+
   try {
     const bridge = await bridgeFor(target);
     return await bridge.recordChange(record);

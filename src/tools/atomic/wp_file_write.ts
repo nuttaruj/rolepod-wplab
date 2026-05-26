@@ -1,5 +1,9 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import { recordChange } from "../../companion/ledger.js";
+import { bridgeFor } from "../../companion/Bridge.js";
+import { flushObjectCache } from "../../companion/cacheFlush.js";
+import { WplabError } from "../../util/errors.js";
+import { log } from "../../util/log.js";
 import {
   WpFileWriteInputSchema,
   WpFileWriteOutputSchema,
@@ -25,6 +29,15 @@ export async function wpFileWriteHandler(
 
   // Production guard — file writes on prod targets refused.
   prodGuard.enforce(target.siteurl);
+
+  // ── v2.4 pre-write syntax validation ──
+  // PHP files: companion runs `php -l` server-side.
+  // JSON files: validated client-side (cheap) AND server-side (authoritative).
+  // Validation failure ALWAYS blocks the write — no opt-out, because the
+  // failure mode (WSOD on functions.php, Site Editor white-page on theme.json)
+  // is invisible and recoverable only via SSH/FTP. If the host has exec()
+  // disabled, the PHP check returns null and we fall back gracefully.
+  await preWriteValidate(target, input.path, input.content);
 
   // Snapshot the prior content if it exists, so revert can restore it.
   let beforeContent: string | null = null;
@@ -58,9 +71,91 @@ export async function wpFileWriteHandler(
     sourceTool: "wp_file_write",
   });
 
+  // Site Editor cache flush after theme.json writes — block themes cache the
+  // resolved theme.json into the object cache; without flush the editor sees
+  // stale data on next reload.
+  if (input.path.toLowerCase().endsWith("/theme.json") || input.path.toLowerCase().endsWith("theme.json")) {
+    await flushObjectCache(target);
+  }
+
   return WpFileWriteOutputSchema.parse({
     path: input.path,
     bytes_written: result.bytesWritten,
     backup_path: result.backupPath,
   });
+}
+
+/**
+ * Pre-write validator. Detects language by file extension:
+ *   *.php → companion `php -l` (server-side, authoritative)
+ *   *.json + *.theme.json → client-side JSON.parse + server-side companion check
+ *
+ * Throws WplabError on failure so the file_write never executes. The error
+ * carries the line + message for the user to see exactly what's wrong.
+ *
+ * For non-validatable extensions (.css, .html, .js, .png, etc.) returns
+ * immediately — no validation possible, write proceeds.
+ *
+ * Failures from the companion side (exec disabled, host unavailable) are
+ * NOT thrown — we log a debug line and let the write proceed. The safety
+ * net here is best-effort, not gate-keeping.
+ */
+async function preWriteValidate(
+  target: Parameters<typeof recordChange>[0],
+  path: string,
+  content: string,
+): Promise<void> {
+  const lower = path.toLowerCase();
+
+  // JSON — client-side parse first (free + immediate).
+  if (lower.endsWith(".json")) {
+    try {
+      JSON.parse(content);
+    } catch (err) {
+      const e = err as Error;
+      throw new WplabError(
+        "FS_WRITE_JSON_INVALID",
+        `client-side JSON.parse failed: ${e.message}`,
+        { path },
+      );
+    }
+  }
+
+  // PHP — companion-side `php -l`. Skip on non-rest targets (Local/SSH/Docker
+  // have their own runtime; companion validator is REST-only).
+  if (lower.endsWith(".php")) {
+    if (target.kind !== "rest") return;
+    try {
+      const bridge = await bridgeFor(target);
+      const result = await bridge.syntaxCheck("php", content);
+      if (result.ok === false) {
+        throw new WplabError(
+          "FS_WRITE_PHP_SYNTAX_ERROR",
+          `companion php -l rejected the payload (line ${result.errorLine ?? "?"}): ${result.errorMessage ?? "unknown"}`,
+          {
+            path,
+            error_code: result.errorCode,
+            error_line: result.errorLine,
+            error_message: result.errorMessage,
+          },
+        );
+      }
+      if (result.ok === null) {
+        log.debug("file_write: companion syntax check unavailable, proceeding", {
+          path,
+          reason: result.errorCode,
+        });
+      }
+    } catch (err) {
+      // Re-throw our own validation errors. Swallow infra errors so the user
+      // isn't blocked by a transient companion problem.
+      if (err instanceof WplabError && err.code === "FS_WRITE_PHP_SYNTAX_ERROR") {
+        throw err;
+      }
+      log.debug("file_write: pre-write PHP validation skipped on infra error", {
+        path,
+        reason: (err as Error).message,
+      });
+    }
+  }
 }

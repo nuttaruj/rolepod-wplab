@@ -629,6 +629,125 @@ export class CompanionBridge {
     }
     return res.body;
   }
+
+  // ─── v2.4 Pre-write syntax check + Theme snapshot/restore ───────────
+
+  /**
+   * Server-side validate a PHP or JSON payload before file_write commits it.
+   * Returns { ok: true } when valid, or { ok: false, errorCode, errorLine,
+   * errorMessage } when invalid. If the companion can't run php -l (exec
+   * disabled), returns ok=null and the caller decides whether to proceed
+   * un-validated.
+   */
+  async syntaxCheck(
+    language: "php" | "json",
+    content: string,
+  ): Promise<{
+    ok: boolean | null;
+    errorCode?: string;
+    errorLine?: number | null;
+    errorMessage?: string;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/syntax-check",
+      body: { session_token: token, language, content },
+    });
+    if (res.status === 503) {
+      // exec disabled — caller falls back.
+      return { ok: null, errorCode: "EXEC_DISABLED" };
+    }
+    if (res.status < 200 || res.status >= 300) {
+      // Unexpected error — treat as "couldn't validate", caller decides.
+      return { ok: null, errorCode: `HTTP_${res.status}` };
+    }
+    const b = (res.body ?? {}) as {
+      ok?: boolean;
+      error_code?: string;
+      error_line?: number | null;
+      error_message?: string;
+    };
+    if (b.ok === true) return { ok: true };
+    return {
+      ok: false,
+      errorCode: b.error_code ?? "VALIDATION_FAILED",
+      errorLine: b.error_line ?? null,
+      errorMessage: b.error_message ?? "",
+    };
+  }
+
+  /**
+   * Snapshot a theme directory to wp-content/uploads/rolepod-wp-theme-snapshots/
+   * as a .tar.gz. Returns the absolute path for use in subsequent restore.
+   */
+  async themeSnapshot(stylesheet: string): Promise<{
+    stylesheet: string;
+    path: string;
+    bytes: number;
+    fileCount: number;
+    auditId: string;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/theme/snapshot",
+      body: { session_token: token, stylesheet },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `THEME_SNAPSHOT_HTTP_${res.status}`,
+        b.error_message ?? `theme snapshot returned HTTP ${res.status}`,
+        { status: res.status, stylesheet },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      stylesheet?: string;
+      path?: string;
+      bytes?: number;
+      file_count?: number;
+      audit_id?: string;
+    };
+    return {
+      stylesheet: b.stylesheet ?? stylesheet,
+      path: b.path ?? "",
+      bytes: b.bytes ?? 0,
+      fileCount: b.file_count ?? 0,
+      auditId: b.audit_id ?? "",
+    };
+  }
+
+  async themeRestore(snapshotPath: string): Promise<{
+    stylesheet: string;
+    filesRestored: number;
+    auditId: string;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/theme/restore",
+      body: { session_token: token, snapshot_path: snapshotPath },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `THEME_RESTORE_HTTP_${res.status}`,
+        b.error_message ?? `theme restore returned HTTP ${res.status}`,
+        { status: res.status, snapshotPath },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      stylesheet?: string;
+      files_restored?: number;
+      audit_id?: string;
+    };
+    return {
+      stylesheet: b.stylesheet ?? "",
+      filesRestored: b.files_restored ?? 0,
+      auditId: b.audit_id ?? "",
+    };
+  }
 }
 
 /**

@@ -2,6 +2,69 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] — 2026-05-27 — Theme safety: pre-write validators + snapshot + child-theme-first + safe-switch
+
+### Added — pre-write validators on `wp_file_write`
+
+- `.php` files: companion runs `php -l` server-side. Reject on syntax error
+  with line + message — WSOD on functions.php is now impossible via this MCP.
+- `.json` files: Node-side `JSON.parse` before sending. Catch typos before
+  they hit the wire.
+- Both validators are unbypassable (no opt-out flag). Companion infra failures
+  (exec disabled, transient host issue) degrade to "best-effort skip", not
+  block the user.
+
+### Added — theme snapshot + restore + safe switch
+
+- `rolepod_wp_theme_snapshot` — capture full theme dir as `.tar.gz` under
+  `wp-content/uploads/rolepod-wp-theme-snapshots/<slug>-<utc-ts>.tar.gz`.
+- `rolepod_wp_theme_restore` — un-tar a snapshot back over the theme dir.
+  Refuses out-of-managed-dir paths (path validation in companion).
+- `rolepod_wp_theme_switch_safe` — composite: snapshot CURRENT theme →
+  `wp-cli theme activate <new>` → REST `GET /` post-switch health probe →
+  AUTO-ROLLBACK (re-activate old + restore snapshot) on red. Ledger row
+  category=theme so manual revert via `wp-changes` also works.
+
+### Added — child-theme-first composite
+
+- `rolepod_wp_child_theme_create` — reads parent style.css for Theme Name +
+  Version, scaffolds child dir (style.css with `Template: <parent>` header,
+  functions.php with parent-style enqueue). Refuses if child slug already
+  exists. Standard WP best practice baked in.
+
+### Added — session correlation
+
+- `rolepod_wp_session_start` — issues `sess_<hex>` id, sets
+  `ROLEPOD_WPLAB_SESSION` env so all subsequent auto-ledger writes group
+  under one source_session. Atomic revert via
+  `rolepod_wp_changes_toggle_bulk { source_session: <id> }`.
+
+### Added — auto cache flush + global-styles ledger
+
+- `wp_file_write` paths ending `theme.json` → auto `wp cache flush` after
+  write so the Site Editor sees the new state on next reload.
+- `wp_rest_request POST /wp/v2/global-styles/<id>` → captures before-state
+  via a GET first, records `category=layout subcategory=global_styles` in
+  the Change Ledger, then auto-flushes object cache.
+
+### Skill restructure (13th skill)
+
+- New `wp-edit-theme` skill (phase=build) owns theme files + theme.json +
+  global-styles + child themes + safe theme switch.
+- `wp-edit-design` scope narrows to page-builder layouts only (Elementor /
+  Divi / Oxygen / Bricks) — clearer mental model.
+- `wp-full` alias updated to list both.
+
+### Tool count
+
+62 (v1.5) → 66 (v1.6, ledger) → **71** (v1.7, adds: theme_snapshot,
+theme_restore, child_theme_create, theme_switch_safe, session_start).
+
+### Pairs with
+
+- `rolepod-wp` v2.4.0 — adds `/wplab/v1/syntax-check`, `/theme/snapshot`,
+  `/theme/restore` endpoints.
+
 ## [1.6.0] — 2026-05-26 — AI Change Ledger + per-change toggle + panic-revert
 
 ### Added — `Bridge.changes` methods + 4 MCP tools
