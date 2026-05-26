@@ -78,10 +78,25 @@ export class RestTarget implements Target {
       timeoutMs: 10_000,
     });
     if (probe.status === 401 || probe.status === 403) {
+      const setupWizardUrl = `${args.url.replace(/\/$/, "")}/wp-admin/tools.php?page=rolepod-wplab-setup`;
       throw new WplabError(
         "REST_AUTH_FAILED",
-        `REST auth failed (HTTP ${probe.status}) — check Application Password for ${args.credential.username}@${args.credential.site}`,
-        { site: args.credential.site, status: probe.status },
+        [
+          `REST auth failed (HTTP ${probe.status}) for ${args.credential.username}@${args.credential.site}.`,
+          ``,
+          `The stored Application Password is invalid or revoked. Re-pair via either:`,
+          ``,
+          `  (A) Tools → WPLab Setup → Quick Start on the site:`,
+          `      ${setupWizardUrl}`,
+          `      Then call rolepod_wp_pair with the freshly generated token.`,
+          ``,
+          `  (B) Manual: rolepod-wplab credentials add ${args.credential.site}`,
+        ].join("\n"),
+        {
+          site: args.credential.site,
+          status: probe.status,
+          setup_wizard_url: setupWizardUrl,
+        },
       );
     }
     if (probe.status < 200 || probe.status >= 300) {

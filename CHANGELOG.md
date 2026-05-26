@@ -2,6 +2,19 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] — 2026-05-26 — Path-2 polish
+
+### Changed
+
+- `rolepod_wp_connect_rest` `CREDENTIALS_MISSING` error now lists BOTH paths (companion Quick Start URL + manual `credentials add` command) so the AI can guide the user without guessing.
+- `RestTarget.open` `REST_AUTH_FAILED` error includes the same two-path suggestion plus the setup-wizard URL on the target host.
+- Both errors carry `setup_wizard_url` in `meta` for AI agents that prefer structured data over message text.
+
+### Numbers
+
+- MCP tools: **62** (unchanged).
+- Tests: 141 passing.
+
 ## [1.2.0] — 2026-05-26 — One-click pair (a third-party plugin-style setup UX)
 
 ### Added

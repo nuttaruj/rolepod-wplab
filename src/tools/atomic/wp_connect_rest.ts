@@ -27,10 +27,26 @@ export async function wpConnectRestHandler(
   const vault = await makeVault();
   const cred = await vault.get(lookupKey);
   if (!cred) {
+    const setupWizardUrl = `${input.url.replace(/\/$/, "")}/wp-admin/tools.php?page=rolepod-wplab-setup`;
     throw new WplabError(
       "CREDENTIALS_MISSING",
-      `No credentials stored for ${lookupKey}. Run: rolepod-wplab credentials add ${lookupKey}`,
-      { site: lookupKey },
+      [
+        `No credentials stored for ${lookupKey}.`,
+        ``,
+        `Two paths to pair this site:`,
+        ``,
+        `  (A) RECOMMENDED — one-click pair via companion:`,
+        `      1. Install rolepod-wplab-companion plugin on the WP site`,
+        `      2. Open ${setupWizardUrl}`,
+        `      3. Click "Generate setup prompt" + paste the prompt back here`,
+        `      4. I'll call rolepod_wp_pair with the token automatically`,
+        ``,
+        `  (B) Manual — store an App Password locally:`,
+        `      Run on the user's machine:`,
+        `        rolepod-wplab credentials add ${lookupKey}`,
+        `      Then retry rolepod_wp_connect_rest.`,
+      ].join("\n"),
+      { site: lookupKey, setup_wizard_url: setupWizardUrl },
     );
   }
 
