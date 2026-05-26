@@ -2,6 +2,45 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] — 2026-05-26 — AI Change Ledger + per-change toggle + panic-revert
+
+### Added — `Bridge.changes` methods + 4 MCP tools
+
+`Bridge` gains `recordChange`, `queryChanges`, `toggleChange`, `toggleChangesBulk`, `panicChanges` — all targeting the new `/wplab/v1/changes/*` endpoints in companion v2.3+. Four MCP tools expose this surface:
+
+- `rolepod_wp_changes_query` — filter the ledger (category / applied / since_minutes / source_session).
+- `rolepod_wp_changes_toggle` — flip one row's applied flag, run companion's per-category revert.
+- `rolepod_wp_changes_toggle_bulk` — batch flip (used for git-bisect-style narrowing).
+- `rolepod_wp_changes_panic` — disable every change in a time window (1-1440 min).
+
+Total MCP tools surface: 62 → 66.
+
+### Added — auto-ledger wiring on writer tools
+
+`wp_post_create`, `wp_post_update`, `wp_option_set`, `wp_file_write` now capture before+after state via the new `recordChange()` helper at `src/companion/ledger.ts`. Failure is non-fatal (companion missing / endpoint disabled / older companion = skip and continue).
+
+Env override `ROLEPOD_WPLAB_LEDGER=off` disables recording entirely (for tests or privacy-restricted deployments). Default = on.
+
+Future tools to wire (v1.7): adapter writes (`wp_elementor_write`, `wp_divi_write`, etc.), `wp_scaffold_*`, `wp_clone`, `wp_migrate_data`. Tools that genuinely cannot be reverted (`wp_execute_php` side effects, destructive wp-cli) record with `reversible: false` so the user sees the warning icon in the admin UI.
+
+### Added — `wp-changes` skill (12th skill)
+
+Phase = recovery. Owns the rollback workflow:
+- query the ledger,
+- toggle individual rows,
+- panic-disable a window when the site breaks,
+- bisect to identify the bad change after recovery.
+
+Updated `wp-full` alias to list it.
+
+### Bumped
+
+- `MIN_COMPANION_VERSION` stays at `2.1.0` — `2.3.0` is BACKWARD-COMPATIBLE for older MCP builds (ledger endpoints are additive). MCP v1.6 with companion v2.1 → ledger calls return 404 + writer tools skip recording with a debug log; everything else works.
+
+### Pairs with
+
+- `rolepod-wp` v2.3.0 — ships the ledger table, recorder API, per-category toggle dispatchers, hook wrapper helper, and the admin UI at Tools → Rolepod WP Changes.
+
 ## [1.5.0] — 2026-05-26 — Lean 11-skill rewrite per Rolepod parent contract
 
 ### Changed — full skill-set restructure

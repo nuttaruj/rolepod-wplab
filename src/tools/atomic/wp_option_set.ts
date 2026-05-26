@@ -1,4 +1,5 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { recordChange } from "../../companion/ledger.js";
 import {
   OptionSetInputSchema,
   OptionSetOutputSchema,
@@ -32,6 +33,32 @@ export async function wpOptionSetHandler(
     );
   }
 
+  // Snapshot before-state for the ledger.
+  let beforeValue: unknown = null;
+  try {
+    if (
+      target.kind === "local" ||
+      target.kind === "ssh" ||
+      target.kind === "docker"
+    ) {
+      const r = await target.wpCli(["option", "get", input.name, "--format=json"]);
+      if (r.exitCode === 0) {
+        try {
+          beforeValue = JSON.parse(r.stdout.trim());
+        } catch {
+          beforeValue = r.stdout.trim();
+        }
+      }
+    } else {
+      const r = await target.rest({ method: "GET", path: "/wp/v2/settings" });
+      if (r.status >= 200 && r.status < 300) {
+        beforeValue = ((r.body ?? {}) as Record<string, unknown>)[input.name] ?? null;
+      }
+    }
+  } catch {
+    /* swallow */
+  }
+
   // Shell-capable targets → wp-cli option update
   if (
     target.kind === "local" ||
@@ -56,6 +83,17 @@ export async function wpOptionSetHandler(
     }
     // wp-cli prints "Success: Updated 'opt' option." or "Success: Value passed for 'opt' is unchanged."
     const changed = /Updated/i.test(result.stdout);
+    if (changed) {
+      await recordChange(target, {
+        category: "option",
+        subcategory: input.name,
+        targetDescriptor: `option ${input.name} (via wp-cli)`,
+        beforeState: { value: beforeValue },
+        afterState: { value: input.value },
+        reversible: true,
+        sourceTool: "wp_option_set",
+      });
+    }
     return OptionSetOutputSchema.parse({
       name: input.name,
       changed,
@@ -76,6 +114,15 @@ export async function wpOptionSetHandler(
       { status: res.status, name: input.name },
     );
   }
+  await recordChange(target, {
+    category: "option",
+    subcategory: input.name,
+    targetDescriptor: `option ${input.name} (via rest /wp/v2/settings)`,
+    beforeState: { value: beforeValue },
+    afterState: { value: input.value },
+    reversible: true,
+    sourceTool: "wp_option_set",
+  });
   return OptionSetOutputSchema.parse({
     name: input.name,
     changed: true,

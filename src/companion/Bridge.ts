@@ -501,6 +501,134 @@ export class CompanionBridge {
       { status },
     );
   }
+
+  // ─── v2.3 Change Ledger ─────────────────────────────────────────────────
+
+  /**
+   * Record an AI-issued change into the ledger so the user (or AI itself) can
+   * query and toggle it later. The MCP-side writer tools call this right after
+   * a successful write — before+after state are captured at the moment of the
+   * write so the rollback path is mechanical.
+   */
+  async recordChange(input: {
+    category: string;
+    subcategory: string;
+    targetDescriptor: string;
+    beforeState?: unknown;
+    afterState?: unknown;
+    reversible?: boolean;
+    sourceTool?: string;
+    sourceSession?: string;
+    notes?: string;
+  }): Promise<{ auditId: string }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/changes/record",
+      body: {
+        session_token: token,
+        category: input.category,
+        subcategory: input.subcategory,
+        target_descriptor: input.targetDescriptor,
+        before_state: input.beforeState,
+        after_state: input.afterState,
+        reversible: input.reversible ?? true,
+        source_tool: input.sourceTool,
+        source_session: input.sourceSession,
+        notes: input.notes,
+      },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        "LEDGER_RECORD_FAILED",
+        `record change returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    return { auditId: ((res.body ?? {}) as { audit_id?: string }).audit_id ?? "" };
+  }
+
+  async queryChanges(filters: {
+    category?: string;
+    applied?: boolean;
+    sinceMinutes?: number;
+    sourceSession?: string;
+    limit?: number;
+  } = {}): Promise<{ count: number; rows: Array<Record<string, unknown>> }> {
+    const token = await this.ensureFreshToken();
+    const query: Record<string, string | number | boolean> = { session_token: token };
+    if (filters.category) query["category"] = filters.category;
+    if (filters.applied !== undefined) query["applied"] = filters.applied;
+    if (filters.sinceMinutes !== undefined) query["since_minutes"] = filters.sinceMinutes;
+    if (filters.sourceSession) query["source_session"] = filters.sourceSession;
+    if (filters.limit !== undefined) query["limit"] = filters.limit;
+
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/changes",
+      query,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        "LEDGER_QUERY_FAILED",
+        `query changes returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    const b = (res.body ?? {}) as { count?: number; rows?: Array<Record<string, unknown>> };
+    return { count: b.count ?? 0, rows: b.rows ?? [] };
+  }
+
+  async toggleChange(id: number, applied: boolean): Promise<unknown> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/changes/toggle",
+      body: { session_token: token, id, applied },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        "LEDGER_TOGGLE_FAILED",
+        `toggle change returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    return res.body;
+  }
+
+  async toggleChangesBulk(ids: readonly number[], applied: boolean): Promise<unknown> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/changes/toggle-bulk",
+      body: { session_token: token, ids: [...ids], applied },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        "LEDGER_TOGGLE_BULK_FAILED",
+        `bulk toggle returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    return res.body;
+  }
+
+  async panicChanges(sinceMinutes: number): Promise<unknown> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/changes/panic",
+      body: { session_token: token, since_minutes: sinceMinutes },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        "LEDGER_PANIC_FAILED",
+        `panic returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    return res.body;
+  }
 }
 
 /**

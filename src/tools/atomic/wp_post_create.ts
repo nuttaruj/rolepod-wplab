@@ -1,4 +1,5 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { recordChange } from "../../companion/ledger.js";
 import {
   PostCreateInputSchema,
   PostCreateOutputSchema,
@@ -55,6 +56,21 @@ export async function wpPostCreateHandler(
       body: res.body,
     });
   }
+
+  // Ledger: create has no before-state. Revert = delete via wp-cli or REST.
+  await recordChange(target, {
+    category: "post",
+    subcategory: input.type,
+    targetDescriptor: `create ${input.type} #${b.id} "${input.title.slice(0, 40)}"`,
+    beforeState: { post_id: b.id, existed: false },
+    afterState: {
+      post_id: b.id,
+      post_title: input.title,
+      post_status: input.status,
+    },
+    reversible: true,
+    sourceTool: "wp_post_create",
+  });
 
   return PostCreateOutputSchema.parse({
     status: res.status,

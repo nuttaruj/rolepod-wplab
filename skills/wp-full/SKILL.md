@@ -10,7 +10,7 @@ phase: alias
 
 Pointer skill. Owns nothing. Has nothing under it. Exists so a single invocation surfaces the entire wp-* skill map.
 
-The 11 skills, by phase:
+The 12 skills, by phase:
 
 ## Define
 
@@ -36,6 +36,10 @@ The 11 skills, by phase:
 ## Ship
 
 - **`wp-migrate`** — dryrun, apply, backup, restore, clone between targets.
+
+## Recovery
+
+- **`wp-changes`** — AI Change Ledger query + toggle + panic-revert + bisect.
 
 ## Power
 

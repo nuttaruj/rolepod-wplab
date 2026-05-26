@@ -1,4 +1,5 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { recordChange } from "../../companion/ledger.js";
 import {
   PostUpdateInputSchema,
   PostUpdateOutputSchema,
@@ -38,6 +39,28 @@ export async function wpPostUpdateHandler(
     );
   }
 
+  // Snapshot before-state for the ledger. Best-effort — if the read fails
+  // (deleted between read + write, perms drop), we still proceed with the
+  // write and skip the ledger record.
+  let beforeState: Record<string, unknown> | null = null;
+  try {
+    const pre = await target.rest({
+      method: "GET",
+      path: `/wp/v2/${input.type}/${input.id}?context=edit`,
+    });
+    if (pre.status >= 200 && pre.status < 300) {
+      const pb = (pre.body ?? {}) as Record<string, unknown>;
+      beforeState = {
+        post_id: input.id,
+        post_title: (pb["title"] as { raw?: string })?.raw ?? "",
+        post_content: (pb["content"] as { raw?: string })?.raw ?? "",
+        post_status: pb["status"] ?? null,
+      };
+    }
+  } catch {
+    /* swallow */
+  }
+
   const res = await target.rest({
     method: "POST", // WP REST treats POST to existing /posts/{id} as update
     path: `/wp/v2/${input.type}/${input.id}`,
@@ -56,6 +79,23 @@ export async function wpPostUpdateHandler(
   }
 
   const b = (res.body ?? {}) as { id?: number; modified?: string };
+
+  // Ledger record — non-fatal on failure.
+  if (beforeState !== null) {
+    await recordChange(target, {
+      category: "post",
+      subcategory: input.type,
+      targetDescriptor: `update ${input.type} #${input.id}`,
+      beforeState,
+      afterState: {
+        post_id: input.id,
+        ...body,
+      },
+      reversible: true,
+      sourceTool: "wp_post_update",
+    });
+  }
+
   return PostUpdateOutputSchema.parse({
     status: res.status,
     id: b.id ?? input.id,

@@ -1,4 +1,5 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { recordChange } from "../../companion/ledger.js";
 import {
   WpFileWriteInputSchema,
   WpFileWriteOutputSchema,
@@ -25,10 +26,36 @@ export async function wpFileWriteHandler(
   // Production guard — file writes on prod targets refused.
   prodGuard.enforce(target.siteurl);
 
+  // Snapshot the prior content if it exists, so revert can restore it.
+  let beforeContent: string | null = null;
+  try {
+    const r = await target.fileRead(input.path);
+    beforeContent = r.content;
+  } catch {
+    /* file did not exist — revert = delete */
+  }
+
   const result = await target.fileWrite(input.path, input.content, {
     mode: input.mode,
     backup: input.backup,
     confirmUnsafePath: input.confirm_unsafe_path,
+  });
+
+  await recordChange(target, {
+    category: "file",
+    subcategory: input.path,
+    targetDescriptor: `write ${input.path} (${result.bytesWritten} bytes)`,
+    beforeState:
+      beforeContent !== null
+        ? { absolute_path: result.absolutePath, content: beforeContent }
+        : { absolute_path: result.absolutePath, content: null },
+    afterState: {
+      absolute_path: result.absolutePath,
+      content: input.content,
+      backup_path: result.backupPath,
+    },
+    reversible: true,
+    sourceTool: "wp_file_write",
   });
 
   return WpFileWriteOutputSchema.parse({

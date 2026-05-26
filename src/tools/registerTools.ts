@@ -94,6 +94,22 @@ import {
   wpHookStateToolDef,
 } from "./companion/wp_hook_state.js";
 import {
+  wpChangesQueryHandler,
+  wpChangesQueryToolDef,
+} from "./companion/wp_changes_query.js";
+import {
+  wpChangesToggleHandler,
+  wpChangesToggleToolDef,
+} from "./companion/wp_changes_toggle.js";
+import {
+  wpChangesToggleBulkHandler,
+  wpChangesToggleBulkToolDef,
+} from "./companion/wp_changes_toggle_bulk.js";
+import {
+  wpChangesPanicHandler,
+  wpChangesPanicToolDef,
+} from "./companion/wp_changes_panic.js";
+import {
   wpElementorWriteHandler,
   wpElementorWriteToolDef,
 } from "./adapter/wp_elementor_write.js";
@@ -342,6 +358,22 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpHookStateToolDef,
     handler: (d, raw) => wpHookStateHandler(d.registry, raw),
+  },
+  {
+    def: wpChangesQueryToolDef,
+    handler: (d, raw) => wpChangesQueryHandler(d.registry, raw),
+  },
+  {
+    def: wpChangesToggleToolDef,
+    handler: (d, raw) => wpChangesToggleHandler(d.registry, raw),
+  },
+  {
+    def: wpChangesToggleBulkToolDef,
+    handler: (d, raw) => wpChangesToggleBulkHandler(d.registry, raw),
+  },
+  {
+    def: wpChangesPanicToolDef,
+    handler: (d, raw) => wpChangesPanicHandler(d.registry, raw),
   },
   {
     def: wpElementorWriteToolDef,
