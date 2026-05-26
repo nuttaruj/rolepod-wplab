@@ -58,6 +58,33 @@ Goes in the sibling repo. Each endpoint must:
 - Enforce `ProductionGuard::matchedPattern()` for destructive ops.
 - Write `Log::append` for every call (success + rejection).
 
+## Releasing — version-pair convention across two repos
+
+rolepod-wplab ships as **two coordinated repos**:
+
+| Repo | Role | Ships as |
+|---|---|---|
+| `rolepod-wplab` (this repo) | Node MCP server + skills | npm: `@rolepod/wplab` + Claude Code marketplace |
+| `rolepod-wp` (sibling) | WordPress arm of the Rolepod ecosystem (PHP plugin) | `releases/latest/download/rolepod-wp.zip` |
+
+The cross-component contract is locked in `src/companion/constants.ts`:
+
+- **`COMPANION_PLUGIN_SLUG`** = `rolepod-wp` — WP plugin slug + release-asset filename root.
+- **`COMPANION_REPO_URL`** = `https://github.com/nuttaruj/rolepod-wp`.
+- **`COMPANION_INSTALL_URL`** — stable release-asset URL (no version suffix). The sibling repo's `scripts/build-zip.sh` and `.github/workflows/release.yml` are responsible for keeping that asset present on every tagged release.
+- **`MIN_COMPANION_VERSION`** — the floor plugin version this MCP build is known to work with. Bump it the moment MCP starts depending on a new endpoint, capability flag, or response field.
+
+### Release rules
+
+1. **Coupled features (new endpoint, new capability, new response field) → tag both repos together.** Same semver level (`wplab v1.x.0` ⇄ `companion v1.x.0`). Bump `MIN_COMPANION_VERSION` in the MCP and release MCP **after** the companion tag is live, so the stable install URL already serves the new zip when MCP guidance points to it.
+2. **Independent patches (bug fix or doc change confined to one side) → tag only that side.** No need to bump the other repo; `MIN_COMPANION_VERSION` stays put. The version-compat check in `wp_pair` is forward-compatible: a newer companion is always accepted.
+3. **Never** ship MCP that depends on a not-yet-released companion. Verify the new zip is reachable at the stable URL before publishing the npm release.
+4. **CHANGELOG entries on both sides must cross-reference the matched version** in coupled releases (e.g., wplab `## v1.3.0 — companion ≥ 1.3.0`).
+
+### Memory note
+
+Two-repo split is deliberate (parallel dev tracks, independent CI cadence). Do **not** propose monorepo restructure without an explicit maintainer ask — it has been considered and rejected.
+
 ## Single-backend rule (W-011)
 
 Shipped skills under `skills/` call ONLY `rolepod_wp_*` tools — never a third-party plugin, raw wp-cli shell, or any other backend. If a skill cannot accomplish its task with wplab tools, return a structured failure and let the caller decide; do not silently degrade.

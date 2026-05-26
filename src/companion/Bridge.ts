@@ -4,6 +4,7 @@ import {
   ProductionBlockedError,
   WplabError,
 } from "../util/errors.js";
+import { COMPANION_INSTALL_URL } from "./constants.js";
 import { log } from "../util/log.js";
 import type { Target } from "../runtime/Target.js";
 
@@ -75,6 +76,7 @@ export class CompanionBridge {
       throw new CompanionUnavailableError(
         this.target.id,
         "companion plugin not installed or endpoints disabled",
+        { installUrl: COMPANION_INSTALL_URL },
       );
     }
     if (res.status === 403) {
@@ -208,6 +210,7 @@ export class CompanionBridge {
       throw new CompanionUnavailableError(
         this.target.id,
         "companion not installed",
+        { installUrl: COMPANION_INSTALL_URL },
       );
     }
     if (res.status === 403) {

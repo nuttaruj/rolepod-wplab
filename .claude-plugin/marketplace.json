@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "rolepod-wplab",
-  "description": "WordPress operations toolkit for AI coding agents — 62 MCP tools (wp-cli + REST + scoped fs + page-builder adapters + SEO/i18n + WooCommerce + ACF + forms + cron + cache + clone + backup + diagnose + scaffold) + 11 user-invocable skills. Optional companion plugin unlocks execute-php + runtime introspection + one-click pair setup.",
+  "description": "WordPress operations toolkit for AI coding agents — 62 MCP tools (wp-cli + REST + scoped fs + page-builder adapters + SEO/i18n + WooCommerce + ACF + forms + cron + cache + clone + backup + diagnose + scaffold) + 11 user-invocable skills. The rolepod-wp WordPress plugin (optional) unlocks execute-php + runtime introspection + one-click pair setup.",
   "owner": {
     "name": "nuttaruj"
   },
@@ -9,7 +9,7 @@
     {
       "name": "rolepod-wplab",
       "source": "./",
-      "description": "62 MCP tools (rolepod_wp_*) + 11 skills (/wp-pair-setup, /wp-health-check, /wp-scaffold-{block,plugin,theme}, /wp-audit-{security,woo}, /wp-edit-elementor, /wp-introspect, /wp-execute-php, /wp-migrate-dryrun). 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; companion plugin unlocks execute-php + runtime introspection + one-click pair flow.",
+      "description": "62 MCP tools (rolepod_wp_*) + 11 skills (/wp-pair-setup, /wp-health-check, /wp-scaffold-{block,plugin,theme}, /wp-audit-{security,woo}, /wp-edit-elementor, /wp-introspect, /wp-execute-php, /wp-migrate-dryrun). 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair flow.",
       "version": "1.2.4",
       "author": {
         "name": "nuttaruj"

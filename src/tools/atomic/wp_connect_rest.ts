@@ -3,6 +3,10 @@ import { makeVault } from "../../credentials/factory.js";
 import { canonicalizeSite } from "../../credentials/types.js";
 import { WplabError } from "../../util/errors.js";
 import {
+  COMPANION_INSTALL_URL,
+  setupWizardUrlFor,
+} from "../../companion/constants.js";
+import {
   ConnectRestInputSchema,
   ConnectRestOutputSchema,
   type ConnectRestInput,
@@ -27,7 +31,7 @@ export async function wpConnectRestHandler(
   const vault = await makeVault();
   const cred = await vault.get(lookupKey);
   if (!cred) {
-    const setupWizardUrl = `${input.url.replace(/\/$/, "")}/wp-admin/tools.php?page=rolepod-wplab-setup`;
+    const setupWizardUrl = setupWizardUrlFor(input.url);
     throw new WplabError(
       "CREDENTIALS_MISSING",
       [
@@ -36,7 +40,9 @@ export async function wpConnectRestHandler(
         `Two paths to pair this site:`,
         ``,
         `  (A) RECOMMENDED — one-click pair via companion:`,
-        `      1. Install rolepod-wplab-companion plugin on the WP site`,
+        `      1. Install the companion plugin on the WP site:`,
+        `         wp plugin install ${COMPANION_INSTALL_URL} --activate`,
+        `         (or upload via wp-admin → Plugins → Add New → Upload)`,
         `      2. Open ${setupWizardUrl}`,
         `      3. Click "Generate setup prompt" + paste the prompt back here`,
         `      4. I'll call rolepod_wp_pair with the token automatically`,
@@ -46,7 +52,11 @@ export async function wpConnectRestHandler(
         `        rolepod-wplab credentials add ${lookupKey}`,
         `      Then retry rolepod_wp_connect_rest.`,
       ].join("\n"),
-      { site: lookupKey, setup_wizard_url: setupWizardUrl },
+      {
+        site: lookupKey,
+        setup_wizard_url: setupWizardUrl,
+        companion_install_url: COMPANION_INSTALL_URL,
+      },
     );
   }
 
@@ -60,8 +70,16 @@ export async function wpConnectRestHandler(
     await target.close();
     throw new WplabError(
       "COMPANION_REQUIRED_BUT_MISSING",
-      `Companion not detected on ${lookupKey} but require_companion=true. Install rolepod-wplab-companion on this WP install.`,
-      { site: lookupKey },
+      [
+        `Companion not detected on ${lookupKey} but require_companion=true.`,
+        `Install the Rolepod for WordPress plugin on this WP install:`,
+        `  wp plugin install ${COMPANION_INSTALL_URL} --activate`,
+        `(or upload via wp-admin → Plugins → Add New → Upload)`,
+      ].join("\n"),
+      {
+        site: lookupKey,
+        companion_install_url: COMPANION_INSTALL_URL,
+      },
     );
   }
 

@@ -76,12 +76,19 @@ export class DbWriteBlockedError extends WplabError {
 }
 
 export class CompanionUnavailableError extends WplabError {
-  constructor(targetId: string, detail: string) {
-    super(
-      "COMPANION_UNAVAILABLE",
-      `Companion plugin not reachable: ${detail}`,
-      { targetId },
-    );
+  constructor(
+    targetId: string,
+    detail: string,
+    opts: { installUrl?: string } = {},
+  ) {
+    const lines = [`Companion plugin not reachable: ${detail}`];
+    if (opts.installUrl) {
+      lines.push(`Install or upgrade: ${opts.installUrl}`);
+    }
+    super("COMPANION_UNAVAILABLE", lines.join("\n"), {
+      targetId,
+      ...(opts.installUrl ? { companion_install_url: opts.installUrl } : {}),
+    });
   }
 }
 

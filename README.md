@@ -2,7 +2,7 @@
 
 **rolepod-wplab gives Claude Code, Cursor, Codex CLI, and Gemini CLI a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
 
-One MCP server, 62 tools, 11 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wplab-companion`](https://github.com/nuttaruj/rolepod-wplab-companion) WP plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
+One MCP server, 62 tools, 11 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
 
 ## What it helps with
 
@@ -126,17 +126,19 @@ Skills are not auto-registered under Gemini (no unified plugin format yet — `g
 ### Path A — one-click pair (recommended)
 
 ```bash
-# 1. Install companion plugin on your WP site
+# 1. Install the Rolepod for WordPress plugin on your WP site (stable URL, always latest)
 wp plugin install \
-  https://github.com/nuttaruj/rolepod-wplab-companion/releases/download/v1.2.0/rolepod-wplab-companion-1.2.0.zip \
+  https://github.com/nuttaruj/rolepod-wp/releases/latest/download/rolepod-wp.zip \
   --activate
 
-# 2. WP admin → Tools → WPLab Setup → ⚡ Generate setup prompt → copy
+# 2. WP admin → Tools → Rolepod WP Setup → ⚡ Generate setup prompt → copy
 
 # 3. Paste prompt into Claude Code / Cursor / Codex / Gemini → AI calls rolepod_wp_pair → done
 ```
 
-The pair token is single-use, 60-min TTL. Companion mints a WP Application Password named `wplab-pair-<UTC-timestamp>` under your admin user — revocable from `profile.php` at any time.
+The pair token is single-use, 60-min TTL. The plugin mints a WP Application Password named `wplab-pair-<UTC-timestamp>` under your admin user — revocable from `profile.php` at any time.
+
+> The WP plugin (`rolepod-wp`) is the WordPress arm of the broader [Rolepod ecosystem](https://github.com/nuttaruj/rolepod), parallel to `rolepod-uiproof`. Source: [`nuttaruj/rolepod-wp`](https://github.com/nuttaruj/rolepod-wp). End users do not need to read that repo — everything they need is on this page.
 
 ### Path B — manual (no companion required)
 
@@ -179,18 +181,18 @@ npx rolepod-wplab doctor
 - **Per-site memory** — `memory_recall` / `memory_note` / `memory_list` keep context between sessions at `~/.config/rolepod-wplab/memory/<site>/`. Local files, $0, no SaaS.
 - **Audit trail** — every companion `execute_php` writes append-only `wplab_audit_<id>.log` (mode 0600) + a 1000-entry FIFO in `wp_options`.
 
-## Companion
+## Companion WP plugin
 
-The [`rolepod-wplab-companion`](https://github.com/nuttaruj/rolepod-wplab-companion) WP plugin is optional. Without it, wplab is a complete wp-cli + REST + scoped fs toolkit. With it, you get:
+The [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin (the WP arm of the [Rolepod ecosystem](https://github.com/nuttaruj/rolepod)) is optional. Without it, wplab is a complete wp-cli + REST + scoped fs toolkit. With it, you get:
 
-- **One-click pair** — `Tools → WPLab Setup → ⚡ Generate setup prompt` produces a ready-to-paste prompt for any AI CLI.
+- **One-click pair** — `Tools → Rolepod WP Setup → ⚡ Generate setup prompt` produces a ready-to-paste prompt for any AI CLI.
 - **execute-php** — runtime PHP eval, AST-screened, production-blocked.
 - **introspect** — hooks / transients / options / request-state read at runtime.
 - **mid-request observation + persistent PHP session**.
 
 ```bash
 wp plugin install \
-  https://github.com/nuttaruj/rolepod-wplab-companion/releases/latest/download/rolepod-wplab-companion-1.2.0.zip \
+  https://github.com/nuttaruj/rolepod-wp/releases/latest/download/rolepod-wp.zip \
   --activate
 ```
 
@@ -207,7 +209,8 @@ If you also use [`rolepod`](https://github.com/nuttaruj/rolepod) (the markdown p
 
 ## Sibling repos
 
-- [`rolepod-wplab-companion`](https://github.com/nuttaruj/rolepod-wplab-companion) — optional WP plugin for runtime PHP context + one-click pair.
+- [`rolepod`](https://github.com/nuttaruj/rolepod) — parent ecosystem (markdown plugin + phase router).
+- [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) — optional WP plugin for runtime PHP context + one-click pair.
 - [`rolepod-uiproof`](https://github.com/nuttaruj/rolepod-uiproof) — UI / mobile automation sibling.
 
 ---

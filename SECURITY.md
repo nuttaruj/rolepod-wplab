@@ -13,7 +13,7 @@ Until v1.0, only the **latest minor version** receives security fixes. After v1.
 
 **Do NOT open a public GitHub issue.** Email `nuttaruj@gmail.com` with:
 
-1. Affected component (`@rolepod/wplab`, `rolepod-wplab-companion`, or both).
+1. Affected component (`@rolepod/wplab` or `rolepod-wp` — both, or either).
 2. Affected version(s).
 3. Reproduction steps + minimum impact statement.
 4. Suggested fix if you have one (optional).
@@ -30,7 +30,7 @@ The Node MCP (`@rolepod/wplab`):
 - Never logs credentials in MCP responses, audit logs, or artifacts.
 - AST-screens PHP payloads before sending to companion (defence in depth with companion-side screen).
 
-The companion (`rolepod-wplab-companion`):
+The companion WP plugin (`rolepod-wp`):
 
 - Lives inside WordPress as a PHP plugin.
 - Endpoints default OFF on activation — admin must explicitly enable.

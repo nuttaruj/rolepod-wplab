@@ -2,7 +2,7 @@
   "name": "rolepod-wplab",
   "interface": {
     "displayName": "Rolepod WPLab",
-    "shortDescription": "WordPress operations toolkit for AI coding agents — 62 MCP tools, 11 skills, 4 connection kinds, opt-in companion for execute-php + one-click pair.",
+    "shortDescription": "WordPress operations toolkit for AI coding agents — 62 MCP tools, 11 skills, 4 connection kinds, opt-in rolepod-wp plugin for execute-php + one-click pair.",
     "developerName": "nuttaruj",
     "websiteURL": "https://github.com/nuttaruj/rolepod-wplab"
   },

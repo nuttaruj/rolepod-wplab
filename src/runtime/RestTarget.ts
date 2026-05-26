@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { RestClient } from "./restClient.js";
 import { WplabError } from "../util/errors.js";
+import { setupWizardUrlFor } from "../companion/constants.js";
 import { log } from "../util/log.js";
 import type { Credential } from "../credentials/types.js";
 import type {
@@ -78,7 +79,7 @@ export class RestTarget implements Target {
       timeoutMs: 10_000,
     });
     if (probe.status === 401 || probe.status === 403) {
-      const setupWizardUrl = `${args.url.replace(/\/$/, "")}/wp-admin/tools.php?page=rolepod-wplab-setup`;
+      const setupWizardUrl = setupWizardUrlFor(args.url);
       throw new WplabError(
         "REST_AUTH_FAILED",
         [
@@ -86,7 +87,7 @@ export class RestTarget implements Target {
           ``,
           `The stored Application Password is invalid or revoked. Re-pair via either:`,
           ``,
-          `  (A) Tools → WPLab Setup → Quick Start on the site:`,
+          `  (A) Tools → Rolepod WP Setup → Quick Start on the site:`,
           `      ${setupWizardUrl}`,
           `      Then call rolepod_wp_pair with the freshly generated token.`,
           ``,

@@ -1,6 +1,7 @@
 import { makeVault } from "../credentials/factory.js";
 import { confirm } from "../credentials/prompt.js";
 import { RestClient } from "../runtime/restClient.js";
+import { COMPANION_INSTALL_URL } from "../companion/constants.js";
 
 /**
  * `rolepod-wplab companion <subcommand>`
@@ -65,9 +66,7 @@ async function runInstall(args: string[]): Promise<number> {
   process.stderr.write(
     `○ no companion detected. Run this on the target host:\n\n`,
   );
-  process.stderr.write(
-    `  wp plugin install https://github.com/nuttaruj/rolepod-wplab-companion/releases/latest/download/rolepod-wplab-companion.zip --activate\n\n`,
-  );
+  process.stderr.write(`  wp plugin install ${COMPANION_INSTALL_URL} --activate\n\n`);
   process.stderr.write(
     `  Or, via the WP admin: Plugins → Add New → Upload Plugin → pick the zip.\n`,
   );

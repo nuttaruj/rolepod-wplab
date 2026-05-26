@@ -95,7 +95,7 @@ export async function runInit(_argv: string[]): Promise<number> {
     );
   } else {
     process.stderr.write(
-      `○ No companion plugin (rest_ok only; install rolepod-wplab-companion later for power tools)\n`,
+      `○ No companion plugin (rest_ok only; install rolepod-wp later for power tools)\n`,
     );
   }
 

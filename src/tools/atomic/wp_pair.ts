@@ -3,6 +3,11 @@ import { RestTarget } from "../../runtime/RestTarget.js";
 import { makeVault } from "../../credentials/factory.js";
 import { canonicalizeSite } from "../../credentials/types.js";
 import {
+  MIN_COMPANION_VERSION,
+  isCompanionTooOld,
+  COMPANION_INSTALL_URL,
+} from "../../companion/constants.js";
+import {
   PairInputSchema,
   PairOutputSchema,
   type PairInput,
@@ -94,6 +99,14 @@ export async function wpPairHandler(
       "companion did not return username + app_password",
       { status },
     );
+  }
+
+  if (isCompanionTooOld(body.companion_version)) {
+    log.warn("pair: companion version below MIN_COMPANION_VERSION", {
+      detected: body.companion_version,
+      required: MIN_COMPANION_VERSION,
+      upgrade_url: COMPANION_INSTALL_URL,
+    });
   }
 
   const canonical = canonicalizeSite(url.host);
