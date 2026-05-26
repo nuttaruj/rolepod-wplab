@@ -859,6 +859,45 @@ export const RankMathReadOutputSchema = z.object({
 export type RankMathReadOutput = z.infer<typeof RankMathReadOutputSchema>;
 
 // ---------------------------------------------------------------------------
+// v1.2 — One-click pair (companion-minted App Password via pair_token redeem)
+// ---------------------------------------------------------------------------
+
+export const PairInputSchema = z.object({
+  siteurl: z
+    .string()
+    .url()
+    .refine((u) => u.startsWith("https://"), {
+      message:
+        "siteurl must use https:// — pair token MUST NOT traverse plaintext",
+    }),
+  pair_token: z.string().regex(/^wplab_pair_[a-f0-9]{48}$/, {
+    message:
+      'pair_token must match the companion-issued format "wplab_pair_<48 hex>"',
+  }),
+});
+export type PairInput = z.infer<typeof PairInputSchema>;
+
+export const PairOutputSchema = z.object({
+  target_id: TargetIdSchema,
+  siteurl: z.string().url(),
+  username: z.string(),
+  capabilities: z.array(z.string()),
+  companion_version: z.string(),
+  is_production: z.boolean(),
+  app_password_name: z
+    .string()
+    .describe(
+      "Name of the WP Application Password the companion minted; visible + revocable from profile.php",
+    ),
+  credential_stored: z
+    .boolean()
+    .describe(
+      "True if the App Password was stored in the local vault for reuse",
+    ),
+});
+export type PairOutput = z.infer<typeof PairOutputSchema>;
+
+// ---------------------------------------------------------------------------
 // v1.1 Tier A — Divi / Oxygen / Bricks-write / Yoast-write / RankMath-write / WPML-write
 // ---------------------------------------------------------------------------
 

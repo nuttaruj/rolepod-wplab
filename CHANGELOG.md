@@ -2,6 +2,44 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-05-26 — One-click pair (a third-party plugin-style setup UX)
+
+### Added
+
+- `rolepod_wp_pair { siteurl, pair_token }` — single MCP call that redeems a companion-issued pair token for a real WP Application Password (companion-minted under the issuing admin's user, named `wplab-pair-<timestamp>`). Stores credential in vault + opens a `RestTarget` in one shot.
+- Companion endpoint **POST `/wp-json/wplab/v1/pair/generate`** (admin only, manage_options) — issues a 256-bit pair token, TTL 60 min, max 5 active per admin.
+- Companion endpoint **POST `/wp-json/wplab/v1/pair/redeem`** (public, token-authed) — atomic single-use redeem; per-IP throttle (10 failed / hour).
+- Companion `src/Security/PairToken.php` — SHA-256 hashed-at-rest tokens in `wp_options`, opportunistic sweep of expired rows.
+- Companion `Tools → WPLab Setup` page extended with **"⚡ Quick Start"** section: button → mints pair token → renders ready-to-paste prompt that includes Claude Code / Cursor / Codex / Gemini install snippets + `rolepod_wp_pair` call with siteurl + pair_token baked in. One-click copy.
+- New skill `skills/wp-pair-setup/SKILL.md` — instructs AI agents on the pair flow + failure modes + security notes.
+
+### Schema additions
+
+- `PairInputSchema` — siteurl https-only refine + pair_token regex `/^wplab_pair_[a-f0-9]{48}$/`.
+- `PairOutputSchema` — target_id + siteurl + username + capabilities + companion_version + is_production + app_password_name + credential_stored.
+
+### Security
+
+- Pair token = SHA-256 hashed at rest, never returned by any GET endpoint.
+- Single-use guarantee: `PairToken::redeem` deletes the wp_options row **before** acting on the payload — concurrent redeem attempts can't both succeed.
+- TTL 60 min, post-redeem the App Password is the long-lived credential (revocable from `profile.php`).
+- Pair generate requires admin (`manage_options`). Pair redeem rate-limited per IP via transient.
+- App Password name `wplab-pair-<UTC-timestamp>` makes attribution + revocation trivial.
+- Production guard unchanged — pair-minted credentials are subject to all the same `ProdGuard` checks on power tools.
+- Companion `endpoints_enabled` master toggle still applies — pair endpoints respect it.
+
+### Numbers
+
+- **MCP tools**: 61 → 62 (+1: `rolepod_wp_pair`).
+- **Companion REST endpoints**: 8 → 10 (+2: pair/generate, pair/redeem).
+- **Skills**: 10 → 11 (+1: wp-pair-setup).
+- **Unit + smoke tests**: 134 → 141 (+7 PairInput/Output schema tests).
+
+### Notes
+
+- Schema-freeze policy honored: every change is additive (new tool, new schemas, new endpoints).
+- Companion-first install path is now the recommended quick-start. Manual setup path (App Password + npm install + claude mcp add + credentials add) preserved on the same wizard page for users on CLIs without a wplab plugin.
+
 ## [1.1.0] — 2026-05-26 — Parity + lead expansion (Tier A/B/C/D)
 
 ### Added — Tier A (close a third-party plugin gaps)

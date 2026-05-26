@@ -196,6 +196,7 @@ describe("MCP smoke", () => {
         "rolepod_wp_option_set",
         "rolepod_wp_oxygen_read",
         "rolepod_wp_oxygen_write",
+        "rolepod_wp_pair",
         "rolepod_wp_post_create",
         "rolepod_wp_post_get",
         "rolepod_wp_post_list",

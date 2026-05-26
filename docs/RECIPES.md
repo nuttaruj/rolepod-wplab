@@ -329,7 +329,31 @@ Lead:
     → routes[] with path + methods
 ```
 
-## 22 — Setup new target with init wizard (v1.1)
+## 22 — One-click pair via companion (v1.2 — recommended)
+
+```
+WP admin (in the browser):
+  Tools → WPLab Setup → "⚡ Quick Start"
+  Click "Generate setup prompt"
+  Copy the prompt that appears (contains pair_token + per-CLI install snippets)
+
+User → paste into Claude / Cursor / Codex / Gemini
+
+AI agent (with wplab plugin installed):
+  rolepod_wp_pair {
+    siteurl:    "https://walnutztudio.com",
+    pair_token: "wplab_pair_<48 hex>"
+  }
+    → target_id + username + capabilities + app_password_name
+    → credential silently stored in OS keychain
+
+AI: rolepod_wp_health_check { target_id }
+    → db_ok:true, rest_ok:true, companion_ok:true
+```
+
+Token is single-use, 60 min TTL. App Password named `wplab-pair-<timestamp>` — revocable from `profile.php#application-passwords-section` at any time.
+
+## 23 — Setup new target with init wizard (v1.1)
 
 ```
 $ rolepod-wplab init

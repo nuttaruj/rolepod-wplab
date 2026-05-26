@@ -204,6 +204,8 @@ import {
   wpBackupRestoreHandler,
   wpBackupRestoreToolDef,
 } from "./composite/wp_backup.js";
+// v1.2 — One-click pair
+import { wpPairHandler, wpPairToolDef } from "./atomic/wp_pair.js";
 // v1.1 — Tier D
 import {
   wpUserSessionListHandler,
@@ -480,6 +482,8 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
     def: wpDiagnoseToolDef,
     handler: (d, raw) => wpDiagnoseHandler(d.registry, raw),
   },
+  // v1.2 — one-click pair
+  { def: wpPairToolDef, handler: (d, raw) => wpPairHandler(d.registry, raw) },
 ];
 
 export function registerTools(server: Server, deps: RegisterDeps): void {
