@@ -157,3 +157,190 @@ Lead:
   rolepod_wp_connect_docker { container_name: "wplab-fixture-wp", wp_path: "/var/www/html" }
     → target_id + siteurl + wp_version
 ```
+
+## 11 — Edit Divi / Oxygen / Bricks pages (v1.1)
+
+```
+User: "rewrite hero shortcode on Divi homepage"
+
+Lead:
+  rolepod_wp_divi_read { target_id, page_id: 12 }
+    → page.content (Divi shortcode string) + meta.et_pb_use_builder
+  (regenerate new shortcode)
+  rolepod_wp_divi_write {
+    target_id, post_id: 12, content: "<new shortcode>",
+    ensure_builder_flag: true, allow_destructive: true, confirm: true
+  }
+    → bytes_written + backup_path
+```
+
+Same pattern works for `rolepod_wp_oxygen_{read,write}` (ct_builder_shortcodes) and `rolepod_wp_bricks_write` (element tree JSON).
+
+## 12 — SEO bulk update (Yoast / Rank Math, v1.1)
+
+```
+User: "fix focus keyword + meta_description on top 20 product pages"
+
+Lead:
+  (loop product IDs)
+  rolepod_wp_yoast_write {
+    target_id, post_id: 123,
+    focus_keyword: "ergonomic chair",
+    meta_description: "...",
+    allow_destructive: true, confirm: true
+  }
+    → updated_fields: [focus_keyword, meta_description]
+```
+
+Mirror tool: `rolepod_wp_rankmath_write` (same shape).
+
+## 13 — WPML translation linkage (v1.1)
+
+```
+User: "link en page 100 with th post 200 and ja post 300"
+
+Lead:
+  rolepod_wp_wpml_write {
+    target_id,
+    op: "link_translations",
+    original_post_id: 100,
+    translations: { en: 100, th: 200, ja: 300 },
+    allow_destructive: true, confirm: true
+  }
+    → linked_count: 3
+```
+
+## 14 — Form spam triage (v1.1)
+
+```
+User: "find recent Gravity Forms spam entries"
+
+Lead:
+  rolepod_wp_forms_read { target_id, scope: "list_entries", engine: "gravity", per_page: 100 }
+    → items[] with is_spam flag
+  (filter spam → list IDs)
+  rolepod_wp_forms_write {
+    target_id, engine: "gravity", op: "delete_entry", entry_id: 4521,
+    allow_destructive: true, confirm: true
+  }
+```
+
+## 15 — Cron sanity (v1.1)
+
+```
+User: "what's scheduled on wp-cron?"
+
+Lead:
+  rolepod_wp_cron_tool { target_id, op: "list" }
+    → events[] { hook, next_run_relative, recurrence }
+
+User: "fire wp_scheduled_delete now"
+
+Lead:
+  rolepod_wp_cron_tool { target_id, op: "run", hook: "wp_scheduled_delete", confirm: true }
+```
+
+## 16 — Cache + SMTP smoke (v1.1)
+
+```
+User: "flush object cache + test email"
+
+Lead:
+  rolepod_wp_cache_tool { target_id, op: "flush_object", confirm: true }
+    → flushed: true
+  rolepod_wp_mail_test { target_id, to: "me@example.com", confirm: true }
+    → delivered: true | source: companion_php | detail: "wp_mail() returned true"
+```
+
+## 17 — Backup before risky op (v1.1)
+
+```
+User: "back up db before plugin upgrade"
+
+Lead:
+  rolepod_wp_backup_create { target_id, scope: ["db"], label: "pre-upgrade" }
+    → artifact_dir: ".rolepod-wplab/artifacts/backups/wplab_..._pre-upgrade/"
+
+  rolepod_wp_cli_run { target_id, args: ["plugin","update","--all"], allow_destructive: true }
+    (if anything goes south)
+  rolepod_wp_backup_restore {
+    target_id, artifact_dir: "<above>", scope: ["db"],
+    allow_destructive: true, confirm: true
+  }
+```
+
+## 18 — Full site clone dev → staging (v1.1)
+
+```
+User: "spin up staging from dev"
+
+Lead:
+  rolepod_wp_clone {
+    source_target_id: tgt_dev,
+    dest_target_id:   tgt_staging,
+    scope: ["db", "wp_content", "plugin_versions"],
+    rewrite_urls: true,
+    allow_destructive: true,
+    confirm: true
+  }
+    → steps[]: { step:"db", ok:true } / { step:"wp_content", ok:true } /
+                { step:"rewrite_urls", detail:"old.com → staging.com" } / { step:"plugin_versions" }
+```
+
+## 19 — Site diagnose (v1.1)
+
+```
+User: "why is this site slow?"
+
+Lead:
+  rolepod_wp_diagnose {
+    target_id,
+    scopes: ["plugin_conflict_probe", "slow_queries", "large_options", "php_errors"]
+  }
+    → findings ranked critical/warn/info
+    → report_path: ".rolepod-wplab/artifacts/<run_id>/diagnose-report.md"
+```
+
+## 20 — Block pattern scaffold (v1.1)
+
+```
+User: "scaffold a CTA pattern into my theme"
+
+Lead:
+  rolepod_wp_scaffold_pattern {
+    target_id,
+    host: "theme", host_slug: "twentytwentyfive",
+    pattern_slug: "twentytwentyfive/cta-card",
+    title: "Call-to-action card",
+    content: "<!-- wp:cover --><div class=\"wp-block-cover\">...</div><!-- /wp:cover -->",
+    allow_destructive: true
+  }
+    → file_written: wp-content/themes/twentytwentyfive/patterns/cta-card.php
+```
+
+## 21 — REST discovery (v1.1)
+
+```
+User: "what REST routes does WC expose?"
+
+Lead:
+  rolepod_wp_rest_dump { target_id, filter_namespace: "wc/v3" }
+    → namespaces: ["wc/v3"]
+    → routes[] with path + methods
+```
+
+## 22 — Setup new target with init wizard (v1.1)
+
+```
+$ rolepod-wplab init
+  Site URL (https://...): https://walnutztudio.com
+  WP username: admin
+  Application Password: ****
+  ✓ REST reachable
+  ✓ Companion present (v1.1.0)
+  ✓ stored in vault
+  ✓ wrote starter ~/.config/rolepod-wplab/profile.json (profile=personal)
+
+  Claude Code:
+    claude mcp add rolepod-wplab -- rolepod-wplab serve
+```

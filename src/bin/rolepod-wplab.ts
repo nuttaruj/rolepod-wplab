@@ -1,73 +1,92 @@
 #!/usr/bin/env node
-import { createServer } from '../server.js'
-import { runDoctor } from './doctor.js'
-import { runCredentials } from './credentials.js'
-import { runMemory } from './memory.js'
-import { runReplay } from './replay.js'
-import { log } from '../util/log.js'
+import { createServer } from "../server.js";
+import { runDoctor } from "./doctor.js";
+import { runCredentials } from "./credentials.js";
+import { runMemory } from "./memory.js";
+import { runReplay } from "./replay.js";
+import { runInit } from "./init.js";
+import { runCompanion } from "./companion.js";
+import { log } from "../util/log.js";
 
 async function main(): Promise<void> {
-  const cmd = process.argv[2] ?? 'serve'
+  const cmd = process.argv[2] ?? "serve";
 
   switch (cmd) {
-    case 'doctor': {
-      const code = await runDoctor()
-      process.exit(code)
+    case "doctor": {
+      const code = await runDoctor();
+      process.exit(code);
       // unreachable, but TS doesn't know
-      return
+      return;
     }
-    case 'credentials':
-    case 'creds': {
-      const code = await runCredentials(process.argv.slice(3))
-      process.exit(code)
-      return
+    case "credentials":
+    case "creds": {
+      const code = await runCredentials(process.argv.slice(3));
+      process.exit(code);
+      return;
     }
-    case 'memory':
-    case 'mem': {
-      const code = await runMemory(process.argv.slice(3))
-      process.exit(code)
-      return
+    case "memory":
+    case "mem": {
+      const code = await runMemory(process.argv.slice(3));
+      process.exit(code);
+      return;
     }
-    case 'replay': {
-      const code = await runReplay(process.argv.slice(3))
-      process.exit(code)
-      return
+    case "replay": {
+      const code = await runReplay(process.argv.slice(3));
+      process.exit(code);
+      return;
     }
-    case 'smoke': {
+    case "init": {
+      const code = await runInit(process.argv.slice(3));
+      process.exit(code);
+      return;
+    }
+    case "companion": {
+      const code = await runCompanion(process.argv.slice(3));
+      process.exit(code);
+      return;
+    }
+    case "smoke": {
       // Smoke test against fixture WP — v0.4 stub. Use tests/fixtures/install-wp.sh
       // + manual MCP probe via test runner for now.
-      console.error('[wplab] smoke not yet wired into CLI — use `npm test` for the MCP smoke suite')
-      process.exit(2)
-      return
+      console.error(
+        "[wplab] smoke not yet wired into CLI — use `npm test` for the MCP smoke suite",
+      );
+      process.exit(2);
+      return;
     }
-    case 'serve':
-    case '--stdio':
+    case "serve":
+    case "--stdio":
     case undefined: {
-      const { shutdown } = await createServer()
+      const { shutdown } = await createServer();
 
       const onSignal = (signal: NodeJS.Signals) => {
-        log.info(`signal received — closing targets`, { signal })
+        log.info(`signal received — closing targets`, { signal });
         shutdown()
           .then(() => process.exit(0))
           .catch((err: unknown) => {
-            log.error('shutdown error', { err: (err as Error).message })
-            process.exit(1)
-          })
-      }
+            log.error("shutdown error", { err: (err as Error).message });
+            process.exit(1);
+          });
+      };
 
-      process.on('SIGINT', onSignal)
-      process.on('SIGTERM', onSignal)
-      return
+      process.on("SIGINT", onSignal);
+      process.on("SIGTERM", onSignal);
+      return;
     }
     default: {
-      console.error(`[wplab] unknown command: ${cmd}`)
-      console.error('Usage: rolepod-wplab [serve|doctor|credentials|memory|replay|smoke]')
-      process.exit(2)
+      console.error(`[wplab] unknown command: ${cmd}`);
+      console.error(
+        "Usage: rolepod-wplab [serve|doctor|init|credentials|memory|replay|companion|smoke]",
+      );
+      process.exit(2);
     }
   }
 }
 
 main().catch((err: unknown) => {
-  log.error('fatal', { err: (err as Error).message, stack: (err as Error).stack })
-  process.exit(1)
-})
+  log.error("fatal", {
+    err: (err as Error).message,
+    stack: (err as Error).stack,
+  });
+  process.exit(1);
+});

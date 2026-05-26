@@ -1,4 +1,4 @@
-import type { Target } from '../runtime/Target.js'
+import type { Target } from "../runtime/Target.js";
 
 /**
  * Adapter contract (W-023).
@@ -18,25 +18,25 @@ import type { Target } from '../runtime/Target.js'
  */
 export interface Adapter<TRead, TWrite = never> {
   /** Lowercase slug — must match the WP plugin slug exactly. */
-  readonly slug: string
+  readonly slug: string;
 
   /** Optional human-readable name for diagnostics. */
-  readonly name?: string
+  readonly name?: string;
 
   /** Range of plugin versions this adapter is tested against. */
-  readonly supportedRange?: { min: string; testedUpTo: string }
+  readonly supportedRange?: { min: string; testedUpTo: string };
 
   /** Cheap probe: is the plugin active on this target? */
-  detect(target: Target): Promise<boolean>
+  detect(target: Target): Promise<boolean>;
 
   /** Plugin-version-discovery for warning when outside testedRange. */
-  versionOn?(target: Target): Promise<string | null>
+  versionOn?(target: Target): Promise<string | null>;
 
   /** Typed read methods. */
-  read: TRead
+  read: TRead;
 
   /** Optional typed write methods. */
-  write?: TWrite
+  write?: TWrite;
 }
 
 /**
@@ -45,13 +45,13 @@ export interface Adapter<TRead, TWrite = never> {
  * (e.g. needs companion executePhp but companion absent).
  */
 export class AdapterUnavailableError extends Error {
-  readonly adapter: string
-  readonly reason: string
+  readonly adapter: string;
+  readonly reason: string;
 
   constructor(adapter: string, reason: string) {
-    super(`Adapter '${adapter}' unavailable: ${reason}`)
-    this.name = 'AdapterUnavailableError'
-    this.adapter = adapter
-    this.reason = reason
+    super(`Adapter '${adapter}' unavailable: ${reason}`);
+    this.name = "AdapterUnavailableError";
+    this.adapter = adapter;
+    this.reason = reason;
   }
 }

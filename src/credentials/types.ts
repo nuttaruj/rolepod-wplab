@@ -1,14 +1,14 @@
 export interface Credential {
   /** Canonical hostname, e.g. "walnutztudio.com" (lowercase, no scheme, no port). */
-  site: string
+  site: string;
   /** WP user login (not email). */
-  username: string
+  username: string;
   /** WP Application Password. Never logged. Never serialized to artifacts. */
-  appPassword: string
+  appPassword: string;
   /** ISO 8601. */
-  addedAt: string
+  addedAt: string;
   /** ISO 8601, optional — runtime updates via `touch`. */
-  lastUsedAt?: string
+  lastUsedAt?: string;
 }
 
 /**
@@ -16,21 +16,21 @@ export interface Credential {
  * Lead. Contains no secrets.
  */
 export interface CredentialMeta {
-  site: string
-  username: string
-  addedAt: string
-  lastUsedAt?: string
-  source: 'keychain' | 'file'
+  site: string;
+  username: string;
+  addedAt: string;
+  lastUsedAt?: string;
+  source: "keychain" | "file";
 }
 
 export interface Vault {
-  add(c: Credential): Promise<void>
+  add(c: Credential): Promise<void>;
   /** Returns the credential including raw secret. Use only inside runtime auth. */
-  get(site: string): Promise<Credential | null>
-  list(): Promise<CredentialMeta[]>
-  remove(site: string): Promise<boolean>
+  get(site: string): Promise<Credential | null>;
+  list(): Promise<CredentialMeta[]>;
+  remove(site: string): Promise<boolean>;
   /** Update lastUsedAt without touching the secret. */
-  touch(site: string): Promise<void>
+  touch(site: string): Promise<void>;
 }
 
 /**
@@ -43,15 +43,17 @@ export interface Vault {
  *                                                 but RestTarget refuses http:// at connect time)
  */
 export function canonicalizeSite(input: string): string {
-  const trimmed = input.trim()
-  if (!trimmed) throw new Error('site cannot be empty')
+  const trimmed = input.trim();
+  if (!trimmed) throw new Error("site cannot be empty");
   // If it parses as a URL, take hostname; otherwise treat the input as a bare hostname.
-  let host: string
+  let host: string;
   try {
-    const u = new URL(/^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`)
-    host = u.hostname
+    const u = new URL(
+      /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`,
+    );
+    host = u.hostname;
   } catch {
-    throw new Error(`invalid site: ${input}`)
+    throw new Error(`invalid site: ${input}`);
   }
-  return host.toLowerCase()
+  return host.toLowerCase();
 }

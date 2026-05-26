@@ -1,32 +1,32 @@
-import { makeRunId } from '../../artifact/runId.js'
-import { ProdGuard } from '../../safety/ProdGuard.js'
+import { makeRunId } from "../../artifact/runId.js";
+import { ProdGuard } from "../../safety/ProdGuard.js";
 import {
   ScaffoldThemeInputSchema,
   ScaffoldThemeOutputSchema,
   type ScaffoldThemeInput,
   type ScaffoldThemeOutput,
-} from '../../schema/tools.js'
-import type { TargetRegistry } from '../../target/TargetRegistry.js'
+} from "../../schema/tools.js";
+import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const wpScaffoldThemeToolDef = {
-  name: 'rolepod_wp_scaffold_theme',
+  name: "rolepod_wp_scaffold_theme",
   description:
-    'Bootstrap a minimum-viable WordPress block-theme (style.css + theme.json + functions.php + templates/index.html) under wp-content/themes/<slug>/. Requires allow_destructive=true. Production guard applies.',
+    "Bootstrap a minimum-viable WordPress block-theme (style.css + theme.json + functions.php + templates/index.html) under wp-content/themes/<slug>/. Requires allow_destructive=true. Production guard applies.",
   inputSchema: ScaffoldThemeInputSchema,
-}
+};
 
 export async function wpScaffoldThemeHandler(
   registry: TargetRegistry,
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<ScaffoldThemeOutput> {
-  const input: ScaffoldThemeInput = ScaffoldThemeInputSchema.parse(raw)
-  const target = registry.get(input.target_id)
-  prodGuard.enforce(target.siteurl)
+  const input: ScaffoldThemeInput = ScaffoldThemeInputSchema.parse(raw);
+  const target = registry.get(input.target_id);
+  prodGuard.enforce(target.siteurl);
 
-  const runId = makeRunId()
-  const dir = `wp-content/themes/${input.slug}`
-  const written: string[] = []
+  const runId = makeRunId();
+  const dir = `wp-content/themes/${input.slug}`;
+  const written: string[] = [];
 
   const styleCss = `/*
 Theme Name: ${input.name}
@@ -37,23 +37,31 @@ Requires at least: 6.0
 Requires PHP: 7.4
 Text Domain: ${input.slug}
 */
-`
-  await target.fileWrite(`${dir}/style.css`, styleCss, { backup: false })
-  written.push(`${dir}/style.css`)
+`;
+  await target.fileWrite(`${dir}/style.css`, styleCss, { backup: false });
+  written.push(`${dir}/style.css`);
 
   const themeJson = {
-    $schema: 'https://schemas.wp.org/trunk/theme.json',
+    $schema: "https://schemas.wp.org/trunk/theme.json",
     version: 2,
     settings: {
-      color: { palette: [{ slug: 'primary', color: '#1a1a2e', name: 'Primary' }] },
-      typography: { fontSizes: [{ slug: 'normal', size: '1rem', name: 'Normal' }] },
+      color: {
+        palette: [{ slug: "primary", color: "#1a1a2e", name: "Primary" }],
+      },
+      typography: {
+        fontSizes: [{ slug: "normal", size: "1rem", name: "Normal" }],
+      },
     },
     styles: {
-      typography: { fontSize: 'var(--wp--preset--font-size--normal)' },
+      typography: { fontSize: "var(--wp--preset--font-size--normal)" },
     },
-  }
-  await target.fileWrite(`${dir}/theme.json`, JSON.stringify(themeJson, null, 2), { backup: false })
-  written.push(`${dir}/theme.json`)
+  };
+  await target.fileWrite(
+    `${dir}/theme.json`,
+    JSON.stringify(themeJson, null, 2),
+    { backup: false },
+  );
+  written.push(`${dir}/theme.json`);
 
   const functions = `<?php
 /**
@@ -68,9 +76,9 @@ add_action('after_setup_theme', function () {
     add_theme_support('responsive-embeds');
     add_theme_support('editor-styles');
 });
-`
-  await target.fileWrite(`${dir}/functions.php`, functions, { backup: false })
-  written.push(`${dir}/functions.php`)
+`;
+  await target.fileWrite(`${dir}/functions.php`, functions, { backup: false });
+  written.push(`${dir}/functions.php`);
 
   const indexHtml = `<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
 
@@ -81,18 +89,22 @@ add_action('after_setup_theme', function () {
 <!-- /wp:group -->
 
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
-`
-  await target.fileWrite(`${dir}/templates/index.html`, indexHtml, { backup: false })
-  written.push(`${dir}/templates/index.html`)
+`;
+  await target.fileWrite(`${dir}/templates/index.html`, indexHtml, {
+    backup: false,
+  });
+  written.push(`${dir}/templates/index.html`);
 
   const partsHeader = `<!-- wp:group {"tagName":"div","layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
   <!-- wp:site-title /-->
 </div>
 <!-- /wp:group -->
-`
-  await target.fileWrite(`${dir}/parts/header.html`, partsHeader, { backup: false })
-  written.push(`${dir}/parts/header.html`)
+`;
+  await target.fileWrite(`${dir}/parts/header.html`, partsHeader, {
+    backup: false,
+  });
+  written.push(`${dir}/parts/header.html`);
 
   const partsFooter = `<!-- wp:group {"tagName":"div","layout":{"type":"constrained"}} -->
 <div class="wp-block-group">
@@ -101,14 +113,16 @@ add_action('after_setup_theme', function () {
   <!-- /wp:paragraph -->
 </div>
 <!-- /wp:group -->
-`
-  await target.fileWrite(`${dir}/parts/footer.html`, partsFooter, { backup: false })
-  written.push(`${dir}/parts/footer.html`)
+`;
+  await target.fileWrite(`${dir}/parts/footer.html`, partsFooter, {
+    backup: false,
+  });
+  written.push(`${dir}/parts/footer.html`);
 
   return ScaffoldThemeOutputSchema.parse({
     run_id: runId,
     theme_path: dir,
     files_written: written,
     activate_command: `wp theme activate ${input.slug}`,
-  })
+  });
 }

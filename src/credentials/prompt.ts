@@ -1,15 +1,15 @@
-import { createInterface } from 'node:readline/promises'
-import { stdin, stdout } from 'node:process'
+import { createInterface } from "node:readline/promises";
+import { stdin, stdout } from "node:process";
 
 /**
  * Plain-text input from stdin (visible echo). Use for usernames + confirms.
  */
 export async function ask(question: string): Promise<string> {
-  const rl = createInterface({ input: stdin, output: stdout })
+  const rl = createInterface({ input: stdin, output: stdout });
   try {
-    return (await rl.question(question)).trim()
+    return (await rl.question(question)).trim();
   } finally {
-    rl.close()
+    rl.close();
   }
 }
 
@@ -24,57 +24,57 @@ export async function ask(question: string): Promise<string> {
  */
 export async function askSecret(question: string): Promise<string> {
   if (!stdin.isTTY) {
-    return ask(question)
+    return ask(question);
   }
 
-  stdout.write(question)
-  const wasRaw = stdin.isRaw
-  stdin.setRawMode?.(true)
-  stdin.resume()
-  stdin.setEncoding('utf8')
+  stdout.write(question);
+  const wasRaw = stdin.isRaw;
+  stdin.setRawMode?.(true);
+  stdin.resume();
+  stdin.setEncoding("utf8");
 
   return new Promise<string>((resolve, reject) => {
-    let buf = ''
+    let buf = "";
 
     const onData = (chunk: string): void => {
       for (const ch of chunk) {
         switch (ch) {
-          case '\r':
-          case '\n':
-            cleanup()
-            stdout.write('\n')
-            resolve(buf)
-            return
-          case '': // Ctrl-C
-            cleanup()
-            stdout.write('\n')
-            reject(new Error('aborted by user'))
-            return
-          case '': // backspace (DEL)
-          case '\b':
-            if (buf.length > 0) buf = buf.slice(0, -1)
-            break
+          case "\r":
+          case "\n":
+            cleanup();
+            stdout.write("\n");
+            resolve(buf);
+            return;
+          case "": // Ctrl-C
+            cleanup();
+            stdout.write("\n");
+            reject(new Error("aborted by user"));
+            return;
+          case "": // backspace (DEL)
+          case "\b":
+            if (buf.length > 0) buf = buf.slice(0, -1);
+            break;
           default:
-            if (ch >= ' ') buf += ch
-            break
+            if (ch >= " ") buf += ch;
+            break;
         }
       }
-    }
+    };
 
     const cleanup = (): void => {
-      stdin.off('data', onData)
-      stdin.setRawMode?.(wasRaw)
-      stdin.pause()
-    }
+      stdin.off("data", onData);
+      stdin.setRawMode?.(wasRaw);
+      stdin.pause();
+    };
 
-    stdin.on('data', onData)
-  })
+    stdin.on("data", onData);
+  });
 }
 
 /**
  * Yes/no prompt — defaults to no.
  */
 export async function confirm(question: string): Promise<boolean> {
-  const answer = (await ask(`${question} [y/N] `)).toLowerCase()
-  return answer === 'y' || answer === 'yes'
+  const answer = (await ask(`${question} [y/N] `)).toLowerCase();
+  return answer === "y" || answer === "yes";
 }

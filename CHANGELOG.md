@@ -2,6 +2,61 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-05-26 — Parity + lead expansion (Tier A/B/C/D)
+
+### Added — Tier A (close a third-party plugin gaps)
+
+- `rolepod_wp_divi_read` / `rolepod_wp_divi_write` — Divi Builder pages (post_content shortcodes + `_et_pb_use_builder` flag).
+- `rolepod_wp_oxygen_read` / `rolepod_wp_oxygen_write` — Oxygen Builder (`ct_builder_shortcodes` post meta).
+- `rolepod_wp_bricks_write` — extends Bricks adapter with page / header / footer element-tree writes.
+- `rolepod_wp_yoast_write` — Yoast SEO post meta (focus_keyword / meta_description / title / canonical / noindex).
+- `rolepod_wp_rankmath_write` — Rank Math SEO post meta (mirrors Yoast surface).
+- `rolepod_wp_wpml_write` — set_post_language / link_translations / duplicate_for_translation ops.
+
+### Added — Tier B (exceed a third-party plugin surface)
+
+- `rolepod_wp_forms_read` / `rolepod_wp_forms_write` — unified Gravity / Contact Form 7 / WPForms adapter with auto-detect.
+- `rolepod_wp_cron_tool` — list / run / delete WP-Cron events.
+- `rolepod_wp_cache_tool` — inspect object cache + transient counts; flush_object / flush_transients ops.
+- `rolepod_wp_mail_test` — send test email via wp_mail() (companion execute-php preferred, wp-cli `wp eval` fallback).
+- `rolepod_wp_clone` — composite: db export+import + wp-content sync + url search-replace + plugin version sync.
+- `rolepod_wp_backup_create` / `rolepod_wp_backup_restore` — db dump + wp-content manifest snapshots.
+
+### Added — Tier C (setup UX parity)
+
+- `rolepod-wplab init` — interactive 5-step wizard (App Password + REST probe + handshake + credential store + starter profile).
+- `rolepod-wplab companion install --target=<host>` — probe + emit copy-paste wp-cli installer command.
+- `rolepod-wplab companion status --target=<host>` — handshake check + capability dump.
+- Companion plugin: new **Tools → WPLab Setup** wizard page with App Password + MCP install copy-paste blocks.
+
+### Added — Tier D (moat extend)
+
+- `rolepod_wp_user_session_list` — enumerate active user sessions via `wp_usermeta.session_tokens` (security audit).
+- `rolepod_wp_rest_dump` — enumerate every registered REST route (optional `filter_namespace`).
+- `rolepod_wp_scaffold_pattern` — scaffolds a block pattern PHP file inside a theme or plugin.
+- `rolepod_wp_diagnose` — non-destructive sweep: plugin_conflict_probe / slow_queries / large_options / broken_images / php_errors.
+
+### Changed
+
+- `AllowList.ts` — added wp-cli READ_ONLY entries: `transient list`, `cache type`, `user session list`.
+- `AllowList.ts` — added wp-cli DESTRUCTIVE entries: `cron event run` / `delete` / `schedule`, `cache flush`, `transient delete` / `delete-expired`, `db export` / `import`, `search-replace`, `wpml`, `gf`, `user session destroy`.
+- `tests/smoke/mcp-handshake.test.ts` — expected tool count 41 → 61.
+
+### Numbers
+
+- **MCP tools**: 41 → 61 (+20).
+- **Adapters**: 8 (Elementor / Woo / ACF / Bricks / WPML / Yoast / RankMath) + 3 new dir (Divi / Oxygen / Forms).
+- **CLI subcommands**: 5 → 7 (added `init`, `companion`).
+- **Companion REST endpoints**: 8 (unchanged).
+- **Unit + smoke tests**: 117 passing.
+
+### Notes
+
+- Schema-freeze policy honored: every new tool is **additive** (new tool names). No existing input/output schema fields changed.
+- Forms adapter `list_entries` is wired for Gravity Forms in v1.1; CF7 / WPForms entries land in plugin-private tables — adapter returns empty for those scopes in v1.1 (planned for v1.2 once both expose entry REST routes consistently).
+- `wp_clone` `wp_content` scope copies top-level entries only — full deep tree sync (large media) is deferred to v1.2 with a companion `fs-rsync` endpoint.
+- `wp_backup_restore` `wp_content` scope is manifest-verify only in v1.1; deep restore requires batch fs-write API (v1.2).
+
 ## [1.0.0] — 2026-05-25 — Stable (schema-frozen)
 
 ### Schema-freeze promise

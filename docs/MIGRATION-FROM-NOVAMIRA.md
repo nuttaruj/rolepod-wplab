@@ -20,24 +20,39 @@ Recommended migration flow:
 
 ## Feature parity matrix
 
-| a third-party plugin feature | wplab equivalent | Status |
+| a third-party plugin feature | wplab equivalent | Status (as of v1.1) |
 |---|---|---|
 | `execute-php` | `rolepod_wp_execute_php` (companion + power profile + non-prod) | ✅ ceiling matched |
-| `db-query` arbitrary | `rolepod_wp_db_query` (SELECT-only default; `allow_write: true` + prod-guard for writes) | ✅ safer-default |
-| File ops | `rolepod_wp_file_read` / `_write` (scoped to wp-content + wp-config) | ✅ scope-bounded |
+| `db-query` arbitrary | `rolepod_wp_db_query` (SELECT-only default; `allow_write: true` + prod-guard) | ✅ safer-default |
+| File ops | `rolepod_wp_file_{read,write}` (scoped to wp-content + wp-config) | ✅ scope-bounded |
 | Plugin / theme list + install | `rolepod_wp_cli_run` (allow-listed) | ✅ same surface |
-| Post / option / user CRUD | typed `wp_post_*`, `wp_option_*`, `wp_user_list` (via REST) | ✅ typed |
+| Post / option / user CRUD | typed `wp_post_*`, `wp_option_*`, `wp_user_list` | ✅ typed |
 | WP-CLI passthrough | `rolepod_wp_cli_run` allow-list + `allow_destructive` | ✅ guarded |
 | Bulk product price update | `rolepod_wp_woo_write { op: bulk_update_prices }` | ✅ |
-| Page-builder edit (Elementor / Bricks) | `rolepod_wp_elementor_{read,write}` + `wp_bricks_read` | ✅ Elementor + Bricks; Divi/Oxygen post-v1.0 |
+| Elementor edit | `rolepod_wp_elementor_{read,write}` | ✅ |
+| Bricks edit | `rolepod_wp_bricks_{read,write}` (v1.1 write added) | ✅ |
+| **Divi edit** | `rolepod_wp_divi_{read,write}` (v1.1) | ✅ |
+| **Oxygen edit** | `rolepod_wp_oxygen_{read,write}` (v1.1) | ✅ |
 | ACF field group operations | `rolepod_wp_acf_{read,write}` | ✅ |
-| Yoast / Rank Math read | `rolepod_wp_yoast_read` + `wp_rankmath_read` | ✅ read; write post-v1.0 |
-| WPML translations | `rolepod_wp_wpml_read` | ✅ read; write post-v1.0 |
+| Yoast read + write | `rolepod_wp_yoast_{read,write}` (v1.1 write added) | ✅ |
+| RankMath read + write | `rolepod_wp_rankmath_{read,write}` (v1.1 write added) | ✅ |
+| WPML translations (read + write) | `rolepod_wp_wpml_{read,write}` (v1.1 write added) | ✅ |
+| **Form plugins (Gravity / CF7 / WPForms)** | `rolepod_wp_forms_{read,write}` (v1.1) | ✅ wplab-unique |
+| **WP-Cron inspect + control** | `rolepod_wp_cron_tool` (v1.1) | ✅ wplab-unique |
+| **Cache + transient ops** | `rolepod_wp_cache_tool` (v1.1) | ✅ wplab-unique |
+| **SMTP / wp_mail smoke** | `rolepod_wp_mail_test` (v1.1) | ✅ wplab-unique |
+| **Full site clone dev→staging** | `rolepod_wp_clone` (v1.1) | ✅ wplab-unique |
+| **Backup / restore** | `rolepod_wp_backup_{create,restore}` (v1.1) | ✅ wplab-unique |
+| **Active user session enumeration** | `rolepod_wp_user_session_list` (v1.1) | ✅ wplab-unique |
+| **REST surface discovery** | `rolepod_wp_rest_dump` (v1.1) | ✅ wplab-unique |
+| **Block pattern scaffold** | `rolepod_wp_scaffold_pattern` (v1.1) | ✅ wplab-unique |
+| **Diagnostic sweep (conflict / slow / errors)** | `rolepod_wp_diagnose` (v1.1) | ✅ wplab-unique |
 | Per-site memory (a third-party plugin Pro) | `rolepod_wp_memory_{recall,note,list}` + `memory` CLI | ✅ local-only, $0 |
 | Mid-request hook observation | `rolepod_wp_introspect { scope: hooks }` + companion `request-observer` | ✅ |
 | Persistent PHP eval context | companion `php-session` endpoint | ✅ |
-| Multi-site management | 1 MCP, N targets via `connect_local` / `connect_rest` / `connect_ssh` / `connect_docker` | ✅✅ (a third-party plugin: install plugin per site) |
+| Multi-site management | 1 MCP, N targets via `connect_local` / `connect_rest` / `connect_ssh` / `connect_docker` | ✅✅ |
 | Cross-target diff / migrate | `wp_migrate_dryrun` + `wp_migrate_data` + `wp_audit_many` | ✅✅ |
+| **Setup wizard (admin UI)** | Companion **Tools → WPLab Setup** page (v1.1) + `rolepod-wplab init` CLI | ✅ |
 
 ## Key behavioral differences
 
