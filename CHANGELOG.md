@@ -2,6 +2,37 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] — 2026-05-26 — Cross-component contract + rolepod-wp companion rename
+
+### Added
+
+- `src/companion/constants.ts` — single source of truth for the cross-repo contract:
+  - `COMPANION_INSTALL_URL` — stable `releases/latest/download/rolepod-wp.zip` URL
+  - `COMPANION_PLUGIN_SLUG = "rolepod-wp"`
+  - `COMPANION_REPO_URL = https://github.com/nuttaruj/rolepod-wp`
+  - `MIN_COMPANION_VERSION = "2.0.0"` — version-compat floor; warns post-pair if companion is older
+  - `compareVersions()` + `isCompanionTooOld()` helpers
+  - `setupWizardUrlFor(siteurl)` builder targeting `?page=rolepod-wp-setup`
+- 5 unit tests for the new constants module (147 → 152 total tests, all green).
+
+### Changed
+
+- `wp_connect_rest` `CREDENTIALS_MISSING` + `COMPANION_REQUIRED_BUT_MISSING` errors now embed the stable install URL + a `wp plugin install <URL> --activate` one-liner so AI agents can hand users a copy-paste command.
+- `wp_pair` post-pair warns when companion_version < MIN_COMPANION_VERSION (non-blocking).
+- `CompanionUnavailableError` accepts `installUrl` hint; surfaces in error message + meta.
+- `Bridge.ts` handshake 404 + introspect 404 now pass the install URL hint.
+- `runtime/RestTarget.ts` REST_AUTH_FAILED guidance uses `setupWizardUrlFor()` + "Rolepod WP Setup" wording.
+- `bin/companion.ts` install command emits from constant.
+- `bin/init.ts` no-companion message references the new "rolepod-wp" name.
+- README Path A install URL switched to the new stable `rolepod-wp.zip` URL.
+- README + CONTRIBUTING + SECURITY rephrased to call the WP plugin `rolepod-wp` (the WordPress arm of the [Rolepod ecosystem](https://github.com/nuttaruj/rolepod)) rather than "companion".
+- 4 marketplace manifest descriptions rephrased to match the new positioning.
+- CONTRIBUTING gains a release-protocol section: version-pair convention across the two repos, MIN_COMPANION_VERSION bump rule, "never ship MCP before companion zip is live" ordering.
+
+### Pairs with
+
+- `rolepod-wp` v2.0.0 (the renamed companion plugin). Existing v1.x companion installs continue to handshake on `/wplab/v1/*` for wire compatibility, but install URL guidance now points at the new repo.
+
 ## [1.2.4] — 2026-05-26 — Schema-verified plugin marketplaces (Claude Code + Codex)
 
 ### Added
