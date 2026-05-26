@@ -75,6 +75,14 @@ Skills are not auto-registered under Cursor (no unified plugin format yet). The 
 
 ### Codex CLI
 
+```bash
+# Install via marketplace (reads .agents/plugins/marketplace.json + .codex-plugin/plugin.json from this repo)
+codex plugin marketplace add nuttaruj/rolepod-wplab
+codex plugin install rolepod-wplab@rolepod-wplab
+```
+
+Or drop-in config (no plugin install — just MCP wiring):
+
 ```toml
 # ~/.codex/config.toml
 [mcp_servers.rolepod-wplab]
@@ -95,6 +103,8 @@ args = ["-y", "@rolepod/wplab@latest", "serve"]
   }
 }
 ```
+
+Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 62 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Direct npm (any MCP-aware tool)
 

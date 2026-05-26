@@ -1,0 +1,39 @@
+{
+  "name": "rolepod-wplab",
+  "version": "1.2.4",
+  "description": "WordPress operations toolkit for AI coding agents — 62 MCP tools + 11 skills (/wp-pair-setup, /wp-health-check, /wp-scaffold-{block,plugin,theme}, /wp-audit-{security,woo}, /wp-edit-elementor, /wp-introspect, /wp-execute-php, /wp-migrate-dryrun). 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; companion plugin unlocks execute-php + runtime introspection + one-click pair setup.",
+  "author": {
+    "name": "nuttaruj",
+    "url": "https://github.com/nuttaruj"
+  },
+  "homepage": "https://github.com/nuttaruj/rolepod-wplab",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuttaruj/rolepod-wplab"
+  },
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "wordpress",
+    "wp-cli",
+    "rest-api",
+    "automation",
+    "ai-agents"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Rolepod WPLab",
+    "shortDescription": "WordPress operations toolkit — 62 MCP tools, 11 skills, 4 connection kinds, opt-in companion for execute-php + one-click pair.",
+    "longDescription": "rolepod-wplab ships an MCP server with 62 tools and 11 user-invocable skills. Connect any WordPress install via local filesystem, HTTPS REST + App Password, SSH, or Docker. Default-safe surface covers wp-cli (allow-listed), REST CRUD, scoped fs writes, page-builder adapters (Elementor / Divi / Oxygen / Bricks), SEO + WPML write, WooCommerce, ACF, forms (Gravity / CF7 / WPForms), cron, cache, mail-test, full site clone, backup, diagnose, scaffold (block / plugin / theme / pattern). Install the optional companion WordPress plugin to unlock execute-php (AST-screened on both sides), runtime introspection, and the one-click 'Generate setup prompt' wizard that pairs the AI in 30 seconds.",
+    "developerName": "nuttaruj",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write", "Bash"],
+    "websiteURL": "https://github.com/nuttaruj/rolepod-wplab",
+    "defaultPrompt": [
+      "Use /wp-pair-setup with this pair token to connect my WordPress site.",
+      "Use /wp-health-check to confirm the target is reachable + companion is present.",
+      "Use /wp-audit-security to scan the connected site for outdated core/plugins/themes + weak admins."
+    ]
+  }
+}

@@ -2,6 +2,34 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] — 2026-05-26 — Schema-verified plugin marketplaces (Claude Code + Codex)
+
+### Added
+
+- **`.claude-plugin/marketplace.json`** — enables `claude plugin marketplace add nuttaruj/rolepod-wplab` + `claude plugin install rolepod-wplab@rolepod-wplab`. Schema-verified against https://code.claude.com/docs/en/plugin-marketplaces.
+- **`.codex-plugin/plugin.json`** — Codex CLI plugin manifest with full `interface` block (displayName, shortDescription, longDescription, capabilities, defaultPrompt). Schema-verified against https://developers.openai.com/codex/plugins/build.
+- **`.agents/plugins/marketplace.json`** — Codex local marketplace catalog with `source.path: "./"` (plugin lives at repo root, not in a subdir). Schema-verified against same source.
+
+### Changed
+
+- README **Codex CLI** section gets the marketplace install path (in addition to the manual `config.toml` snippet).
+- README **Gemini CLI** section now notes skills are not auto-registered (no stable extension format yet — matches the rolepod-uiproof honesty).
+- `package.json` `files[]` adds `.codex-plugin` + `.agents` so the marketplace catalogs ship with the npm package.
+
+### Schema-bound source URLs (locked in for SCHEMA-BOUND-file hook policy)
+
+| File | Source |
+|---|---|
+| `.claude-plugin/marketplace.json` | https://code.claude.com/docs/en/plugin-marketplaces |
+| `.claude-plugin/plugin.json` | https://code.claude.com/docs/en/plugins-reference |
+| `.codex-plugin/plugin.json` | https://developers.openai.com/codex/plugins/build |
+| `.agents/plugins/marketplace.json` | https://developers.openai.com/codex/plugins/build |
+
+### Numbers
+
+- MCP tools: 62 (unchanged).
+- Tests: 141 passing.
+
 ## [1.2.3] — 2026-05-26 — Install path fixes + README rewrite
 
 ### Fixed
