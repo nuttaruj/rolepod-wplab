@@ -5,17 +5,17 @@ describe("PairInputSchema — wire format gate", () => {
   it("accepts well-formed https url + 48-hex token", () => {
     const v = PairInputSchema.parse({
       siteurl: "https://walnutztudio.com",
-      pair_token: "wplab_pair_" + "a".repeat(48),
+      pair_token: "rolepod_wp_pair_" + "a".repeat(48),
     });
     expect(v.siteurl).toBe("https://walnutztudio.com");
-    expect(v.pair_token.length).toBe("wplab_pair_".length + 48);
+    expect(v.pair_token.length).toBe("rolepod_wp_pair_".length + 48);
   });
 
   it("rejects http (non-https) siteurl — pair must never traverse plaintext", () => {
     expect(() =>
       PairInputSchema.parse({
         siteurl: "http://walnutztudio.com",
-        pair_token: "wplab_pair_" + "0".repeat(48),
+        pair_token: "rolepod_wp_pair_" + "0".repeat(48),
       }),
     ).toThrow();
   });
@@ -33,7 +33,7 @@ describe("PairInputSchema — wire format gate", () => {
     expect(() =>
       PairInputSchema.parse({
         siteurl: "https://walnutztudio.com",
-        pair_token: "wplab_pair_abc",
+        pair_token: "rolepod_wp_pair_abc",
       }),
     ).toThrow();
   });
@@ -42,7 +42,7 @@ describe("PairInputSchema — wire format gate", () => {
     expect(() =>
       PairInputSchema.parse({
         siteurl: "https://walnutztudio.com",
-        pair_token: "wplab_pair_" + "z".repeat(48),
+        pair_token: "rolepod_wp_pair_" + "z".repeat(48),
       }),
     ).toThrow();
   });
