@@ -2,6 +2,26 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.8] — 2026-05-27 — 6 more adapter writes accept RestTarget+companion (bricks/oxygen/divi/wpml/elementor/forms)
+
+Round 6 page-builder swap test surfaced more adapters with the same stale
+shell-only gate that yoast/rankmath had. All 6 patched to accept
+`target.kind === "rest" && target.companion?.enabled`:
+
+- elementor_write
+- bricks_write
+- oxygen_write
+- divi_write
+- wpml_write
+- forms_write
+
+Same one-liner change as v1.11.7 — extend the kind check, leave the rest
+of the path (target.wpCli + scoped fileWrite) untouched. Companion v2.7.x
+already proxies wp-cli and file-write through REST; the adapter just had
+to stop refusing the connection kind.
+
+After this patch all 13 `_write` adapters work on RestTarget+companion.
+
 ## [1.11.7] — 2026-05-27 — JsonObjectSchema + yoast/rankmath write accept RestTarget+companion
 
 Round 6 Batch 4 (adapter writes) surfaced 2 issues fixed here.

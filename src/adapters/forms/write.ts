@@ -23,10 +23,11 @@ function requireShell(target: Target): void {
   if (
     target.kind !== "local" &&
     target.kind !== "ssh" &&
-    target.kind !== "docker"
+    target.kind !== "docker" &&
+    !(target.kind === "rest" && target.companion?.enabled)
   ) {
     throw new Error(
-      "forms write requires shell-capable target (Gravity Forms CLI).",
+      "forms write requires shell-capable target OR RestTarget with companion (Gravity Forms CLI).",
     );
   }
 }

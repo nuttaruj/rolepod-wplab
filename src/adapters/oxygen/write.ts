@@ -17,7 +17,8 @@ export const oxygenWrite: OxygenWriteAPI = {
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
         "oxygenWrite.updatePageShortcodes requires a shell-capable target.",

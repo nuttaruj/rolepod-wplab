@@ -90,7 +90,8 @@ export const wpmlWrite: WpmlWriteAPI = {
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
         "wpml duplicateForTranslation requires shell-capable target (uses WPML CLI).",

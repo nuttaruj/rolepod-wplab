@@ -18,7 +18,8 @@ export const diviWrite: DiviWriteAPI = {
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
         "diviWrite.updatePageContent requires a shell-capable target. RestTarget needs companion fs/exec.",

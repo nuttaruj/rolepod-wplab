@@ -14,10 +14,11 @@ export const elementorWrite: ElementorWriteAPI = {
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
-        "elementorWrite.updatePageData requires a shell-capable target (Local/Ssh/Docker). RestTarget support lands when companion fs-write is wired (v0.2 companion).",
+        "elementorWrite.updatePageData requires a shell-capable target OR a RestTarget with companion enabled.",
       );
     }
 

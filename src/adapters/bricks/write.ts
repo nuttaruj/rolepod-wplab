@@ -33,9 +33,12 @@ async function replaceMeta(
   if (
     target.kind !== "local" &&
     target.kind !== "ssh" &&
-    target.kind !== "docker"
+    target.kind !== "docker" &&
+    !(target.kind === "rest" && target.companion?.enabled)
   ) {
-    throw new Error("bricksWrite requires a shell-capable target.");
+    throw new Error(
+      "bricksWrite requires a shell-capable target OR a RestTarget with companion enabled.",
+    );
   }
   const before = await target.wpCli([
     "post",
