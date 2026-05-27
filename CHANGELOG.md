@@ -2,6 +2,67 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] — 2026-05-27 — Sub-gap closeout: backup tmp dir, db-query endpoint, power-profile UX
+
+Closes 3 sub-gaps surfaced during v1.10.1 retest of E2E gaps. Pairs with
+companion v2.7.1.
+
+### Fixed — sub-gap A: `backup_create` `wp db export` exit 1
+
+Root cause: `wp-content/uploads/wplab-tmp/` did not exist; mysqldump errno 2.
+Fix in companion v2.7.1: `WpCli` endpoint now calls `wp_mkdir_p` for the
+scratch dir before exec. Idempotent + cheap. `backup_create` now succeeds
+on RestTarget with companion.
+
+### Fixed — sub-gap B: `diagnose` slow_queries + large_options query failures
+
+Two root causes:
+1. `wp db query` over the wp-cli endpoint does NOT substitute `{prefix}`
+   placeholders — the literal string went straight to mysql, got
+   "Unknown table" error.
+2. Shell quoting of SQL with single/double quotes is brittle.
+
+Fix: companion v2.7.1 adds `POST /wp-json/wplab/v1/db-query` —
+SELECT/SHOW/DESCRIBE/EXPLAIN/WITH only, `$wpdb->prepare` parameter binding,
+auto-substitutes `{prefix}` → `$wpdb->prefix`. `diagnose` now routes
+through `bridge.dbQuery()` for RestTarget+companion, with fallback to
+`wp db query` for shell-capable targets without companion.
+
+### Added — `Bridge.dbQuery(sql, params?)`
+
+Thin wrapper around `/wplab/v1/db-query`. Reusable for any read-only DB
+introspection tool. Refuses non-SELECT at companion side; binds params
+via `$wpdb->prepare`.
+
+### Fixed — sub-gap C: `wp_execute_php` POWER_PROFILE UX
+
+`PowerProfileRequiredError` now returns a detailed message including:
+- Exact env var name (`ROLEPOD_WPLAB_PROFILE`)
+- Required value (`power`)
+- Concrete `.mcp.json` snippet ready to paste
+- Why the gate exists (execute-php = arbitrary PHP, opt-in by design)
+- Confirmation that other MCP tools work without the gate
+
+### Added — `connect_rest` exposes active profile
+
+`rolepod_wp_connect_rest` response now includes:
+```jsonc
+"profile": {
+  "active": "default" | "power",
+  "execute_php_unlocked": boolean,
+  "env_var_name": "ROLEPOD_WPLAB_PROFILE"
+}
+```
+
+AI clients can read this at connect time to know whether `wp_execute_php`
+is available without trial-and-error.
+
+### Pairs with
+
+`rolepod-wp` **v2.7.1** — `wplab-tmp` auto-mkdir + new `/db-query`
+endpoint. MIN_COMPANION_VERSION unchanged at 2.1.0; new endpoints are
+additive.
+
 ## [1.10.1] — 2026-05-27 — Patch: wave-3 PHP payload bugs surfaced in retest
 
 3 bugs caught during v1.10.0 MCP retest:

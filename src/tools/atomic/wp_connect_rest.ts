@@ -86,6 +86,12 @@ export async function wpConnectRestHandler(
   registry.register(target);
   await vault.touch(lookupKey);
 
+  // Surface the active MCP-server profile (default | power) so AI clients
+  // know whether wp_execute_php is currently unlocked. Power profile is
+  // opt-in via env var ROLEPOD_WPLAB_PROFILE=power in MCP client config.
+  const { loadProfile } = await import("../../profile/load.js");
+  const profile = loadProfile();
+
   return ConnectRestOutputSchema.parse({
     target_id: target.id,
     siteurl: target.siteurl,
@@ -101,5 +107,10 @@ export async function wpConnectRestHandler(
           capabilities: [...target.companion.capabilities],
         }
       : null,
+    profile: {
+      active: profile.profile,
+      execute_php_unlocked: profile.profile === "power",
+      env_var_name: "ROLEPOD_WPLAB_PROFILE",
+    },
   });
 }

@@ -1,6 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { makeRunId } from "../../artifact/runId.js";
+import { bridgeFor } from "../../companion/Bridge.js";
 import {
   DiagnoseInputSchema,
   DiagnoseOutputSchema,
@@ -113,6 +114,38 @@ async function pluginConflictProbe(target: Target): Promise<Finding[]> {
 }
 
 async function slowQueriesProbe(target: Target): Promise<Finding[]> {
+  // Use companion /db-query when available (RestTarget + companion) so the
+  // {prefix} placeholder gets substituted server-side via $wpdb->prefix and
+  // shell escapes don't bite. Falls back to wp-cli `db query` for
+  // shell-capable targets without companion. v2.7.0's MCP retest exposed
+  // that wp-cli does NOT substitute {prefix} — the literal string went
+  // straight to mysql and got "Unknown table" errors.
+  if (target.kind === "rest" && target.companion?.enabled) {
+    try {
+      const bridge = await bridgeFor(target);
+      const result = await bridge.dbQuery(
+        "SELECT meta_key, COUNT(*) AS rows_n, ROUND(AVG(LENGTH(meta_value))) AS avg_bytes FROM {prefix}postmeta GROUP BY meta_key ORDER BY avg_bytes DESC LIMIT 10",
+      );
+      return [
+        {
+          scope: "slow_queries",
+          severity: "info",
+          message: "top postmeta keys by avg row size",
+          detail: result.rows,
+        },
+      ];
+    } catch (err) {
+      return [
+        {
+          scope: "slow_queries",
+          severity: "warn",
+          message: "postmeta size query failed",
+          detail: (err as Error).message.slice(0, 200),
+        },
+      ];
+    }
+  }
+
   const r = await target.wpCli([
     "db",
     "query",
@@ -146,6 +179,52 @@ async function slowQueriesProbe(target: Target): Promise<Finding[]> {
 }
 
 async function largeOptionsProbe(target: Target): Promise<Finding[]> {
+  // Same pattern as slowQueriesProbe — prefer companion /db-query.
+  if (target.kind === "rest" && target.companion?.enabled) {
+    try {
+      const bridge = await bridgeFor(target);
+      const result = await bridge.dbQuery(
+        "SELECT option_name, LENGTH(option_value) AS bytes FROM {prefix}options WHERE autoload='yes' ORDER BY bytes DESC LIMIT 10",
+      );
+      const findings: Finding[] = [];
+      for (const row of result.rows) {
+        const name = String(row["option_name"] ?? "");
+        const bytes = Number(row["bytes"] ?? 0);
+        if (!name) continue;
+        if (bytes > 1_000_000) {
+          findings.push({
+            scope: "large_options",
+            severity: "critical",
+            message: `autoload option ${name} is ${(bytes / 1024 / 1024).toFixed(2)} MB — slows every page load`,
+          });
+        } else if (bytes > 200_000) {
+          findings.push({
+            scope: "large_options",
+            severity: "warn",
+            message: `autoload option ${name} is ${(bytes / 1024).toFixed(1)} KB — consider non-autoload`,
+          });
+        }
+      }
+      if (findings.length === 0) {
+        findings.push({
+          scope: "large_options",
+          severity: "info",
+          message: `no autoload options >200KB (scanned ${result.count} rows)`,
+        });
+      }
+      return findings;
+    } catch (err) {
+      return [
+        {
+          scope: "large_options",
+          severity: "warn",
+          message: "options query failed",
+          detail: (err as Error).message.slice(0, 200),
+        },
+      ];
+    }
+  }
+
   const r = await target.wpCli([
     "db",
     "query",

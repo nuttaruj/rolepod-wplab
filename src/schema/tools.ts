@@ -74,6 +74,16 @@ export const ConnectRestOutputSchema = z.object({
       capabilities: z.array(z.string()),
     })
     .nullable(),
+  profile: z
+    .object({
+      active: z.enum(["default", "power"]),
+      execute_php_unlocked: z.boolean(),
+      env_var_name: z.string(),
+    })
+    .optional()
+    .describe(
+      "Active MCP-server profile (default | power). Power unlocks wp_execute_php. Set via env var ROLEPOD_WPLAB_PROFILE=power in MCP client config.",
+    ),
   memory_summary: z
     .string()
     .optional()

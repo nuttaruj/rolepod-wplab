@@ -96,8 +96,25 @@ export class PowerProfileRequiredError extends WplabError {
   constructor() {
     super(
       "POWER_PROFILE_REQUIRED",
-      "Power profile required — set ROLEPOD_WPLAB_PROFILE=power",
-      {},
+      [
+        "wp_execute_php requires the power profile.",
+        "Set environment variable ROLEPOD_WPLAB_PROFILE=power in your MCP client config.",
+        "",
+        "Claude Code .mcp.json example:",
+        '  "mcpServers": {',
+        '    "rolepod-wplab": {',
+        '      "command": "npx",',
+        '      "args": ["-y", "@rolepod/wplab@latest", "serve"],',
+        '      "env": { "ROLEPOD_WPLAB_PROFILE": "power" }',
+        "    }",
+        "  }",
+        "",
+        "After editing .mcp.json, restart the MCP client. The power profile is intentionally",
+        "opt-in — execute-php runs arbitrary PHP on a live WP install and should only be",
+        "enabled when you actively need it. Other MCP tools (post_create, option_set,",
+        "site_scaffold, etc.) work without the power profile.",
+      ].join("\n"),
+      { env_var: "ROLEPOD_WPLAB_PROFILE", required_value: "power" },
     );
   }
 }

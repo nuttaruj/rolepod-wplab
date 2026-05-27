@@ -789,6 +789,49 @@ export class CompanionBridge {
   }
 
   // -------------------------------------------------------------------------
+  // v2.7.1 — SELECT-only DB query (bypass wp-cli `db query` shell-escape hazards)
+  //
+  // wp-cli's `db query` over the companion exec endpoint requires careful
+  // shell quoting + does NOT substitute `{prefix}` placeholders. The
+  // companion `/db-query` endpoint binds via $wpdb->prepare + replaces
+  // `{prefix}` with the actual table prefix server-side. Used by diagnose
+  // (slow_queries, large_options) and any other read-only DB introspection.
+  // Refuses non-SELECT statements at companion level.
+  // -------------------------------------------------------------------------
+
+  async dbQuery(
+    sql: string,
+    params?: ReadonlyArray<string | number>,
+  ): Promise<{ rows: Array<Record<string, unknown>>; count: number; auditId: string }> {
+    const token = await this.ensureFreshToken();
+    const body: Record<string, unknown> = { session_token: token, sql };
+    if (params !== undefined) body["params"] = params;
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/db-query",
+      body,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `DB_QUERY_HTTP_${res.status}`,
+        b.error_message ?? `db-query returned HTTP ${res.status}`,
+        { status: res.status, sql_preview: sql.slice(0, 200) },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      rows?: Array<Record<string, unknown>>;
+      count?: number;
+      audit_id?: string;
+    };
+    return {
+      rows: Array.isArray(b.rows) ? b.rows : [],
+      count: typeof b.count === "number" ? b.count : 0,
+      auditId: b.audit_id ?? "",
+    };
+  }
+
+  // -------------------------------------------------------------------------
   // v2.7 — Direct wp_options access (bypass REST /wp/v2/settings allowlist)
   //
   // REST /wp/v2/settings only exposes ~10 fields under different names than
