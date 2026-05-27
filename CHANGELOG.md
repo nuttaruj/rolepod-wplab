@@ -2,6 +2,76 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] — 2026-05-27 — a third-party plugin-parity closeout: one-time admin login + file toggle + 3 field-plugin adapters + conventions
+
+Eleven new MCP tools, all driven by the v2.4 a third-party plugin analysis pass. 71 → 82 tools.
+
+### Added — a third-party plugin gap closers
+
+- **`rolepod_wp_admin_one_time_link`** — mint a 5-min single-use wp-admin
+  login URL (companion `/admin/one-time-login`). Browser-automation safe;
+  no admin password exposed. Closes a third-party plugin v1.3 admin link parity.
+- **`rolepod_wp_file_disable`** — rename `<path>` → `<path>.disabled`
+  (companion `/fs-rename`). PHP files become invisible to autoloader.
+  Auto-ledger row category=file action=disable, reversible.
+- **`rolepod_wp_file_enable`** — reverse `wp_file_disable`. Refuses if
+  destination already exists.
+
+### Added — field-plugin adapters (closes a third-party plugin Pro paywall coverage)
+
+- **`rolepod_wp_jetengine_{read,write}`** — JetEngine field groups + CCT
+  list + post meta. Detection via REST plugin search.
+- **`rolepod_wp_metabox_{read,write}`** — Meta Box (metabox.io) field
+  groups (rwmb_meta_box post type) + post meta.
+- **`rolepod_wp_pods_{read,write}`** — Pods Framework pods (_pods_pod) +
+  fields (_pods_field) + post meta. Compatible free + Pro.
+
+All field-plugin writes auto-ledger (category=post) with before-state
+captured via REST GET ?context=edit.
+
+### Added — project conventions storage (free a third-party plugin Pro parity)
+
+- **`rolepod_wp_conventions_{get,set}`** — per-site structured style guide
+  storage at `~/.config/rolepod-wplab/memory/<host>/conventions.json`.
+  Schema: colors[], fonts[], spacing[], style_rules[], code_conventions[],
+  brand_voice, custom{}. Free equivalent of a third-party plugin Pro's paywalled
+  "project convention storage". `set` defaults to merge (deep); pass
+  `merge: false` to replace.
+
+### Changed — Gutenberg block-count in post_create output
+
+`wp_post_create` now scans content for `<!-- wp:` block markers and reports
+`block_count` in the ledger after-state. Informational only; behavior
+unchanged. Helps the AI confirm Gutenberg vs classic content was authored
+correctly.
+
+### Bridge additions
+
+- `Bridge.adminOneTimeLink(destination?)` — POST `/admin/one-time-login`.
+- `Bridge.fsRename(src, dest)` — POST `/fs-rename`, scope-checked.
+
+### Tool count
+
+71 (v1.7) → **82** (v1.8). Adds: admin_one_time_link, file_disable,
+file_enable, conventions_get, conventions_set, jetengine_read,
+jetengine_write, metabox_read, metabox_write, pods_read, pods_write.
+
+### Deferred — WordPress Abilities API wrapper
+
+Considered + deferred. WP Abilities API (WP 6.9+) has minimal ecosystem
+uptake outside a third-party plugin itself. Re-evaluate when:
+- WordPress 7.0 ships with Abilities in core.
+- A second well-known plugin adopts the API publicly.
+- Users explicitly ask for cross-consumer ability discovery.
+
+Standard MCP works with every MCP client today; WP-side ability registration
+adds composer dep + PHP layer for marginal benefit at present.
+
+### Pairs with
+
+- `rolepod-wp` v2.5.0 — adds `/admin/one-time-login`, `/fs-rename` endpoints
+  + execute-php crash recovery.
+
 ## [1.7.0] — 2026-05-27 — Theme safety: pre-write validators + snapshot + child-theme-first + safe-switch
 
 ### Added — pre-write validators on `wp_file_write`

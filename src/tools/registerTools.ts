@@ -130,6 +130,48 @@ import {
   wpSessionStartToolDef,
 } from "./atomic/wp_session_start.js";
 import {
+  wpAdminOneTimeLinkHandler,
+  wpAdminOneTimeLinkToolDef,
+} from "./companion/wp_admin_one_time_link.js";
+import {
+  wpFileDisableHandler,
+  wpFileDisableToolDef,
+} from "./atomic/wp_file_disable.js";
+import {
+  wpFileEnableHandler,
+  wpFileEnableToolDef,
+} from "./atomic/wp_file_enable.js";
+import {
+  wpConventionsGetHandler,
+  wpConventionsGetToolDef,
+  wpConventionsSetHandler,
+  wpConventionsSetToolDef,
+} from "./atomic/wp_conventions.js";
+import {
+  wpJetengineReadHandler,
+  wpJetengineReadToolDef,
+} from "./adapter/wp_jetengine_read.js";
+import {
+  wpJetengineWriteHandler,
+  wpJetengineWriteToolDef,
+} from "./adapter/wp_jetengine_write.js";
+import {
+  wpMetaboxReadHandler,
+  wpMetaboxReadToolDef,
+} from "./adapter/wp_metabox_read.js";
+import {
+  wpMetaboxWriteHandler,
+  wpMetaboxWriteToolDef,
+} from "./adapter/wp_metabox_write.js";
+import {
+  wpPodsReadHandler,
+  wpPodsReadToolDef,
+} from "./adapter/wp_pods_read.js";
+import {
+  wpPodsWriteHandler,
+  wpPodsWriteToolDef,
+} from "./adapter/wp_pods_write.js";
+import {
   wpElementorWriteHandler,
   wpElementorWriteToolDef,
 } from "./adapter/wp_elementor_write.js";
@@ -414,6 +456,50 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpSessionStartToolDef,
     handler: (d, raw) => wpSessionStartHandler(d.registry, raw),
+  },
+  {
+    def: wpAdminOneTimeLinkToolDef,
+    handler: (d, raw) => wpAdminOneTimeLinkHandler(d.registry, raw),
+  },
+  {
+    def: wpFileDisableToolDef,
+    handler: (d, raw) => wpFileDisableHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpFileEnableToolDef,
+    handler: (d, raw) => wpFileEnableHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpConventionsGetToolDef,
+    handler: (d, raw) => wpConventionsGetHandler(d.registry, raw),
+  },
+  {
+    def: wpConventionsSetToolDef,
+    handler: (d, raw) => wpConventionsSetHandler(d.registry, raw),
+  },
+  {
+    def: wpJetengineReadToolDef,
+    handler: (d, raw) => wpJetengineReadHandler(d.registry, raw),
+  },
+  {
+    def: wpJetengineWriteToolDef,
+    handler: (d, raw) => wpJetengineWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpMetaboxReadToolDef,
+    handler: (d, raw) => wpMetaboxReadHandler(d.registry, raw),
+  },
+  {
+    def: wpMetaboxWriteToolDef,
+    handler: (d, raw) => wpMetaboxWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpPodsReadToolDef,
+    handler: (d, raw) => wpPodsReadHandler(d.registry, raw),
+  },
+  {
+    def: wpPodsWriteToolDef,
+    handler: (d, raw) => wpPodsWriteHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpElementorWriteToolDef,

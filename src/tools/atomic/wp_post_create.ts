@@ -57,6 +57,11 @@ export async function wpPostCreateHandler(
     });
   }
 
+  // Gutenberg block detection — count <!-- wp:block --> comments in content.
+  // Informational only; WP-side already handles block markup correctly via
+  // the standard /wp/v2/posts REST endpoint.
+  const blockCount = (input.content.match(/<!-- wp:/g) ?? []).length;
+
   // Ledger: create has no before-state. Revert = delete via wp-cli or REST.
   await recordChange(target, {
     category: "post",
@@ -67,6 +72,7 @@ export async function wpPostCreateHandler(
       post_id: b.id,
       post_title: input.title,
       post_status: input.status,
+      block_count: blockCount,
     },
     reversible: true,
     sourceTool: "wp_post_create",

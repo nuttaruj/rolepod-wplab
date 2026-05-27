@@ -718,6 +718,76 @@ export class CompanionBridge {
     };
   }
 
+  /**
+   * Mint a one-time wp-admin login URL. Companion stores a 5-min single-use
+   * transient; URL form: `<siteurl>/?rolepod_wp_otl=<hex>`. WP's init hook
+   * intercepts the param, validates, calls wp_set_auth_cookie, redirects.
+   * Used by browser-automation flows + by AI to surface a one-shot admin
+   * link to the user without exposing the admin password.
+   */
+  async adminOneTimeLink(destination?: string): Promise<{
+    url: string;
+    token: string;
+    expiresInSeconds: number;
+    destination: string;
+  }> {
+    const token = await this.ensureFreshToken();
+    const body: Record<string, unknown> = { session_token: token };
+    if (destination !== undefined) body["destination"] = destination;
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/admin/one-time-login",
+      body,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `ONE_TIME_LOGIN_HTTP_${res.status}`,
+        b.error_message ?? `one-time login mint returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      url?: string;
+      token?: string;
+      expires_in_seconds?: number;
+      destination?: string;
+    };
+    return {
+      url: b.url ?? "",
+      token: b.token ?? "",
+      expiresInSeconds: b.expires_in_seconds ?? 300,
+      destination: b.destination ?? "",
+    };
+  }
+
+  /**
+   * Rename a file via companion `/fs-rename`. Used by wp_file_disable +
+   * wp_file_enable to toggle a file by suffixing `.disabled`.
+   */
+  async fsRename(src: string, dest: string): Promise<{ src: string; dest: string; auditId: string }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/fs-rename",
+      body: { session_token: token, src, dest },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `FS_RENAME_HTTP_${res.status}`,
+        b.error_message ?? `fs-rename returned HTTP ${res.status}`,
+        { status: res.status, src, dest },
+      );
+    }
+    const b = (res.body ?? {}) as { src?: string; dest?: string; audit_id?: string };
+    return {
+      src: b.src ?? src,
+      dest: b.dest ?? dest,
+      auditId: b.audit_id ?? "",
+    };
+  }
+
   async themeRestore(snapshotPath: string): Promise<{
     stylesheet: string;
     filesRestored: number;

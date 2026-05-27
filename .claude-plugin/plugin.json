@@ -1,8 +1,8 @@
 {
   "name": "rolepod-wplab",
   "displayName": "Rolepod WPLab",
-  "version": "1.7.0",
-  "description": "WordPress operations toolkit for Claude Code / Cursor / Codex / Gemini — wp-cli + REST + scoped fs + 62 MCP tools, opt-in the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair setup.",
+  "version": "1.8.0",
+  "description": "WordPress operations toolkit for Claude Code / Cursor / Codex / Gemini — wp-cli + REST + scoped fs + 82 MCP tools, opt-in the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair setup.",
   "author": {
     "name": "nuttaruj",
     "url": "https://github.com/nuttaruj"
