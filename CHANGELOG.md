@@ -499,9 +499,9 @@ Bundle size 2.34 MB (+~6 KB for 9 small tool files).
 Doc-only patch. Removed all references to the third-party WordPress AI plugin
 that originally inspired the project's design exploration. Independent
 implementation language used throughout README, CONTRIBUTING, package.json,
-CHANGELOG entries, and the `wp_conventions` tool description. The deleted
-`docs/MIGRATION-FROM-THIRD-PARTY.md` removed entirely (single-purpose migration
-guide).
+CHANGELOG entries, and the `wp_conventions` tool description. The legacy
+third-party migration guide under `docs/` removed entirely (single-purpose
+guide that referenced an unrelated WP plugin's namespace).
 
 No behavior change. No new tools. No schema change. Tool count unchanged
 at 89.
