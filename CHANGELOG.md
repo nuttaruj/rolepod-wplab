@@ -2,22 +2,56 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.3] — 2026-05-27 — Patch: ConfirmTrueSchema applied to all 17 `allow_destructive` fields
+## [1.11.3] — 2026-05-27 — Round 4 stress-test closeout: ConfirmTrueSchema sweep + db-query routing for 3 more probes
+
+Round 4 cross-tool stress test surfaced 4 issues. All fixed.
+
+### Fixed — ConfirmTrueSchema applied to all 17 `allow_destructive` fields
 
 v1.10.0 introduced `ConfirmTrueSchema` (`true | "true"` union → boolean) for
-`confirm` parameters on `execute_php` + `mail_test`. Round 4 stress test
-caught that **17 other schemas** still used raw `z.literal(true)` for
+`confirm` parameters on `execute_php` + `mail_test`. Round 4 caught that
+**17 other schemas** still used raw `z.literal(true)` for
 `allow_destructive`, so `scaffold_theme`, `scaffold_plugin`,
-`scaffold_block`, `db_query`, `option_set` (in some paths), and all 11 page
-builder + SEO adapter `_write` tools rejected `"true"` from MCP clients
-that JSON-stringify booleans.
+`scaffold_block`, `db_query` write paths, and all 11 page builder + SEO
+adapter `_write` tools rejected `"true"` from MCP clients that
+JSON-stringify booleans.
 
 Fix: bulk-replace all `allow_destructive: z.literal(true)` →
 `allow_destructive: ConfirmTrueSchema`. Moved `ConfirmTrueSchema`
 declaration to top of schemas file (used by schemas earlier than its
 previous position → TS2454).
 
-No behavior change for callers passing real boolean `true`.
+### Fixed — `diagnose broken_images` now routes via `/db-query`
+
+`brokenImagesProbe` was the only diagnose scope still using `wp db query`
+directly. Stress test on RestTarget showed `"image scan deferred (db
+query unsupported)"` because the SQL contained embedded single quotes
+(`'<img'`, `'src="'`, `'%<img%'`) that escapeshellarg mangled. Same fix
+as v1.11.0 slow_queries/large_options: route via `bridge.dbQuery()` for
+RestTarget + companion.
+
+### Fixed — `yoast_read` + `rankmath_read` postMeta on RestTarget
+
+Both adapter `postMeta` paths returned only `{ post_id }` on RestTarget
+because:
+- Yoast meta keys (`_yoast_wpseo_*`) aren't `register_meta` show_in_rest,
+  so `/wp/v2/posts/<id>?_fields=meta` excludes them.
+- Rank Math meta keys (`rank_math_*`) — same.
+- Previous fallback to `yoast_head_json` was incomplete.
+
+Fix: when target.kind === "rest" && companion enabled, read raw postmeta
+via `bridge.dbQuery("SELECT meta_key, meta_value FROM {prefix}postmeta
+WHERE post_id = %d AND meta_key IN (...)", [postId])` — gets the real
+values directly from DB. Falls back to existing wp-cli + REST shim for
+non-companion targets.
+
+Verified live: pages with `_yoast_wpseo_focuskw` + `_yoast_wpseo_metadesc`
+set via `wp_seo_set` now read back correctly through `wp_yoast_read`.
+
+### Pairs with companion v2.7.1 (unchanged)
+
+No companion-side change required — these routes already use the
+existing `/db-query` endpoint shipped in v2.7.1.
 
 ## [1.11.2] — 2026-05-27 — Patch: diagnose large_options autoload filter (WP 6.6+ values)
 

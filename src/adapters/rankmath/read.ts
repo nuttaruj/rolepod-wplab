@@ -57,7 +57,27 @@ export const rankmathAdapter: Adapter<RankMathReadAPI> = {
 
   read: {
     async postMeta(target, postId) {
-      // Rank Math meta keys live in postmeta under `rank_math_*`.
+      // Rank Math meta keys live in postmeta under `rank_math_*`. REST API
+      // doesn't expose them (no register_meta show_in_rest), so on RestTarget
+      // we route via companion /db-query.
+      if (target.kind === "rest" && target.companion?.enabled) {
+        const { bridgeFor } = await import("../../companion/Bridge.js");
+        const bridge = await bridgeFor(target);
+        const result = await bridge.dbQuery(
+          "SELECT meta_key, meta_value FROM {prefix}postmeta WHERE post_id = %d AND meta_key IN ('rank_math_focus_keyword', 'rank_math_description', 'rank_math_title', 'rank_math_canonical_url', 'rank_math_robots')",
+          [postId],
+        );
+        const map: Record<string, string> = {};
+        for (const row of result.rows) {
+          map[String(row["meta_key"] ?? "")] = String(row["meta_value"] ?? "");
+        }
+        const out: RankMathPostMeta = { post_id: postId };
+        if (map["rank_math_focus_keyword"]) out.focus_keyword = map["rank_math_focus_keyword"];
+        if (map["rank_math_description"]) out.meta_description = map["rank_math_description"];
+        if (map["rank_math_title"]) out.title = map["rank_math_title"];
+        if (map["rank_math_canonical_url"]) out.canonical = map["rank_math_canonical_url"];
+        return out;
+      }
       if (
         target.kind === "local" ||
         target.kind === "ssh" ||

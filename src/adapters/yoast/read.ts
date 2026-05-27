@@ -52,7 +52,33 @@ export const yoastAdapter: Adapter<YoastReadAPI> = {
 
   read: {
     async postMeta(target, postId) {
-      // Yoast exposes SEO meta via /wp/v2/posts/{id}?_fields=yoast_head_json
+      // Yoast stores SEO fields in postmeta keys `_yoast_wpseo_*`. These are
+      // NOT exposed via /wp/v2/posts/<id>?_fields=meta unless register_meta
+      // declares them with show_in_rest=true (Yoast doesn't). So we read
+      // directly from wp_postmeta via companion /db-query when available,
+      // falling back to wp-cli + yoast_head_json shim for non-companion
+      // RestTargets.
+      if (target.kind === "rest" && target.companion?.enabled) {
+        const { bridgeFor } = await import("../../companion/Bridge.js");
+        const bridge = await bridgeFor(target);
+        const result = await bridge.dbQuery(
+          "SELECT meta_key, meta_value FROM {prefix}postmeta WHERE post_id = %d AND meta_key IN ('_yoast_wpseo_focuskw', '_yoast_wpseo_metadesc', '_yoast_wpseo_title', '_yoast_wpseo_canonical', '_yoast_wpseo_meta-robots-noindex')",
+          [postId],
+        );
+        const out: YoastPostMeta = { post_id: postId };
+        for (const row of result.rows) {
+          const key = String(row["meta_key"] ?? "");
+          const value = String(row["meta_value"] ?? "");
+          if (key === "_yoast_wpseo_focuskw" && value) out.focus_keyword = value;
+          else if (key === "_yoast_wpseo_metadesc" && value) out.meta_description = value;
+          else if (key === "_yoast_wpseo_title" && value) out.title = value;
+          else if (key === "_yoast_wpseo_canonical" && value) out.canonical = value;
+          else if (key === "_yoast_wpseo_meta-robots-noindex" && value === "1") out.noindex = true;
+        }
+        return out;
+      }
+
+      // Fallback (no companion): yoast_head_json only — incomplete but safe.
       const res = await target.rest({
         method: "GET",
         path: `/wp/v2/posts/${postId}`,

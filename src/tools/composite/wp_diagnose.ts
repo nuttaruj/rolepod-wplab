@@ -276,10 +276,41 @@ async function largeOptionsProbe(target: Target): Promise<Finding[]> {
 }
 
 async function brokenImagesProbe(target: Target): Promise<Finding[]> {
+  // Prefer companion /db-query for RestTarget+companion (avoids the
+  // shell-escape hazards of the SQL embedded in wp-cli `db query` —
+  // single-quote literals + LIKE patterns + SUBSTRING_INDEX delimiters).
+  // Falls back to wp-cli for shell-capable targets without companion.
+  const sql =
+    "SELECT DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(post_content, '<img', -1), 'src=\"', -1) AS src FROM {prefix}posts WHERE post_status = 'publish' AND post_content LIKE '%<img%' LIMIT 50";
+  if (target.kind === "rest" && target.companion?.enabled) {
+    try {
+      const bridge = await bridgeFor(target);
+      const result = await bridge.dbQuery(sql);
+      const samples = result.rows.map((r) => String(r["src"] ?? "")).filter(Boolean).slice(0, 5);
+      return [
+        {
+          scope: "broken_images",
+          severity: "info",
+          message: `image src sample (${result.count} scanned, showing up to 5)`,
+          detail: samples,
+        },
+      ];
+    } catch (err) {
+      return [
+        {
+          scope: "broken_images",
+          severity: "warn",
+          message: "image scan failed",
+          detail: (err as Error).message.slice(0, 200),
+        },
+      ];
+    }
+  }
+
   const r = await target.wpCli([
     "db",
     "query",
-    "SELECT DISTINCT SUBSTRING_INDEX(SUBSTRING_INDEX(post_content,'<img',-1),'src=\"',-1) FROM {prefix}posts WHERE post_status='publish' AND post_content LIKE '%<img%' LIMIT 50",
+    sql,
     "--skip-column-names",
   ]);
   if (r.exitCode !== 0) {
