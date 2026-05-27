@@ -275,7 +275,7 @@ export const OptionGetOutputSchema = z.object({
   name: z.string(),
   value: z.unknown(),
   source: z
-    .enum(["wp_cli", "rest_settings"])
+    .enum(["wp_cli", "rest_settings", "companion_option_get"])
     .describe("which transport actually returned the value"),
 });
 export type OptionGetOutput = z.infer<typeof OptionGetOutputSchema>;
@@ -300,7 +300,7 @@ export type OptionSetInput = z.infer<typeof OptionSetInputSchema>;
 export const OptionSetOutputSchema = z.object({
   name: z.string(),
   changed: z.boolean(),
-  source: z.enum(["wp_cli", "rest_settings"]),
+  source: z.enum(["wp_cli", "rest_settings", "companion_option_set"]),
 });
 export type OptionSetOutput = z.infer<typeof OptionSetOutputSchema>;
 
@@ -549,11 +549,18 @@ export type MigrateDataOutput = z.infer<typeof MigrateDataOutputSchema>;
 // Companion-gated power tools — v0.2 (W-003R, W-004R)
 // ---------------------------------------------------------------------------
 
+// `confirm` accepts boolean true OR the literal string "true". Some MCP clients
+// JSON-stringify booleans when passing through transports without strict type
+// preservation; we coerce + then enforce the semantic "must be true".
+const ConfirmTrueSchema = z
+  .union([z.literal(true), z.literal("true")])
+  .transform(() => true as const);
+
 export const ExecutePhpInputSchema = z.object({
   target_id: TargetIdSchema,
   payload: z.string().min(1),
   timeout_ms: z.number().int().min(100).max(30_000).default(5000),
-  confirm: z.literal(true),
+  confirm: ConfirmTrueSchema,
 });
 export type ExecutePhpInput = z.infer<typeof ExecutePhpInputSchema>;
 
@@ -1138,7 +1145,7 @@ export const MailTestInputSchema = z.object({
   body: z
     .string()
     .default("Test message from rolepod-wplab v1.1 mail-test tool."),
-  confirm: z.literal(true),
+  confirm: ConfirmTrueSchema,
 });
 export type MailTestInput = z.infer<typeof MailTestInputSchema>;
 

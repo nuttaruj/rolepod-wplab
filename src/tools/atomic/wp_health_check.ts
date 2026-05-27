@@ -22,7 +22,9 @@ export async function wpHealthCheckHandler(
 
   const warnings: string[] = [];
 
-  // wp-cli reachability — already proven on connect, but re-check cheap
+  // wp-cli reachability — works on every target kind:
+  //   LocalTarget/SshTarget/DockerTarget → spawn `wp` binary directly.
+  //   RestTarget → routes through companion `/wp-cli` endpoint via bridge.
   let wpCliOk = false;
   try {
     const result = await target.wpCli(["cli", "version"]);
@@ -47,11 +49,24 @@ export async function wpHealthCheckHandler(
     warnings.push(`db probe failed: ${(err as Error).message}`);
   }
 
-  // REST + companion checks live in v0.1 once Target.rest() is implemented.
-  const restOk = false;
-  warnings.push(
-    "REST check deferred to v0.1 (Target.rest() not yet implemented)",
-  );
+  // REST reachability — issue a tiny HEAD-ish probe via target.rest() if
+  // available. RestTarget always has rest(); LocalTarget/SshTarget/DockerTarget
+  // don't (their reachability is wp-cli-based, captured above).
+  let restOk = false;
+  if ("rest" in target && typeof (target as { rest?: unknown }).rest === "function") {
+    try {
+      const res = await (target as { rest: (req: { method: string; path: string }) => Promise<{ status: number }> }).rest({
+        method: "GET",
+        path: "/wp/v2/types/post",
+      });
+      restOk = res.status >= 200 && res.status < 400;
+      if (!restOk) {
+        warnings.push(`REST probe returned HTTP ${res.status}`);
+      }
+    } catch (err) {
+      warnings.push(`REST probe failed: ${(err as Error).message}`);
+    }
+  }
 
   const companionOk = target.companion?.enabled === true;
 

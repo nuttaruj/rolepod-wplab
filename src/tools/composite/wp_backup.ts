@@ -31,11 +31,18 @@ export const wpBackupRestoreToolDef = {
 };
 
 function ensureShell(t: Target): void {
+  // RestTarget routes wp-cli through companion's /wp-cli endpoint, so
+  // backup operations (wp db export, plugin/theme listing) work over REST
+  // as long as companion is installed + enabled. Other RestTargets without
+  // companion still get rejected — they have no way to invoke wp-cli.
+  if (t.kind === "rest" && t.companion?.enabled) {
+    return;
+  }
   if (t.kind !== "local" && t.kind !== "ssh" && t.kind !== "docker") {
     throw new WplabError(
       "BACKUP_REQUIRES_SHELL",
-      `backup requires shell target — got ${t.kind}`,
-      { kind: t.kind },
+      `backup requires shell-capable target or RestTarget with companion — got ${t.kind} (companion: ${t.companion?.enabled ? "yes" : "no"})`,
+      { kind: t.kind, companion_enabled: !!t.companion?.enabled },
     );
   }
 }

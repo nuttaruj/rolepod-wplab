@@ -2,6 +2,86 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] — 2026-05-27 — E2E gap closeout: companion /option-set, 9 new tools, ledger capture
+
+Driven by the 2026-05-27 e2e build-out test on Hostinger demo where ~60% of
+operations had to fall back to direct execute-php. 89 → 98 tools.
+
+### Changed — option_set / option_get route via companion `/option-set` for RestTarget (Gap #2/#4)
+
+Previously: `option_set` against RestTarget hit `/wp/v2/settings`, whose
+allowlist uses different field names than raw wp_options (title vs blogname,
+description vs blogdescription, timezone vs timezone_string). Writes
+silently no-op'd. The tool returned `changed: true` but `option_get`
+returned null on read-back.
+
+Now: when companion is enabled, option_set/option_get route to the new
+companion endpoints which call `update_option()` / `get_option()` directly.
+Full wp_options coverage. Blocked keys (db_version, auth_key, secret,
+rewrite_rules, etc.) refuse with `OPTION_BLOCKED`. Falls back to REST
+settings only if companion is unavailable.
+
+### Changed — `wp_backup_create` accepts RestTarget with companion (Gap #8)
+
+Was hard-gated to LocalTarget/SshTarget/DockerTarget. Now also accepts
+RestTarget when `companion.enabled` is true (wp-cli routes through
+companion's wp-cli endpoint, so all backup ops work). The error message is
+clearer when companion is missing.
+
+`audit_security` + `audit_many` + `diagnose` were already kind-agnostic in
+v1.9 — the stale errors reported in the e2e test came from npm v1.2.3 which
+hadn't been updated since the local source diverged. Re-publish to npm
+unblocks them.
+
+### Changed — `health_check` uses companion-aware probes (Gap #1)
+
+Removed the "v0.2+ required" stale warnings. wp_cli_ok / db_ok now reflect
+actual reachability via target.wpCli() which works on RestTarget through
+companion. Added rest_ok probe using `target.rest({ path: '/wp/v2/types/post' })`.
+
+### Changed — `execute_php` `confirm` schema accepts true OR "true" (Gap #3)
+
+`z.literal(true)` rejected the string "true" some MCP clients send when
+JSON-stringifying booleans. New `ConfirmTrueSchema` union accepts both forms
+and normalizes to boolean true semantically. Same fix applied to
+`mail_test.confirm`.
+
+### Added — `Bridge.optionSet(name, value, autoload?)` + `Bridge.optionGet(name, default?)`
+
+Thin wrappers around companion endpoints `/wp-json/wplab/v1/option-set` +
+`/option-get`. Reused by `wp_option_set` / `wp_option_get` for RestTarget
+and available for any new tool that needs direct wp_options access.
+
+### Added — 9 new MCP tools (89 → 98)
+
+- **`rolepod_wp_menu_create`** — create (or reuse) a nav menu by name.
+- **`rolepod_wp_menu_add_item`** — add page link or custom URL item to menu.
+- **`rolepod_wp_menu_assign`** — assign menu to theme location (primary / footer).
+- **`rolepod_wp_product_create`** — WooCommerce simple product (price + sku + stock + categories). Refuses if WC not active.
+- **`rolepod_wp_set_front_page`** — static front page + blog index in one call (show_on_front + page_on_front + page_for_posts).
+- **`rolepod_wp_global_styles_set`** — write user-level wp_global_styles for the active block theme (Site Editor equivalent).
+- **`rolepod_wp_cf7_form_create`** — Contact Form 7 form + mail config + recipient. Returns ready-to-paste shortcode.
+- **`rolepod_wp_seo_set`** — set Yoast OR Rank Math post meta (auto-detect). Focus keyword + meta description + canonical + noindex.
+- **`rolepod_wp_site_scaffold`** (composite) — one-shot site build from a JSON spec: identity + pages + menu + front_page assignment. Returns slug → id manifest.
+
+All 9 tools auto-ledger their writes. `wp_site_scaffold` runs server-side
+in one execute-php call so the entire scaffold is roughly atomic.
+
+### Pairs with
+
+`rolepod-wp` **v2.7.0** — adds companion endpoints `/option-set`,
+`/option-get`, and server-side ledger capture in `/execute-php` (regex
+scans payload for update_option / wp_insert_post / wp_update_post /
+update_post_meta / activate_plugins / etc. and records one ledger row per
+detected write, tagged source_tool=execute_php). Closes Gap #9 — writes
+issued via execute-php (the main escape hatch) are now discoverable in
+the AI Change Ledger.
+
+### Smoke test
+
+98 tools alphabetized in `tests/smoke/mcp-handshake.test.ts`. tsc clean.
+Bundle size 2.34 MB (+~6 KB for 9 small tool files).
+
 ## [1.9.1] — 2026-05-27 — Branding cleanup (remove third-party references)
 
 Doc-only patch. Removed all references to the third-party WordPress AI plugin

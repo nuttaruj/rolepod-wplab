@@ -1,4 +1,5 @@
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import {
   OptionSetInputSchema,
@@ -12,7 +13,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpOptionSetToolDef = {
   name: "rolepod_wp_option_set",
   description:
-    "Write a WordPress option. Routes via wp-cli when shell access available; falls back to REST /wp/v2/settings for the small allow-list WP exposes there. Production guard fires unless confirm=true.",
+    "Write a WordPress option. Routes via wp-cli for shell-capable targets; via the companion /option-set endpoint for RestTarget (direct update_option(), full wp_options coverage). Falls back to REST /wp/v2/settings only when companion is unavailable (limited allowlist). Production guard fires unless confirm=true.",
   inputSchema: OptionSetInputSchema,
 };
 
@@ -101,7 +102,33 @@ export async function wpOptionSetHandler(
     });
   }
 
-  // RestTarget → /wp/v2/settings (small allow-list)
+  // RestTarget — prefer companion's /option-set endpoint which calls
+  // update_option() directly (no REST settings allowlist limitation). Falls
+  // back to REST /wp/v2/settings only if companion not installed.
+  if (target.companion?.enabled) {
+    const bridge = await bridgeFor(target);
+    const result = await bridge.optionSet(input.name, input.value);
+    // Capture before-value from the companion's response (authoritative).
+    if (result.changed) {
+      await recordChange(target, {
+        category: "option",
+        subcategory: input.name,
+        targetDescriptor: `option ${input.name} (via companion /option-set)`,
+        beforeState: { value: result.previous },
+        afterState: { value: result.current },
+        reversible: true,
+        sourceTool: "wp_option_set",
+      });
+    }
+    return OptionSetOutputSchema.parse({
+      name: input.name,
+      changed: result.changed,
+      source: "companion_option_set",
+    });
+  }
+
+  // No companion → fall back to REST /wp/v2/settings (small allow-list with
+  // different field names than wp_options; only handful of options work).
   const res = await target.rest({
     method: "POST",
     path: "/wp/v2/settings",
@@ -110,7 +137,7 @@ export async function wpOptionSetHandler(
   if (res.status < 200 || res.status >= 300) {
     throw new WplabError(
       "OPTION_SET_FAILED",
-      `REST settings returned HTTP ${res.status} — option may require wp-cli (install companion v0.2 for shared-hosting wp-cli proxy)`,
+      `REST settings returned HTTP ${res.status} — install the rolepod-wp companion to unlock direct wp_options access`,
       { status: res.status, name: input.name },
     );
   }

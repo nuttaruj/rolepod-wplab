@@ -1,3 +1,4 @@
+import { bridgeFor } from "../../companion/Bridge.js";
 import {
   OptionGetInputSchema,
   OptionGetOutputSchema,
@@ -10,7 +11,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpOptionGetToolDef = {
   name: "rolepod_wp_option_get",
   description:
-    "Read a WordPress option by name. Routes via wp-cli (LocalTarget) when available; falls back to REST /wp/v2/settings for the small allow-list WP exposes (siteurl, title, language, etc.).",
+    "Read a WordPress option by name. Routes via wp-cli (shell-capable targets) or the companion /option-get endpoint (RestTarget — direct get_option(), full wp_options coverage). Falls back to REST /wp/v2/settings only when companion is unavailable.",
   inputSchema: OptionGetInputSchema,
 };
 
@@ -55,12 +56,23 @@ export async function wpOptionGetHandler(
     }
   }
 
-  // RestTarget OR wp-cli failed → try REST /wp/v2/settings (limited surface).
+  // RestTarget — prefer companion's /option-get for full wp_options access.
+  if (target.companion?.enabled) {
+    const bridge = await bridgeFor(target);
+    const result = await bridge.optionGet(input.name);
+    return OptionGetOutputSchema.parse({
+      name: input.name,
+      value: result.value,
+      source: "companion_option_get",
+    });
+  }
+
+  // No companion → REST /wp/v2/settings (limited allowlist).
   const res = await target.rest({ method: "GET", path: "/wp/v2/settings" });
   if (res.status < 200 || res.status >= 300) {
     throw new WplabError(
       "OPTION_GET_FAILED",
-      `REST settings returned HTTP ${res.status} — option may require wp-cli (install companion v0.2 for shared-hosting wp-cli proxy)`,
+      `REST settings returned HTTP ${res.status} — install the rolepod-wp companion to unlock direct wp_options access`,
       { status: res.status, name: input.name },
     );
   }

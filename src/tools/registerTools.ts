@@ -162,6 +162,42 @@ import {
   wpRecoverySafeModeToolDef,
 } from "./companion/wp_recovery_safe_mode.js";
 import {
+  wpMenuCreateHandler,
+  wpMenuCreateToolDef,
+} from "./atomic/wp_menu_create.js";
+import {
+  wpMenuAddItemHandler,
+  wpMenuAddItemToolDef,
+} from "./atomic/wp_menu_add_item.js";
+import {
+  wpMenuAssignHandler,
+  wpMenuAssignToolDef,
+} from "./atomic/wp_menu_assign.js";
+import {
+  wpProductCreateHandler,
+  wpProductCreateToolDef,
+} from "./atomic/wp_product_create.js";
+import {
+  wpSetFrontPageHandler,
+  wpSetFrontPageToolDef,
+} from "./atomic/wp_set_front_page.js";
+import {
+  wpGlobalStylesSetHandler,
+  wpGlobalStylesSetToolDef,
+} from "./atomic/wp_global_styles_set.js";
+import {
+  wpCf7FormCreateHandler,
+  wpCf7FormCreateToolDef,
+} from "./atomic/wp_cf7_form_create.js";
+import {
+  wpSeoSetHandler,
+  wpSeoSetToolDef,
+} from "./atomic/wp_seo_set.js";
+import {
+  wpSiteScaffoldHandler,
+  wpSiteScaffoldToolDef,
+} from "./composite/wp_site_scaffold.js";
+import {
   wpFileDisableHandler,
   wpFileDisableToolDef,
 } from "./atomic/wp_file_disable.js";
@@ -516,6 +552,42 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpRecoverySafeModeToolDef,
     handler: (d, raw) => wpRecoverySafeModeHandler(d.registry, raw),
+  },
+  {
+    def: wpMenuCreateToolDef,
+    handler: (d, raw) => wpMenuCreateHandler(d.registry, raw),
+  },
+  {
+    def: wpMenuAddItemToolDef,
+    handler: (d, raw) => wpMenuAddItemHandler(d.registry, raw),
+  },
+  {
+    def: wpMenuAssignToolDef,
+    handler: (d, raw) => wpMenuAssignHandler(d.registry, raw),
+  },
+  {
+    def: wpProductCreateToolDef,
+    handler: (d, raw) => wpProductCreateHandler(d.registry, raw),
+  },
+  {
+    def: wpSetFrontPageToolDef,
+    handler: (d, raw) => wpSetFrontPageHandler(d.registry, raw),
+  },
+  {
+    def: wpGlobalStylesSetToolDef,
+    handler: (d, raw) => wpGlobalStylesSetHandler(d.registry, raw),
+  },
+  {
+    def: wpCf7FormCreateToolDef,
+    handler: (d, raw) => wpCf7FormCreateHandler(d.registry, raw),
+  },
+  {
+    def: wpSeoSetToolDef,
+    handler: (d, raw) => wpSeoSetHandler(d.registry, raw),
+  },
+  {
+    def: wpSiteScaffoldToolDef,
+    handler: (d, raw) => wpSiteScaffoldHandler(d.registry, raw),
   },
   {
     def: wpFileDisableToolDef,

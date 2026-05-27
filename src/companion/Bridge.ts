@@ -789,6 +789,91 @@ export class CompanionBridge {
   }
 
   // -------------------------------------------------------------------------
+  // v2.7 — Direct wp_options access (bypass REST /wp/v2/settings allowlist)
+  //
+  // REST /wp/v2/settings only exposes ~10 fields under different names than
+  // raw wp_options (title vs blogname, description vs blogdescription,
+  // timezone vs timezone_string). Writing the raw wp_options name to REST
+  // settings silently no-ops. These methods use companion's /option-set and
+  // /option-get endpoints which call update_option() / get_option() directly.
+  // -------------------------------------------------------------------------
+
+  async optionSet(
+    name: string,
+    value: unknown,
+    autoload?: "yes" | "no",
+  ): Promise<{
+    name: string;
+    changed: boolean;
+    previous: unknown;
+    current: unknown;
+    auditId: string;
+  }> {
+    const token = await this.ensureFreshToken();
+    const body: Record<string, unknown> = {
+      session_token: token,
+      name,
+      value,
+    };
+    if (autoload !== undefined) body["autoload"] = autoload;
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/option-set",
+      body,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `OPTION_SET_HTTP_${res.status}`,
+        b.error_message ?? `option-set returned HTTP ${res.status}`,
+        { status: res.status, name },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      name?: string;
+      changed?: boolean;
+      previous?: unknown;
+      current?: unknown;
+      audit_id?: string;
+    };
+    return {
+      name: b.name ?? name,
+      changed: !!b.changed,
+      previous: b.previous ?? null,
+      current: b.current ?? null,
+      auditId: b.audit_id ?? "",
+    };
+  }
+
+  async optionGet(
+    name: string,
+    defaultValue?: unknown,
+  ): Promise<{ name: string; value: unknown; exists: boolean }> {
+    const token = await this.ensureFreshToken();
+    const body: Record<string, unknown> = { session_token: token, name };
+    if (defaultValue !== undefined) body["default"] = defaultValue;
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/option-get",
+      body,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `OPTION_GET_HTTP_${res.status}`,
+        b.error_message ?? `option-get returned HTTP ${res.status}`,
+        { status: res.status, name },
+      );
+    }
+    const b = (res.body ?? {}) as { name?: string; value?: unknown; exists?: boolean };
+    return {
+      name: b.name ?? name,
+      value: b.value ?? null,
+      exists: !!b.exists,
+    };
+  }
+
+  // -------------------------------------------------------------------------
   // v2.6 — Recovery namespace (mu-plugin guardian, /wplab-recovery/v1/*)
   //
   // These bypass the main companion namespace entirely. Used when the main
