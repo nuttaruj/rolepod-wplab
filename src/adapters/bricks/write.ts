@@ -59,8 +59,9 @@ async function replaceMeta(
   const tmpRel = `wp-content/uploads/wplab-tmp/${backupFilePrefix}-${postId}-payload.json`;
   const payload = JSON.stringify(elements);
   const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
+  const filePath = tmpWrite.absolutePath || tmpRel;
 
-  const phpScript = `update_post_meta(${postId}, ${JSON.stringify(metaKey)}, json_decode(file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}), true));`;
+  const phpScript = `update_post_meta(${postId}, ${JSON.stringify(metaKey)}, json_decode(file_get_contents(${JSON.stringify(filePath)}), true));`;
   const r = await target.wpCli(["eval", phpScript], {
     allowDestructive: true,
   });

@@ -47,7 +47,8 @@ export const oxygenWrite: OxygenWriteAPI = {
       backup: false,
     });
 
-    const phpScript = `update_post_meta(${postId}, "ct_builder_shortcodes", file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}));`;
+    const filePath = tmpWrite.absolutePath || tmpRel;
+    const phpScript = `update_post_meta(${postId}, "ct_builder_shortcodes", file_get_contents(${JSON.stringify(filePath)}));`;
     const result = await target.wpCli(["eval", phpScript], {
       allowDestructive: true,
     });

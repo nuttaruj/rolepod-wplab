@@ -2,6 +2,26 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.10] — 2026-05-27 — `wp eval` path falls back to relative when companion fs-write omits absolute_path
+
+R6-7 v1.11.9 fix shipped but caught a second bug on RestTarget+companion:
+companion's `/fs-write` response shape lacks `absolute_path`. CompanionBridge
+defaults missing field to `""` → adapters built `wp eval file_get_contents("")`
+→ `PHP Fatal error: Uncaught ValueError: Path must not be empty`.
+
+wp-cli runs with `getcwd() === ABSPATH`, so a relative path resolves
+correctly. Each affected adapter (elementor/bricks/oxygen/rankmath) now
+prefers `tmpWrite.absolutePath` when present and falls back to the
+relative tmp path otherwise.
+
+```ts
+const filePath = tmpWrite.absolutePath || tmpRel;
+```
+
+Companion-side patch (add `absolute_path` to `/fs-write` response) is
+nice-to-have for callers that need the absolute path explicitly, but is
+no longer required for this code path.
+
 ## [1.11.9] — 2026-05-27 — Replace `wp post meta update --from-file` with `wp eval` (elementor/bricks/oxygen/rankmath)
 
 Round 6 page-builder swap test (post-v1.11.8 client restart) revealed

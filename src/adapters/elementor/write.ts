@@ -47,8 +47,11 @@ export const elementorWrite: ElementorWriteAPI = {
     const tmpRel = `wp-content/uploads/wplab-tmp/elementor-${postId}-payload.json`;
     const payload = JSON.stringify(widgetTree);
     const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
+    // wp-cli runs from ABSPATH — relative path resolves correctly. Fall back to
+    // absolutePath when present (some Target impls supply it).
+    const filePath = tmpWrite.absolutePath || tmpRel;
 
-    const phpScript = `update_post_meta(${postId}, "_elementor_data", json_decode(file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}), true));`;
+    const phpScript = `update_post_meta(${postId}, "_elementor_data", json_decode(file_get_contents(${JSON.stringify(filePath)}), true));`;
     const result = await target.wpCli(["eval", phpScript], {
       allowDestructive: true,
     });

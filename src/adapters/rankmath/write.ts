@@ -44,7 +44,8 @@ export const rankmathWrite: RankMathWriteAPI = {
         const robots = value ? '["noindex"]' : "[]";
         const tmpRel = `wp-content/uploads/wplab-tmp/rankmath-${postId}-robots.json`;
         const tmp = await target.fileWrite(tmpRel, robots, { backup: false });
-        const phpScript = `update_post_meta(${postId}, "rank_math_robots", json_decode(file_get_contents(${JSON.stringify(tmp.absolutePath)}), true));`;
+        const filePath = tmp.absolutePath || tmpRel;
+        const phpScript = `update_post_meta(${postId}, "rank_math_robots", json_decode(file_get_contents(${JSON.stringify(filePath)}), true));`;
         const r = await target.wpCli(["eval", phpScript], {
           allowDestructive: true,
         });
