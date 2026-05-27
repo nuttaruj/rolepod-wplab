@@ -42,33 +42,20 @@ export const elementorWrite: ElementorWriteAPI = {
       backupPath = w.absolutePath;
     }
 
-    // Stringify + escape for shell. wp-cli `post meta update <id> <key> <value> --format=json`
-    // accepts JSON via stdin if `--<value>` omitted; but Target.wpCli doesn't pump stdin.
-    // Workaround: write to a temp file under wp-content/uploads/ + use --from-file.
+    // wp-cli `post meta update` does NOT support --from-file. Route via `wp eval`
+    // reading the temp file + json_decode + update_post_meta.
     const tmpRel = `wp-content/uploads/wplab-tmp/elementor-${postId}-payload.json`;
     const payload = JSON.stringify(widgetTree);
     const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
 
-    try {
-      const result = await target.wpCli(
-        [
-          "post",
-          "meta",
-          "update",
-          String(postId),
-          "_elementor_data",
-          "--format=json",
-          `--from-file=${tmpWrite.absolutePath}`,
-        ],
-        { allowDestructive: true },
+    const phpScript = `update_post_meta(${postId}, "_elementor_data", json_decode(file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}), true));`;
+    const result = await target.wpCli(["eval", phpScript], {
+      allowDestructive: true,
+    });
+    if (result.exitCode !== 0) {
+      throw new Error(
+        `wp eval update_post_meta(_elementor_data) failed: ${result.stderr.slice(0, 200) || result.stdout.slice(0, 200)}`,
       );
-      if (result.exitCode !== 0) {
-        throw new Error(
-          `wp post meta update failed: ${result.stderr.slice(0, 200)}`,
-        );
-      }
-    } finally {
-      // Best-effort cleanup. Failure to delete is not fatal.
     }
 
     return { bytesWritten: payload.length, backupPath };

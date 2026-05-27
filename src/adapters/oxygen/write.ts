@@ -47,20 +47,13 @@ export const oxygenWrite: OxygenWriteAPI = {
       backup: false,
     });
 
-    const result = await target.wpCli(
-      [
-        "post",
-        "meta",
-        "update",
-        String(postId),
-        "ct_builder_shortcodes",
-        `--from-file=${tmpWrite.absolutePath}`,
-      ],
-      { allowDestructive: true },
-    );
+    const phpScript = `update_post_meta(${postId}, "ct_builder_shortcodes", file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}));`;
+    const result = await target.wpCli(["eval", phpScript], {
+      allowDestructive: true,
+    });
     if (result.exitCode !== 0) {
       throw new Error(
-        `wp post meta update ct_builder_shortcodes failed: ${result.stderr.slice(0, 200)}`,
+        `wp eval update_post_meta(ct_builder_shortcodes) failed: ${result.stderr.slice(0, 200) || result.stdout.slice(0, 200)}`,
       );
     }
 

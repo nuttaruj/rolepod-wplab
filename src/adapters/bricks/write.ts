@@ -60,21 +60,13 @@ async function replaceMeta(
   const payload = JSON.stringify(elements);
   const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
 
-  const r = await target.wpCli(
-    [
-      "post",
-      "meta",
-      "update",
-      String(postId),
-      metaKey,
-      "--format=json",
-      `--from-file=${tmpWrite.absolutePath}`,
-    ],
-    { allowDestructive: true },
-  );
+  const phpScript = `update_post_meta(${postId}, ${JSON.stringify(metaKey)}, json_decode(file_get_contents(${JSON.stringify(tmpWrite.absolutePath)}), true));`;
+  const r = await target.wpCli(["eval", phpScript], {
+    allowDestructive: true,
+  });
   if (r.exitCode !== 0) {
     throw new Error(
-      `wp post meta update ${metaKey} failed: ${r.stderr.slice(0, 200)}`,
+      `wp eval update_post_meta(${metaKey}) failed: ${r.stderr.slice(0, 200) || r.stdout.slice(0, 200)}`,
     );
   }
   return { bytesWritten: payload.length, backupPath };

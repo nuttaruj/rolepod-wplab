@@ -2,6 +2,38 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.9] — 2026-05-27 — Replace `wp post meta update --from-file` with `wp eval` (elementor/bricks/oxygen/rankmath)
+
+Round 6 page-builder swap test (post-v1.11.8 client restart) revealed
+the shell-only gate fix unblocked the adapters but a different bug
+fired next: `wp post meta update` does NOT support `--from-file` —
+that flag is exclusive to a handful of subcommands (`option update`,
+`site meta update`, etc.) and yields `Error: Parameter errors: unknown
+--from-file parameter` on post meta.
+
+Root cause: 4 adapters dropped a JSON payload to a temp file under
+`wp-content/uploads/wplab-tmp/` and called `wp post meta update <id>
+<key> --from-file=<path>`. The Target.wpCli wrapper has no stdin
+pump, so the indirect-via-file approach was the only available path
+for large/JSON values. But the flag never existed for that subcommand.
+
+### Fixed — Route via `wp eval` reading the temp file + update_post_meta
+
+```ts
+const phpScript = `update_post_meta(${postId}, ${JSON.stringify(metaKey)}, json_decode(file_get_contents(${JSON.stringify(path)}), true));`;
+await target.wpCli(["eval", phpScript], { allowDestructive: true });
+```
+
+Applied to:
+- `elementor_write` (_elementor_data, JSON-decoded)
+- `bricks_write` (_bricks_page_content_2 / _bricks_header_content / _bricks_footer_content, JSON-decoded)
+- `oxygen_write` (ct_builder_shortcodes, raw string — no json_decode)
+- `rankmath_write` (rank_math_robots, JSON-decoded)
+
+Keeps the temp file + backup logic intact (`update_post_meta` runs
+under WordPress, so hooks/sanitization still fire). Removes the
+broken CLI flag dependency.
+
 ## [1.11.8] — 2026-05-27 — 6 more adapter writes accept RestTarget+companion (bricks/oxygen/divi/wpml/elementor/forms)
 
 Round 6 page-builder swap test surfaced more adapters with the same stale

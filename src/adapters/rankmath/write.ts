@@ -44,21 +44,13 @@ export const rankmathWrite: RankMathWriteAPI = {
         const robots = value ? '["noindex"]' : "[]";
         const tmpRel = `wp-content/uploads/wplab-tmp/rankmath-${postId}-robots.json`;
         const tmp = await target.fileWrite(tmpRel, robots, { backup: false });
-        const r = await target.wpCli(
-          [
-            "post",
-            "meta",
-            "update",
-            String(postId),
-            "rank_math_robots",
-            "--format=json",
-            `--from-file=${tmp.absolutePath}`,
-          ],
-          { allowDestructive: true },
-        );
+        const phpScript = `update_post_meta(${postId}, "rank_math_robots", json_decode(file_get_contents(${JSON.stringify(tmp.absolutePath)}), true));`;
+        const r = await target.wpCli(["eval", phpScript], {
+          allowDestructive: true,
+        });
         if (r.exitCode !== 0) {
           throw new Error(
-            `rankmath rank_math_robots failed: ${r.stderr.slice(0, 200)}`,
+            `rankmath rank_math_robots failed: ${r.stderr.slice(0, 200) || r.stdout.slice(0, 200)}`,
           );
         }
         updated.push(field);
