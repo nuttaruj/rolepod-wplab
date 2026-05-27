@@ -184,7 +184,7 @@ async function largeOptionsProbe(target: Target): Promise<Finding[]> {
     try {
       const bridge = await bridgeFor(target);
       const result = await bridge.dbQuery(
-        "SELECT option_name, LENGTH(option_value) AS bytes FROM {prefix}options WHERE autoload='yes' ORDER BY bytes DESC LIMIT 10",
+        "SELECT option_name, LENGTH(option_value) AS bytes FROM {prefix}options WHERE autoload IN ('yes','on','auto') ORDER BY bytes DESC LIMIT 10",
       );
       const findings: Finding[] = [];
       for (const row of result.rows) {
@@ -228,7 +228,7 @@ async function largeOptionsProbe(target: Target): Promise<Finding[]> {
   const r = await target.wpCli([
     "db",
     "query",
-    "SELECT option_name, LENGTH(option_value) AS bytes FROM {prefix}options WHERE autoload='yes' ORDER BY bytes DESC LIMIT 10",
+    "SELECT option_name, LENGTH(option_value) AS bytes FROM {prefix}options WHERE autoload IN ('yes','on','auto') ORDER BY bytes DESC LIMIT 10",
     "--skip-column-names",
   ]);
   if (r.exitCode !== 0) {

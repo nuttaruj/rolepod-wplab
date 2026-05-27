@@ -2,6 +2,17 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.2] — 2026-05-27 — Patch: diagnose large_options autoload filter (WP 6.6+ values)
+
+WP 6.6+ extended `wp_options.autoload` from `yes/no` to `yes/no/on/off/auto`.
+Existing installs typically have `on` (autoloaded) + `off` (not) + `auto`
+(new behavior). The hard-coded `WHERE autoload='yes'` in
+`largeOptionsProbe` matched zero rows on Hostinger demo. Fix: filter
+`autoload IN ('yes','on','auto')` to cover both legacy + current values.
+
+Verified on demo: 269 `off` + 205 `on` + 94 `auto` + 1 `yes` rows. New
+filter catches the actual autoload-enabled rows.
+
 ## [1.11.1] — 2026-05-27 — Patch: profile enum schema missing `strict` + `personal`
 
 v1.11.0 added `profile.active` field to `connect_rest` response but the
