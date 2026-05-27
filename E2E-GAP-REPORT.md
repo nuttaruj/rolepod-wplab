@@ -210,7 +210,47 @@ Filling the v1.10-v1.12 gaps above would close ~80% of the friction.
 | R2-2 | `seo_set` | Same bug pattern at line 51 | Same fix → v1.10.1 |
 | R2-3 | `cf7_form_create` | Default `mail_from = "[your-name] <noreply@${siteurl-domain}>"`. The `${siteurl-domain}` was meant as documentation placeholder but PHP interprets `${siteurl}` as variable expansion → `Error: Undefined constant "siteurl"` | Drop placeholder; default to `[your-name] <[your-email]>` → v1.10.1 |
 
-## Round-2 sub-gaps remaining (low priority)
+---
+
+# Round 3 — sub-gap closeout (companion v2.7.1 + MCP v1.11.2)
+
+All 3 Round-2 sub-gaps closed + 2 schema/data bugs surfaced and fixed during retest.
+
+## Closure matrix
+
+| Sub-gap | Fix shipped | Verification |
+|---|---|---|
+| A backup_create db export errno 2 | companion v2.7.1 `wp_mkdir_p(wp-content/uploads/wplab-tmp/)` in `WpCli::handle()` | ✅ `wp db export` → `Success: Exported to 'wp-content/uploads/wplab-tmp/v2.7.1-test.sql'`. MCP `backup_create db` → 2.09 MB SQL written to local artifact dir |
+| B diagnose db query failures | companion v2.7.1 new `/db-query` endpoint (SELECT-only, `$wpdb->prepare`, auto-`{prefix}`) + MCP v1.11.0 `Bridge.dbQuery` + diagnose routes through Bridge on RestTarget+companion | ✅ `diagnose` returns 10 real postmeta rows with avg_bytes for slow_queries; "no autoload options >200KB" for large_options (was "query failed") |
+| C wp_execute_php power-profile UX | MCP v1.11.0 detailed `PowerProfileRequiredError` message with `.mcp.json` snippet + `connect_rest` exposes `profile.active / execute_php_unlocked / env_var_name` | ✅ `connect_rest` response includes `profile: { active: "strict", execute_php_unlocked: false, env_var_name: "ROLEPOD_WPLAB_PROFILE" }`. `wp_execute_php` 403 message includes ready-to-paste `.mcp.json` env config |
+
+## 2 new bugs surfaced + fixed in Round 3
+
+| # | Bug | Fix |
+|---|---|---|
+| R3-1 | `connect_rest.profile.active` zod enum was `["default", "power"]` — canonical `ProfileSchema` is `["strict", "personal", "power"]`. Fresh installs default to `strict` → connect failed with `Expected 'default' \| 'power', received 'strict'` | v1.11.1: align enum to ProfileSchema |
+| R3-2 | `diagnose largeOptionsProbe` filtered `WHERE autoload='yes'` but WP 6.6+ extended values to `yes/no/on/off/auto`. Hostinger demo has 269 `off` + 205 `on` + 94 `auto` + 1 `yes` — old filter matched 1 row | v1.11.2: filter `autoload IN ('yes','on','auto')` covers legacy + current WP |
+
+## Final ship history (Round 3)
+
+| Tag | Repo | Headline |
+|---|---|---|
+| `companion v2.7.1` | rolepod-wp | wp-cli auto-mkdir wplab-tmp + new /db-query endpoint |
+| `mcp v1.11.0` | @rolepod/wplab | sub-gap closeout — Bridge.dbQuery, diagnose refactor, power-profile UX |
+| `mcp v1.11.1` | @rolepod/wplab | profile enum schema fix (strict + personal) |
+| `mcp v1.11.2` | @rolepod/wplab | diagnose autoload filter for WP 6.6+ |
+
+## Round 3 honest summary
+
+E2E gap closure now end-to-end:
+- 10 Round 1 gaps closed (Round 2 verified live)
+- 3 Round 2 sub-gaps closed (Round 3 verified live)
+- 2 schema/data bugs surfaced + fixed within same session
+- Zero outstanding blockers for the documented site-build path
+
+All MCP tools that should work on RestTarget+companion DO work. AI can drive the full Bangkok-Roast-Lab build end-to-end via MCP tools with zero curl fallback. Tool count 98 (post v1.10.0); no changes in v1.11.x.
+
+## Round-2 sub-gaps remaining (low priority — closed in Round 3)
 
 ### Sub-gap A — `backup_create` `wp db export` fails over companion
 
