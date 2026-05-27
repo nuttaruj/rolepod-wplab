@@ -1,5 +1,7 @@
 # rolepod-wplab
 
+> **🌐 New here? See [what AI can actually do on your WordPress site](https://nuttaruj.github.io/rolepod-wplab/) — plain-English breakdown of the 3 setup tiers.**
+
 **rolepod-wplab gives Claude Code, Cursor, Codex CLI, and Gemini CLI a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
 
 One MCP server, 62 tools, 11 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
