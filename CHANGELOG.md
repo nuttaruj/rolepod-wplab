@@ -2,7 +2,46 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.11.3] — 2026-05-27 — Round 4 stress-test closeout: ConfirmTrueSchema sweep + db-query routing for 3 more probes
+## [1.11.4] — 2026-05-27 — broken_images via /db-query + yoast/rankmath postMeta via /db-query
+
+Continues Round 4 closeout (v1.11.3 already shipped ConfirmTrueSchema sweep).
+
+### Fixed — `diagnose broken_images` scope routes via `/db-query`
+
+Last diagnose scope still using `wp db query` directly. Routed via
+`bridge.dbQuery` for RestTarget+companion (same pattern as
+slow_queries/large_options in v1.11.0). Falls back to wp-cli for
+shell-capable targets without companion. SQL contains embedded single
+quotes (`'<img'`, `'src="'`, `'%<img%'`) that escapeshellarg mangled.
+
+### Fixed — `yoast_read` + `rankmath_read` postMeta on RestTarget
+
+Both adapter `postMeta` paths returned only `{ post_id }` on RestTarget
+because:
+- Yoast meta keys (`_yoast_wpseo_*`) aren't `register_meta(show_in_rest)`,
+  so `/wp/v2/posts/<id>?_fields=meta` excludes them.
+- Rank Math meta keys (`rank_math_*`) — same.
+
+Fix: when `target.kind === "rest" && companion?.enabled`, read raw
+postmeta via parameterised db-query:
+
+```ts
+bridge.dbQuery(
+  "SELECT meta_key, meta_value FROM {prefix}postmeta WHERE post_id = %d AND meta_key IN (...)",
+  [postId],
+)
+```
+
+Verified live: pages with `_yoast_wpseo_focuskw` + `_yoast_wpseo_metadesc`
+set via `wp_seo_set` (Round 2) now read back correctly through
+`wp_yoast_read`.
+
+### No companion change
+
+Reuses `/db-query` shipped in companion v2.7.1. MIN_COMPANION_VERSION
+unchanged.
+
+## [1.11.3] — 2026-05-27 — Patch: ConfirmTrueSchema applied to all 17 `allow_destructive` fields
 
 Round 4 cross-tool stress test surfaced 4 issues. All fixed.
 
