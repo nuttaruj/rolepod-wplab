@@ -65,26 +65,37 @@ export async function wpSiteScaffoldHandler(
   const bridge = await bridgeFor(target);
 
   // One mega-payload runs server-side so the entire scaffold is atomic-ish
-  // and avoids 10+ round-trips. Errors short-circuit but partial state may
-  // remain — ledger captures each step regardless.
-  const payload = `$result = ['identity' => [], 'pages' => [], 'menu' => null, 'front_page' => null];
-$identity = ${JSON.stringify(input.identity ?? {})};
+  // and avoids 10+ round-trips. We pass all input data as a single
+  // JSON-encoded PHP string + json_decode at the top, because JSON object
+  // syntax `{"a":1}` is NOT valid PHP. v1.10.0 first cut tried to embed
+  // JSON.stringify(input.x) raw into PHP source which parse-errored on
+  // any object with `{`. Fixed: stringify-then-jsondecode pattern.
+  const inputJson = JSON.stringify({
+    identity: input.identity ?? {},
+    pages: input.pages ?? [],
+    menu: input.menu ?? null,
+    front_page_slug: input.front_page_slug ?? null,
+    blog_page_slug: input.blog_page_slug ?? null,
+  });
+  const payload = `$input = json_decode(${JSON.stringify(inputJson)}, true);
+$result = ['identity' => [], 'pages' => [], 'menu' => null, 'front_page' => null];
+$identity = (array) ($input['identity'] ?? []);
 foreach ($identity as $key => $val) {
   $map = ['title' => 'blogname', 'tagline' => 'blogdescription', 'timezone' => 'timezone_string', 'permalink_structure' => 'permalink_structure'];
   $opt = $map[$key] ?? $key;
   update_option($opt, $val);
   $result['identity'][$opt] = $val;
 }
-$pages = ${JSON.stringify(input.pages ?? [])};
+$pages = (array) ($input['pages'] ?? []);
 $page_id_by_slug = [];
 foreach ($pages as $page) {
   $existing = get_page_by_path($page['slug']);
   if ($existing && $existing->post_type === 'page') {
-    wp_update_post(['ID' => $existing->ID, 'post_title' => $page['title'], 'post_content' => $page['content'], 'post_status' => $page['status']]);
+    wp_update_post(['ID' => $existing->ID, 'post_title' => $page['title'], 'post_content' => $page['content'], 'post_status' => $page['status'] ?? 'publish']);
     $page_id_by_slug[$page['slug']] = (int) $existing->ID;
     $result['pages'][] = ['slug' => $page['slug'], 'id' => (int) $existing->ID, 'action' => 'updated'];
   } else {
-    $new_id = wp_insert_post(['post_type' => 'page', 'post_title' => $page['title'], 'post_content' => $page['content'], 'post_status' => $page['status'], 'post_name' => $page['slug']]);
+    $new_id = wp_insert_post(['post_type' => 'page', 'post_title' => $page['title'], 'post_content' => $page['content'], 'post_status' => $page['status'] ?? 'publish', 'post_name' => $page['slug']]);
     if (is_wp_error($new_id)) {
       $result['pages'][] = ['slug' => $page['slug'], 'error' => $new_id->get_error_message()];
       continue;
@@ -93,22 +104,22 @@ foreach ($pages as $page) {
     $result['pages'][] = ['slug' => $page['slug'], 'id' => (int) $new_id, 'action' => 'created'];
   }
 }
-$menu = ${JSON.stringify(input.menu ?? null)};
+$menu = $input['menu'] ?? null;
 if ($menu) {
   $existing_menu = wp_get_nav_menu_object($menu['name']);
   $menu_id = $existing_menu ? (int) $existing_menu->term_id : null;
   if (!$menu_id) {
-    $menu_id = wp_create_nav_menu($menu['name']);
-    if (is_wp_error($menu_id)) {
-      $result['menu'] = ['error' => $menu_id->get_error_message()];
+    $created = wp_create_nav_menu($menu['name']);
+    if (is_wp_error($created)) {
+      $result['menu'] = ['error' => $created->get_error_message()];
       $menu_id = null;
     } else {
-      $menu_id = (int) $menu_id;
+      $menu_id = (int) $created;
     }
   }
   if ($menu_id) {
     $items_added = [];
-    foreach ($menu['items'] as $item) {
+    foreach ((array) ($menu['items'] ?? []) as $item) {
       $pid = $page_id_by_slug[$item['page_slug']] ?? null;
       if (!$pid) continue;
       $item_id = wp_update_nav_menu_item($menu_id, 0, [
@@ -121,13 +132,13 @@ if ($menu) {
       if (!is_wp_error($item_id)) $items_added[] = (int) $item_id;
     }
     $locations = (array) get_theme_mod('nav_menu_locations', []);
-    $locations[$menu['location']] = $menu_id;
+    $locations[$menu['location'] ?? 'primary'] = $menu_id;
     set_theme_mod('nav_menu_locations', $locations);
-    $result['menu'] = ['menu_id' => $menu_id, 'name' => $menu['name'], 'location' => $menu['location'], 'items_added' => count($items_added)];
+    $result['menu'] = ['menu_id' => $menu_id, 'name' => $menu['name'], 'location' => $menu['location'] ?? 'primary', 'items_added' => count($items_added)];
   }
 }
-$front_slug = ${JSON.stringify(input.front_page_slug ?? null)};
-$blog_slug = ${JSON.stringify(input.blog_page_slug ?? null)};
+$front_slug = $input['front_page_slug'] ?? null;
+$blog_slug = $input['blog_page_slug'] ?? null;
 if ($front_slug && isset($page_id_by_slug[$front_slug])) {
   update_option('show_on_front', 'page');
   update_option('page_on_front', $page_id_by_slug[$front_slug]);

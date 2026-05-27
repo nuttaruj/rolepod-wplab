@@ -48,7 +48,7 @@ $set = [];
 $mappings = $yoast
   ? ['focus_keyword' => '_yoast_wpseo_focuskw', 'meta_description' => '_yoast_wpseo_metadesc', 'meta_title' => '_yoast_wpseo_title', 'canonical' => '_yoast_wpseo_canonical', 'noindex' => '_yoast_wpseo_meta-robots-noindex']
   : ['focus_keyword' => 'rank_math_focus_keyword', 'meta_description' => 'rank_math_description', 'meta_title' => 'rank_math_title', 'canonical' => 'rank_math_canonical_url', 'noindex' => 'rank_math_robots'];
-$input = ${JSON.stringify(input)};
+$input = json_decode(${JSON.stringify(JSON.stringify(input))}, true);
 foreach ($mappings as $field => $key) {
   if (array_key_exists($field, $input)) {
     $before[$key] = get_post_meta(${input.post_id}, $key, true);

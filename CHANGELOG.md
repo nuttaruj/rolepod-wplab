@@ -2,6 +2,23 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.1] — 2026-05-27 — Patch: wave-3 PHP payload bugs surfaced in retest
+
+3 bugs caught during v1.10.0 MCP retest:
+
+- **site_scaffold**: `${JSON.stringify(input.x)}` embedded JSON object
+  literal `{"a":1}` into PHP source → `ParseError: unexpected token "{"`.
+  Fix: stringify-then-jsondecode pattern (build `json_decode("...", true)`).
+- **seo_set**: same bug at line 51 `$input = ${JSON.stringify(input)};`.
+  Fix: same stringify-then-jsondecode.
+- **cf7_form_create**: default `mail_from` was `"[your-name] <noreply@${siteurl-domain}>"`
+  — `${siteurl-domain}` was a documentation placeholder but PHP interprets
+  `${siteurl}` as variable expansion → `Undefined constant "siteurl"`.
+  Fix: default `mail_from` to `"[your-name] <[your-email]>"`.
+
+No new features. No schema change. Tool count unchanged at 98. Build clean.
+Smoke 3/3.
+
 ## [1.10.0] — 2026-05-27 — E2E gap closeout: companion /option-set, 9 new tools, ledger capture
 
 Driven by the 2026-05-27 e2e build-out test on Hostinger demo where ~60% of

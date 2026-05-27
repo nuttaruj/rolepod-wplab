@@ -45,7 +45,7 @@ export async function wpCf7FormCreateHandler(
     input.mail_body ??
     "From: [your-name] <[your-email]>\nSubject: [your-subject]\n\n[your-message]";
   const mailFrom =
-    input.mail_from ?? "[your-name] <noreply@${siteurl-domain}>";
+    input.mail_from ?? "[your-name] <[your-email]>";
 
   const mail = {
     subject: input.mail_subject,
