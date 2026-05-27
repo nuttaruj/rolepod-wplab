@@ -4,7 +4,28 @@ description: Bootstrap a new Gutenberg block, plugin, theme, or block-pattern sk
 when_to_use: user wants to "create a new plugin / new block / new theme / new block-pattern", OR mentions scaffolding any of those four artifact types
 tier: 1
 phase: build
+mode:
+  standalone:
+    role: scaffold + guide WP file creation
+    output: scaffolded files + structure walkthrough
+  with-rolepod:
+    role: WP scaffold primitive
+    caller: rolepod:implement-plan
+    output: files created (list of paths) — no guide
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — return
+only the list of files created (absolute paths). Skip the structure walkthrough
+and next-step suggestions — the parent's `implement-plan` owns the build flow.
+
+If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — scaffold + guide
+the user through structure, conventions, and recommended next steps.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
 
 # WP Scaffold
 

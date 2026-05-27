@@ -4,7 +4,28 @@ description: Read or write configuration owned by SEO / i18n / e-commerce / cust
 when_to_use: user wants to set SEO meta, manage Woo products/orders/settings, manage WPML translations, edit ACF fields, create/edit forms (any flavor), OR mentions any of those plugin names
 tier: 1
 phase: build
+mode:
+  standalone:
+    role: edit + guide + verify in one flow
+    output: edit diff + impact analysis + verification suggestion
+  with-rolepod:
+    role: WP edit primitive
+    caller: rolepod:implement-plan
+    output: edit diff only (parent owns verify/review phases)
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — return
+the edit diff only. The parent's `implement-plan` owns verify + review; do not
+re-run them here.
+
+If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — edit + impact
+analysis + verification suggestion in one flow.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
 
 # WP Edit Plugin
 

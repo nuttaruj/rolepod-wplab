@@ -2,6 +2,79 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] — 2026-05-27 — Rolepod Extension Protocol v1 (forward-compatible child mode)
+
+Implements the spec from `brief/handoff-wplab-v1.9.md` shipped here as
+v1.12 (npm version drift since the brief was written for 1.8.0 → 1.9.0
+and we've since shipped 1.9–1.11). Plugin-manifest version
+(`.claude-plugin/plugin.json`) catches up from 1.8.0 → 1.12.0.
+
+### Why
+
+The sibling `rolepod` parent plugin (v2.7+) will introduce Extension
+Protocol v1 — it sets `ROLEPOD_PARENT=1` + `ROLEPOD_PROTOCOL=v1` via
+its SessionStart hook so children can discover each other and divide
+responsibility. Without protocol support, wplab's phase-flavored
+skills (`wp-diagnose`, `wp-health-check`, `wp-changes`, etc.) overlap
+with the parent's own phase skills (`debug-issue`, `check-work`,
+`review-code`) and create user confusion about which to call.
+
+### Added — Extension Protocol v1 support
+
+- **`src/lib/rolepodEvidence.ts`** — new helper
+  - `isUnderRolepodParent()` — env-var detection
+  - `resolveEvidenceDir(skill, ts)` — picks `.rolepod-wplab/artifacts/`
+    standalone vs `.rolepod/evidence/<ts>-rolepod-wplab-<skill>/`
+    with-parent
+  - `writeManifest(dir, input)` — emits the `manifest.json` schema
+    (`protocol: "rolepod/v1"`, plugin, skill, phase, status, summary,
+    timestamps, artifacts, metadata)
+  - `makeRunTimestamp()` — ISO-compact UTC stamp suitable for dir names
+- **`tests/unit/rolepodEvidence.test.ts`** — 7 tests covering env
+  detection, dir paths in both modes, manifest schema, snake_case
+  serialization, timestamp format. All passing.
+
+### Changed — 8 skill frontmatter blocks
+
+Added `mode:` declaration + "Mode selection" body block to:
+
+- `wp-diagnose` — standalone debug entry → with-parent evidence provider
+  for `rolepod:debug-issue`
+- `wp-health-check` — standalone smoke test → with-parent snapshot
+  provider for `rolepod:check-work` (writes manifest.json)
+- `wp-changes` — standalone change audit → with-parent diff summary
+  provider for `rolepod:review-code` (writes manifest.json)
+- `wp-full` — standalone tour → with-parent flat tool inventory for
+  `rolepod:using-rolepod` (body branches on mode)
+- `wp-scaffold` — standalone scaffold + guide → with-parent files-only
+  primitive for `rolepod:implement-plan`
+- `wp-edit-design`, `wp-edit-plugin`, `wp-edit-theme` — standalone
+  edit + guide + verify → with-parent diff-only primitives for
+  `rolepod:implement-plan`
+
+### Changed — README
+
+New "Standalone vs Combined" section explaining both modes, the
+6-skill mode summary table, install combos, and evidence path
+conventions.
+
+### Forward-compat posture
+
+Parent rolepod is currently at v2.6.5. Until parent ships v2.7 with
+the SessionStart hook that sets `ROLEPOD_PARENT=1`, the `with-rolepod`
+mode path stays dormant — standalone behavior is unchanged for every
+existing user. When the parent ships, no further action is required
+on the wplab side.
+
+### Unchanged
+
+- 89+ MCP tools — zero surface change
+- 6 other skills (`wp-connect`, `wp-pair-setup`, `wp-introspect`,
+  `wp-execute-php`, `wp-content`, `wp-migrate`) — already pure tools,
+  no mode logic needed
+- Standalone artifact path — `.rolepod-wplab/artifacts/` still used
+  when no parent
+
 ## [1.11.11] — 2026-05-27 — Root cause: `replacePostMeta` shared helper + opt-in RestTarget+companion E2E smoke test
 
 Round 6 produced 7 production bugs across copy-pasted post-meta-replace

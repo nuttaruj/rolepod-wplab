@@ -4,7 +4,28 @@ description: Read or modify theme-level config on a connected target — theme f
 when_to_use: user wants to "edit theme / change theme files / make a child theme / set theme.json palette / edit global styles / switch active theme", OR a hook callback needs to live in a theme rather than a custom plugin
 tier: 1
 phase: build
+mode:
+  standalone:
+    role: edit + guide + verify in one flow
+    output: edit diff + impact analysis + verification suggestion
+  with-rolepod:
+    role: WP edit primitive
+    caller: rolepod:implement-plan
+    output: edit diff only (parent owns verify/review phases)
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — return
+the edit diff only. The parent's `implement-plan` owns verify + review; do not
+re-run them here.
+
+If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — edit + impact
+analysis + verification suggestion in one flow.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
 
 # WP Edit Theme
 

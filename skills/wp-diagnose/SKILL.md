@@ -4,7 +4,29 @@ description: Multi-probe diagnostic + security audit of a connected target — p
 when_to_use: user asks "what is wrong with this site / audit security / check for problems / why is the site slow", OR after a regression spike, OR before a migration to a new environment
 tier: 1
 phase: debug
+mode:
+  standalone:
+    role: primary debug entry — reproduce → trace → fix WP issue
+    output: full debug report (symptom, trace, root cause, fix)
+  with-rolepod:
+    role: WP-specific evidence provider
+    caller: rolepod:debug-issue
+    output: WP-runtime findings only (error log lines, hook trace, query log) — no fix flow
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
+in the frontmatter — produce reduced output suited to the parent's `debug-issue`
+phase orchestrator. Skip the fix-flow narrative; emit WP-runtime findings only
+(error log lines, hook trace, query log) and let the parent decide remediation.
+
+If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
+run the full diagnostic flow described below.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
 
 # WP Diagnose
 

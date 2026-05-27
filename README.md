@@ -4,7 +4,46 @@
 
 **rolepod-wplab gives Claude Code, Cursor, Codex CLI, and Gemini CLI a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
 
-One MCP server, 62 tools, 11 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
+One MCP server, 89+ tools, 14 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
+
+## Standalone vs Combined
+
+**Standalone:** complete WordPress operations toolkit. 14 skills + 89+ MCP tools
+cover the full lifecycle — connect, introspect, edit, verify, migrate. Use
+directly via skill commands. No external dependencies.
+
+**Combined with rolepod parent (v2.7+):** wplab phase-flavored skills narrow
+to WP-specific tool roles, deferring workflow orchestration to parent. Same
+14 skills, smarter division of labor. Detection is one env var
+(`ROLEPOD_PARENT=1`) set by parent's SessionStart hook — no install-time
+coupling.
+
+### Mode summary
+
+| wplab skill | standalone role | with-rolepod role |
+|---|---|---|
+| `wp-diagnose` | primary debug entry | evidence for parent's `debug-issue` |
+| `wp-health-check` | full smoke test | snapshot for parent's `check-work` |
+| `wp-changes` | change audit | summary for parent's `review-code` |
+| `wp-full` | tour + flow | tool loader (parent owns flow) |
+| `wp-scaffold`, `wp-edit-*` | edit + guide + verify | edit primitives for parent's `implement-plan` |
+| `wp-migrate`, `wp-connect`, `wp-pair-setup`, `wp-introspect`, `wp-execute-php`, `wp-content` | unchanged tools | unchanged tools |
+
+### Install combos
+
+| Install | Unlocks |
+|---|---|
+| wplab alone | full WordPress dev toolkit |
+| wplab + rolepod parent | + workflow discipline, evidence handoff, multi-phase gates |
+| wplab + uiproof | + browser-verified WP changes, a11y on themes, visual diff on migrations |
+| all three | full WP dev flow with verified evidence at every phase |
+
+Evidence path convention:
+
+- standalone: `.rolepod-wplab/artifacts/<ts>/`
+- with-parent: `.rolepod/evidence/<ts>-rolepod-wplab-<skill>/`
+
+Manifest schema (Extension Protocol v1): `src/lib/rolepodEvidence.ts`.
 
 ## What it helps with
 

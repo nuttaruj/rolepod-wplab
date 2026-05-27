@@ -4,7 +4,32 @@ description: Query the AI Change Ledger on a connected target — every write th
 when_to_use: site broke after AI activity ("ตอบ tool หลังเปิด AI แล้วเว็บพัง"), OR user wants to audit "อะไรที่ AI แก้ไปบ้างวันนี้", OR debug a regression by bisecting AI changes, OR roll back a single AI write without affecting others
 tier: 1
 phase: recovery
+mode:
+  standalone:
+    role: change audit + report
+    output: full diff report with risk annotations
+  with-rolepod:
+    role: WP diff summary provider
+    caller: rolepod:review-code
+    output: diff summary only (files touched, risk level) + manifest.json
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
+in the frontmatter — emit a structured diff summary (files touched, category,
+risk level) to the parent's evidence directory via `manifest.json`
+(protocol `rolepod/v1`, phase `review`). Parent's `review-code` consumes it.
+
+If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
+print the full diff report with risk annotations and remediation suggestions.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
+
+In with-rolepod mode, write evidence via `src/lib/rolepodEvidence.ts` (same
+helper as wp-health-check, phase `review`).
 
 # WP Changes
 

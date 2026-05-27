@@ -4,11 +4,60 @@ description: Alias / pointer skill — when the user wants "the full rolepod-wpl
 when_to_use: a user types `/wp-full` literally, OR asks for the complete WP skill set, OR wants a directory of every wp-* skill in the project
 tier: 1
 phase: alias
+mode:
+  standalone:
+    role: tour of wplab tools + suggested in-domain workflow
+    output: capability overview + recommended next skill
+  with-rolepod:
+    role: tool loader (no flow narrative)
+    caller: rolepod:using-rolepod
+    output: tool inventory only — parent owns flow
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — emit the
+flat tool inventory under the "When with-rolepod" section below; do NOT render
+the flow narrative. Parent's `using-rolepod` router decides which wplab skill
+to invoke based on phase.
+
+If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — render the full
+tour with phase grouping + recommended next skill, under the "When standalone"
+section.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
 
 # WP Full
 
 Pointer skill. Owns nothing. Has nothing under it. Exists so a single invocation surfaces the entire wp-* skill map.
+
+## When with-rolepod
+
+Parent detected. Print the flat tool inventory (no flow narrative):
+
+```
+wplab tools available:
+- wp-diagnose      (debug evidence)
+- wp-health-check  (verify evidence)
+- wp-changes       (review evidence)
+- wp-edit-design   (build primitive)
+- wp-edit-plugin   (build primitive)
+- wp-edit-theme    (build primitive)
+- wp-scaffold      (build primitive)
+- wp-migrate       (build + verify pair)
+- wp-connect       (utility — opens a Target)
+- wp-pair-setup    (utility — one-click pair via companion)
+- wp-introspect    (utility — runtime introspection)
+- wp-execute-php   (utility — guarded PHP eval)
+- wp-content       (utility — core REST CRUD)
+- wp-full          (this skill — already loaded)
+```
+
+Then stop. Parent owns the phase decision.
+
+## When standalone
 
 The 13 skills, by phase:
 

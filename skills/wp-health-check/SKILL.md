@@ -4,7 +4,48 @@ description: Run a sub-5s diagnostic of a connected WordPress target — version
 when_to_use: user asks "ping the site / is it healthy / what version is it / is the companion live", OR after a connect / pair / migration before continuing
 tier: 1
 phase: verify
+mode:
+  standalone:
+    role: WordPress smoke test entry — full system check
+    output: full health report with remediation suggestions
+  with-rolepod:
+    role: WP system snapshot provider
+    caller: rolepod:check-work
+    output: snapshot JSON (PHP version, plugin status, DB state) + manifest.json under .rolepod/evidence/
 ---
+
+## Mode selection
+
+If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
+in the frontmatter — write a structured snapshot to the parent's evidence
+directory using the `manifest.json` schema (protocol `rolepod/v1`,
+phase `verify`). The parent's `check-work` consumes the manifest to decide
+whether the change is ready to merge.
+
+If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
+print the full health report with remediation suggestions.
+
+```bash
+if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
+
+In with-rolepod mode, emit evidence with the `src/lib/rolepodEvidence.ts`
+helper:
+
+```ts
+import { resolveEvidenceDir, writeManifest, makeRunTimestamp } from "../../src/lib/rolepodEvidence.js";
+const ts = makeRunTimestamp();
+const dir = resolveEvidenceDir("wp-health-check", ts);
+writeManifest(dir, {
+  skill: "wp-health-check",
+  phase: "verify",
+  status: warnings.length ? "warn" : "pass",
+  summary: `WP ${wpVersion}, PHP ${phpVersion}, ${pluginCount} plugins active`,
+  startedAt, finishedAt,
+  artifacts: [{ type: "report", path: "./health.json" }],
+  metadata: { wp_version: wpVersion, php_version: phpVersion, plugin_count: pluginCount },
+});
+```
 
 # WP Health Check
 
