@@ -2,6 +2,99 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] — 2026-05-27 — Recovery namespace (mu-plugin guardian wrappers)
+
+Seven new MCP tools for crash recovery via the new `/wplab-recovery/v1/*`
+namespace that ships in companion v2.6.0's mu-plugin guardian. The guardian
+loads before regular plugins so its REST endpoints survive main-plugin
+parse errors / fatals. 82 → 89 tools.
+
+### Added — recovery tools
+
+- **`rolepod_wp_recovery_status`** — probe guardian. Returns
+  `main_alive`, `recent_fatals[]`, `last_fatal`, `safe_mode`,
+  `guardian_version`. Use after a 5xx from main namespace to determine
+  whether you're in recovery mode.
+- **`rolepod_wp_recovery_disable_plugin`** — rename plugin main file to
+  `.disabled`. Accepts slug or `slug/file.php` form. Calls
+  `deactivate_plugins()` for active_plugins cleanup. Use when a plugin
+  (often the one just updated/edited) is fataling.
+- **`rolepod_wp_recovery_disable_file`** — scope-checked rename
+  `<path>` → `<path>.disabled` for any file under
+  `wp-content/{plugins,themes,uploads,mu-plugins}` or `wp-config.php`.
+  Use when a specific file (theme `functions.php`, plugin include) is
+  the culprit but you don't want to nuke the whole plugin.
+- **`rolepod_wp_recovery_restore_file`** — reverse. Accepts either
+  the `.disabled` form or active form.
+- **`rolepod_wp_recovery_restore_snapshot`** — untar a previously
+  captured theme snapshot via the guardian (bypasses main companion's
+  `/theme/restore` which would be unreachable if main is down).
+- **`rolepod_wp_recovery_list_changes`** — direct DB read of the
+  ledger. Useful pre-rollback to identify the suspect write.
+- **`rolepod_wp_recovery_safe_mode`** — toggle `rolepod_wp_safe_mode`
+  option. When ON, the main companion (when alive) should refuse risky
+  ops to prevent the AI from immediately re-introducing the bad write.
+
+### Added — `RecoveryModeError` (`src/util/errors.ts`)
+
+Surfaces when main namespace 5xx + guardian reports `main_alive: false`.
+Includes `last_fatal` (file/line/message) so the AI can decide which file
+to disable without an extra status probe.
+
+### Added — `Bridge` recovery methods
+
+`CompanionBridge.recoveryStatus / recoveryDisablePlugin /
+recoveryDisableFile / recoveryRestoreFile / recoveryRestoreSnapshot /
+recoveryListChanges / recoverySafeMode` — all hit
+`/wplab-recovery/v1/*` and use Application Password auth via
+`target.rest()` (no session token; main `/handshake` may be down).
+
+### Pairs with
+
+`rolepod-wp` **v2.6.2+** (recommended) — companion with the mu-plugin
+guardian auto-installed on plugin activate. Version notes:
+
+- **v2.6.0** — initial guardian. REST endpoints registered via
+  `rest_api_init` only, which is unreachable during theme-load fatal
+  (~40% of WSODs). Useful for post-`init` fatals only.
+- **v2.6.1** — added `muplugins_loaded:PHP_INT_MAX` early-dispatch path
+  so recovery endpoints reachable during ANY post-mu-plugin fatal
+  (theme load, plugin file parse). Recovery coverage ~95%.
+- **v2.6.2** — best-practices auth hardening. Pluggable.php load order
+  fix + REDIRECT_HTTP_AUTHORIZATION + getallheaders() fallbacks for
+  broader server compat (Apache mod_php, Apache FastCGI, Nginx FPM,
+  LiteSpeed). Set as the floor in `MIN_COMPANION_VERSION`.
+
+### Demo test learning (recorded for future contributors)
+
+The architecture pattern "mu-plugin recovery via `rest_api_init`" has a
+trap: REST routes don't register until WP boot completes through `init`,
+which is gated by `setup_theme` → theme `functions.php` load. A fatal in
+the theme file kills the boot before `rest_api_init` fires. The guardian
+mu-plugin DID load (mu-plugins are pulled in before plugins/themes in
+`wp-settings.php`), and its `register_shutdown_function` DID record the
+fatal — but the REST endpoints weren't registered, so the AI couldn't
+query / disable / recover.
+
+The fix (companion v2.6.1) detects recovery URLs at the top of mu-plugin
+load and short-circuits at `muplugins_loaded:PHP_INT_MAX`, bypassing
+plugin + theme load entirely. Manual Application Password auth via
+`WP_Application_Passwords::validate_application_password()` works because
+WP loads its core classes (incl. that one) before mu-plugins via
+`wp-load.php`.
+
+Result: if v2.6.1+ is installed BEFORE a WSOD-inducing write, recovery
+works through REST. If only v2.6.0 was installed and a theme-level fatal
+hits, manual SSH/FTP/cPanel recovery is still required (chicken-and-egg
+on the upgrade path — to install v2.6.1, WP must boot, but WP can't
+boot through the fatal).
+
+### Smoke test
+
+`tests/smoke/mcp-handshake.test.ts` expected tool list updated 82 → 89.
+TypeScript compile clean (`tsc --noEmit`). Bundle size: 2.33 MB (unchanged
+material, +~3 KB from 7 small tool files).
+
 ## [1.8.0] — 2026-05-27 — a third-party plugin-parity closeout: one-time admin login + file toggle + 3 field-plugin adapters + conventions
 
 Eleven new MCP tools, all driven by the v2.4 a third-party plugin analysis pass. 71 → 82 tools.

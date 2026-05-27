@@ -134,6 +134,34 @@ import {
   wpAdminOneTimeLinkToolDef,
 } from "./companion/wp_admin_one_time_link.js";
 import {
+  wpRecoveryStatusHandler,
+  wpRecoveryStatusToolDef,
+} from "./companion/wp_recovery_status.js";
+import {
+  wpRecoveryDisablePluginHandler,
+  wpRecoveryDisablePluginToolDef,
+} from "./companion/wp_recovery_disable_plugin.js";
+import {
+  wpRecoveryDisableFileHandler,
+  wpRecoveryDisableFileToolDef,
+} from "./companion/wp_recovery_disable_file.js";
+import {
+  wpRecoveryRestoreFileHandler,
+  wpRecoveryRestoreFileToolDef,
+} from "./companion/wp_recovery_restore_file.js";
+import {
+  wpRecoveryRestoreSnapshotHandler,
+  wpRecoveryRestoreSnapshotToolDef,
+} from "./companion/wp_recovery_restore_snapshot.js";
+import {
+  wpRecoveryListChangesHandler,
+  wpRecoveryListChangesToolDef,
+} from "./companion/wp_recovery_list_changes.js";
+import {
+  wpRecoverySafeModeHandler,
+  wpRecoverySafeModeToolDef,
+} from "./companion/wp_recovery_safe_mode.js";
+import {
   wpFileDisableHandler,
   wpFileDisableToolDef,
 } from "./atomic/wp_file_disable.js";
@@ -460,6 +488,34 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpAdminOneTimeLinkToolDef,
     handler: (d, raw) => wpAdminOneTimeLinkHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryStatusToolDef,
+    handler: (d, raw) => wpRecoveryStatusHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryDisablePluginToolDef,
+    handler: (d, raw) => wpRecoveryDisablePluginHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryDisableFileToolDef,
+    handler: (d, raw) => wpRecoveryDisableFileHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryRestoreFileToolDef,
+    handler: (d, raw) => wpRecoveryRestoreFileHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryRestoreSnapshotToolDef,
+    handler: (d, raw) => wpRecoveryRestoreSnapshotHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoveryListChangesToolDef,
+    handler: (d, raw) => wpRecoveryListChangesHandler(d.registry, raw),
+  },
+  {
+    def: wpRecoverySafeModeToolDef,
+    handler: (d, raw) => wpRecoverySafeModeHandler(d.registry, raw),
   },
   {
     def: wpFileDisableToolDef,

@@ -110,3 +110,32 @@ export class AstRejectedError extends WplabError {
     });
   }
 }
+
+/**
+ * Thrown when the main companion namespace (wplab/v1) is unreachable but the
+ * mu-plugin guardian namespace (wplab-recovery/v1) is alive. Surfaces last
+ * fatal so the AI can call recovery tools (disable plugin/file, restore
+ * snapshot) before retrying the original op.
+ */
+export class RecoveryModeError extends WplabError {
+  constructor(detail: {
+    targetId: string;
+    lastFatal: Record<string, unknown> | null;
+    recentFatals: Array<Record<string, unknown>>;
+    guardianVersion: string;
+  }) {
+    const fatalLine = detail.lastFatal
+      ? `last fatal: ${detail.lastFatal["message"] ?? "unknown"} at ${detail.lastFatal["file"] ?? "?"}:${detail.lastFatal["line"] ?? "?"}`
+      : "no fatal recorded";
+    super(
+      "RECOVERY_MODE",
+      `Main plugin down on target ${detail.targetId} — guardian is alive (${fatalLine}). Use rolepod_wp_recovery_* tools to fix.`,
+      {
+        targetId: detail.targetId,
+        last_fatal: detail.lastFatal,
+        recent_fatals: detail.recentFatals,
+        guardian_version: detail.guardianVersion,
+      },
+    );
+  }
+}

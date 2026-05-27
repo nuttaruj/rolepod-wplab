@@ -788,6 +788,208 @@ export class CompanionBridge {
     };
   }
 
+  // -------------------------------------------------------------------------
+  // v2.6 — Recovery namespace (mu-plugin guardian, /wplab-recovery/v1/*)
+  //
+  // These bypass the main companion namespace entirely. Used when the main
+  // plugin parse-errors or fatals — the mu-plugin guardian loaded earlier in
+  // WP boot and registered these endpoints independently. Auth = WP-native
+  // Application Password (target.rest() carries it), so we don't need a
+  // session token (which would require the main /handshake endpoint alive).
+  // -------------------------------------------------------------------------
+
+  async recoveryStatus(): Promise<{
+    ok: boolean;
+    guardianVersion: string;
+    mainAlive: boolean;
+    mainVersion: string | null;
+    safeMode: boolean;
+    recentFatals: Array<Record<string, unknown>>;
+    lastFatal: Record<string, unknown> | null;
+    wpVersion: string | null;
+    phpVersion: string;
+    siteurl: string | null;
+  }> {
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab-recovery/v1/status",
+    });
+    if (res.status === 404) {
+      throw new WplabError(
+        "GUARDIAN_NOT_INSTALLED",
+        "Recovery guardian mu-plugin not found. Install main rolepod-wp plugin v2.6+ and activate to deploy the guardian.",
+        { status: res.status },
+      );
+    }
+    if (res.status === 403) {
+      throw new WplabError(
+        "GUARDIAN_UNAUTHORIZED",
+        "Recovery guardian rejected the call — needs manage_options + valid Application Password.",
+        { status: res.status },
+      );
+    }
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        `GUARDIAN_HTTP_${res.status}`,
+        `recovery status returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    return {
+      ok: !!b["ok"],
+      guardianVersion: (b["guardian_version"] as string) ?? "",
+      mainAlive: !!b["main_alive"],
+      mainVersion: (b["main_version"] as string | null) ?? null,
+      safeMode: !!b["safe_mode"],
+      recentFatals: Array.isArray(b["recent_fatals"])
+        ? (b["recent_fatals"] as Array<Record<string, unknown>>)
+        : [],
+      lastFatal: (b["last_fatal"] as Record<string, unknown> | null) ?? null,
+      wpVersion: (b["wp_version"] as string | null) ?? null,
+      phpVersion: (b["php_version"] as string) ?? "",
+      siteurl: (b["siteurl"] as string | null) ?? null,
+    };
+  }
+
+  async recoveryDisablePlugin(plugin: string): Promise<{
+    disabledFile: string;
+    originalFile: string;
+    plugin: string;
+  }> {
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab-recovery/v1/disable-plugin",
+      body: { plugin },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string };
+      throw new WplabError(
+        b.error_code ?? `RECOVERY_DISABLE_PLUGIN_HTTP_${res.status}`,
+        `recovery disable-plugin returned HTTP ${res.status}`,
+        { status: res.status, plugin },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      disabled_file?: string;
+      original_file?: string;
+      plugin?: string;
+    };
+    return {
+      disabledFile: b.disabled_file ?? "",
+      originalFile: b.original_file ?? "",
+      plugin: b.plugin ?? plugin,
+    };
+  }
+
+  async recoveryDisableFile(path: string): Promise<{ src: string; dest: string }> {
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab-recovery/v1/disable-file",
+      body: { path },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string };
+      throw new WplabError(
+        b.error_code ?? `RECOVERY_DISABLE_FILE_HTTP_${res.status}`,
+        `recovery disable-file returned HTTP ${res.status}`,
+        { status: res.status, path },
+      );
+    }
+    const b = (res.body ?? {}) as { src?: string; dest?: string };
+    return { src: b.src ?? path, dest: b.dest ?? `${path}.disabled` };
+  }
+
+  async recoveryRestoreFile(path: string): Promise<{ src: string; dest: string }> {
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab-recovery/v1/restore-file",
+      body: { path },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string };
+      throw new WplabError(
+        b.error_code ?? `RECOVERY_RESTORE_FILE_HTTP_${res.status}`,
+        `recovery restore-file returned HTTP ${res.status}`,
+        { status: res.status, path },
+      );
+    }
+    const b = (res.body ?? {}) as { src?: string; dest?: string };
+    return { src: b.src ?? "", dest: b.dest ?? "" };
+  }
+
+  async recoveryRestoreSnapshot(snapshotPath: string): Promise<{
+    restoredTheme: string;
+    snapshotPath: string;
+    targetDir: string;
+  }> {
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab-recovery/v1/restore-snapshot",
+      body: { snapshot_path: snapshotPath },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      throw new WplabError(
+        b.error_code ?? `RECOVERY_RESTORE_SNAPSHOT_HTTP_${res.status}`,
+        b.error_message ?? `recovery restore-snapshot returned HTTP ${res.status}`,
+        { status: res.status, snapshotPath },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      restored_theme?: string;
+      snapshot_path?: string;
+      target_dir?: string;
+    };
+    return {
+      restoredTheme: b.restored_theme ?? "",
+      snapshotPath: b.snapshot_path ?? snapshotPath,
+      targetDir: b.target_dir ?? "",
+    };
+  }
+
+  async recoveryListChanges(limit = 50): Promise<{
+    changes: Array<Record<string, unknown>>;
+    count: number;
+  }> {
+    const res = await this.target.rest({
+      method: "GET",
+      path: `/wplab-recovery/v1/list-changes?limit=${encodeURIComponent(String(limit))}`,
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        `RECOVERY_LIST_CHANGES_HTTP_${res.status}`,
+        `recovery list-changes returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    const b = (res.body ?? {}) as {
+      changes?: Array<Record<string, unknown>>;
+      count?: number;
+    };
+    return {
+      changes: Array.isArray(b.changes) ? b.changes : [],
+      count: typeof b.count === "number" ? b.count : 0,
+    };
+  }
+
+  async recoverySafeMode(enabled: boolean): Promise<{ safeMode: boolean }> {
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab-recovery/v1/safe-mode",
+      body: { enabled },
+    });
+    if (res.status < 200 || res.status >= 300) {
+      throw new WplabError(
+        `RECOVERY_SAFE_MODE_HTTP_${res.status}`,
+        `recovery safe-mode returned HTTP ${res.status}`,
+        { status: res.status },
+      );
+    }
+    const b = (res.body ?? {}) as { safe_mode?: boolean };
+    return { safeMode: !!b.safe_mode };
+  }
+
   async themeRestore(snapshotPath: string): Promise<{
     stylesheet: string;
     filesRestored: number;
