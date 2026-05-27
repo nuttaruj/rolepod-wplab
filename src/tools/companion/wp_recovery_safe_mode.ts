@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bridgeFor } from "../../companion/Bridge.js";
+import { bridgeForRecovery } from "../../companion/Bridge.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const RecoverySafeModeInputSchema = z.object({
@@ -20,6 +20,6 @@ export async function wpRecoverySafeModeHandler(
 ): Promise<unknown> {
   const input = RecoverySafeModeInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  const bridge = await bridgeFor(target);
+  const bridge = await bridgeForRecovery(target);
   return bridge.recoverySafeMode(input.enabled);
 }

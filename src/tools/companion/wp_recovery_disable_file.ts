@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bridgeFor } from "../../companion/Bridge.js";
+import { bridgeForRecovery } from "../../companion/Bridge.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const RecoveryDisableFileInputSchema = z.object({
@@ -25,6 +25,6 @@ export async function wpRecoveryDisableFileHandler(
 ): Promise<unknown> {
   const input = RecoveryDisableFileInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  const bridge = await bridgeFor(target);
+  const bridge = await bridgeForRecovery(target);
   return bridge.recoveryDisableFile(input.path);
 }

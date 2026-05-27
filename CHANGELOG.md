@@ -2,6 +2,40 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.5] — 2026-05-27 — Recovery tools no longer gate on companion handshake
+
+Round 5 stress test exposed: all 7 `rolepod_wp_recovery_*` MCP tools were
+routed through `bridgeFor(target)` which calls `handshake()`. When WP
+WSODs (the exact scenario the recovery tools exist for), main companion's
+`/wplab/v1/handshake` returns 500 → `bridgeFor` throws
+`COMPANION_UNAVAILABLE` → user cannot recover via MCP.
+
+The guardian's `/wplab-recovery/v1/*` endpoints authenticate via WP-native
+Application Password (no session token), specifically so they survive
+main-plugin death. Bridge methods for the recovery namespace don't need
+the handshake at all.
+
+### Fix — `bridgeForRecovery(target)` helper
+
+New helper builds a `CompanionBridge` instance without calling
+`handshake()`. All 7 recovery tools (`wp_recovery_status`,
+`wp_recovery_disable_plugin`, `wp_recovery_disable_file`,
+`wp_recovery_restore_file`, `wp_recovery_restore_snapshot`,
+`wp_recovery_list_changes`, `wp_recovery_safe_mode`) switched from
+`bridgeFor(target)` to `bridgeForRecovery(target)`.
+
+### Verified live
+
+Demo coffee-bloom theme functions.php fatal → main `/wplab/v1/handshake`
+500 → guardian `/wplab-recovery/v1/status` 200 (via curl, proves
+companion-side path). After v1.11.5 publish, MCP recovery tools will work
+in the same scenario.
+
+### No companion change
+
+`/wplab-recovery/v1/*` endpoints already work without session token (App
+Password auth). Pure MCP-side routing fix.
+
 ## [1.11.4] — 2026-05-27 — broken_images via /db-query + yoast/rankmath postMeta via /db-query
 
 Continues Round 4 closeout (v1.11.3 already shipped ConfirmTrueSchema sweep).

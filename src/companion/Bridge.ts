@@ -1174,3 +1174,29 @@ export async function bridgeFor(target: Target): Promise<CompanionBridge> {
   await bridge.handshake();
   return bridge;
 }
+
+/**
+ * Helper for recovery-namespace methods: build a Bridge WITHOUT calling
+ * handshake(). The guardian's `/wplab-recovery/v1/*` endpoints authenticate
+ * via WP-native Application Password (no session token needed) AND
+ * intentionally work when the main `/wplab/v1/*` companion is dead. v1.11.4
+ * recovery tools failed because they routed through `bridgeFor()` which
+ * tries handshake first → 500 from broken WP → COMPANION_UNAVAILABLE → user
+ * cannot recover.
+ *
+ * Use this in any tool that exclusively hits `/wplab-recovery/v1/*` paths.
+ */
+export async function bridgeForRecovery(target: Target): Promise<CompanionBridge> {
+  try {
+    await target.rest({ method: "GET", path: "/" });
+  } catch (err) {
+    const e = err as Error & { code?: string };
+    if (e.code === "NOT_IMPLEMENTED") {
+      throw new CompanionUnavailableError(
+        target.id,
+        "Target.rest() not implemented for this target kind",
+      );
+    }
+  }
+  return new CompanionBridge(target);
+}

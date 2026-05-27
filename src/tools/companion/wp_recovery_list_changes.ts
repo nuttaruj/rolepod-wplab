@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bridgeFor } from "../../companion/Bridge.js";
+import { bridgeForRecovery } from "../../companion/Bridge.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const RecoveryListChangesInputSchema = z.object({
@@ -20,6 +20,6 @@ export async function wpRecoveryListChangesHandler(
 ): Promise<unknown> {
   const input = RecoveryListChangesInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  const bridge = await bridgeFor(target);
+  const bridge = await bridgeForRecovery(target);
   return bridge.recoveryListChanges(input.limit);
 }
