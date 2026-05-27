@@ -10,6 +10,14 @@ export const TargetIdSchema = z.string().regex(/^tgt_[a-z0-9]{8,}$/, {
 
 export const RunIdSchema = z.string().regex(/^wplab_\d{8}T\d{6}_[a-z0-9]{8}$/);
 
+// `confirm` / `allow_destructive` accept boolean true OR the literal string
+// "true". Some MCP clients JSON-stringify booleans through transports without
+// strict type preservation; we coerce both forms and enforce the semantic
+// "must be true" — refuses false / "false" / missing.
+const ConfirmTrueSchema = z
+  .union([z.literal(true), z.literal("true")])
+  .transform(() => true as const);
+
 // ---------------------------------------------------------------------------
 // rolepod_wp_connect_local
 // ---------------------------------------------------------------------------
@@ -406,7 +414,7 @@ export const ScaffoldBlockInputSchema = z.object({
   category: z.string().default("design"),
   icon: z.string().default("star-filled"),
   render_strategy: z.enum(["dynamic", "static"]).default("dynamic"),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
 });
 export type ScaffoldBlockInput = z.infer<typeof ScaffoldBlockInputSchema>;
 
@@ -428,7 +436,7 @@ export const ScaffoldPluginInputSchema = z.object({
       z.enum(["rest_endpoint", "admin_page", "gutenberg_block", "cli_command"]),
     )
     .default([]),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
 });
 export type ScaffoldPluginInput = z.infer<typeof ScaffoldPluginInputSchema>;
 
@@ -446,7 +454,7 @@ export const ScaffoldThemeInputSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   author: z.string().default("AI-generated"),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
 });
 export type ScaffoldThemeInput = z.infer<typeof ScaffoldThemeInputSchema>;
 
@@ -533,7 +541,7 @@ export const MigrateDataInputSchema = z.object({
   source_target_id: TargetIdSchema,
   dest_target_id: TargetIdSchema,
   scope: z.enum(["plugin_versions"]).default("plugin_versions"),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type MigrateDataInput = z.infer<typeof MigrateDataInputSchema>;
@@ -558,13 +566,6 @@ export type MigrateDataOutput = z.infer<typeof MigrateDataOutputSchema>;
 // ---------------------------------------------------------------------------
 // Companion-gated power tools — v0.2 (W-003R, W-004R)
 // ---------------------------------------------------------------------------
-
-// `confirm` accepts boolean true OR the literal string "true". Some MCP clients
-// JSON-stringify booleans when passing through transports without strict type
-// preservation; we coerce + then enforce the semantic "must be true".
-const ConfirmTrueSchema = z
-  .union([z.literal(true), z.literal("true")])
-  .transform(() => true as const);
 
 export const ExecutePhpInputSchema = z.object({
   target_id: TargetIdSchema,
@@ -759,7 +760,7 @@ export const ElementorWriteInputSchema = z.object({
   target_id: TargetIdSchema,
   post_id: z.number().int().positive(),
   widget_tree: z.array(z.unknown()),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type ElementorWriteInput = z.infer<typeof ElementorWriteInputSchema>;
@@ -784,7 +785,7 @@ export const WooWriteInputSchema = z.object({
       }),
     )
     .optional(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type WooWriteInput = z.infer<typeof WooWriteInputSchema>;
@@ -800,7 +801,7 @@ export const AcfWriteInputSchema = z.object({
   post_id: z.number().int().positive(),
   field_name: z.string().min(1),
   value: z.unknown(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type AcfWriteInput = z.infer<typeof AcfWriteInputSchema>;
@@ -945,7 +946,7 @@ export const DiviWriteInputSchema = z.object({
     .boolean()
     .default(true)
     .describe("Set _et_pb_use_builder=on if not already"),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type DiviWriteInput = z.infer<typeof DiviWriteInputSchema>;
@@ -976,7 +977,7 @@ export const OxygenWriteInputSchema = z.object({
   target_id: TargetIdSchema,
   post_id: z.number().int().positive(),
   shortcodes: z.string().min(1),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type OxygenWriteInput = z.infer<typeof OxygenWriteInputSchema>;
@@ -992,7 +993,7 @@ export const BricksWriteInputSchema = z.object({
   post_id: z.number().int().positive(),
   scope: z.enum(["page", "header", "footer"]).default("page"),
   elements: z.array(z.unknown()),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type BricksWriteInput = z.infer<typeof BricksWriteInputSchema>;
@@ -1012,7 +1013,7 @@ export const YoastWriteInputSchema = z.object({
   title: z.string().optional(),
   canonical: z.string().optional(),
   noindex: z.boolean().optional(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type YoastWriteInput = z.infer<typeof YoastWriteInputSchema>;
@@ -1032,7 +1033,7 @@ export const RankMathWriteInputSchema = z.object({
   title: z.string().optional(),
   canonical: z.string().optional(),
   noindex: z.boolean().optional(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type RankMathWriteInput = z.infer<typeof RankMathWriteInputSchema>;
@@ -1056,7 +1057,7 @@ export const WpmlWriteInputSchema = z.object({
   language_code: z.string().min(2).max(10).optional(),
   target_language: z.string().min(2).max(10).optional(),
   translations: z.record(z.string(), z.number().int().positive()).optional(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type WpmlWriteInput = z.infer<typeof WpmlWriteInputSchema>;
@@ -1095,7 +1096,7 @@ export const FormsWriteInputSchema = z.object({
   engine: z.enum(["gravity", "cf7", "wpforms"]),
   op: z.enum(["delete_entry", "mark_spam", "unmark_spam"]),
   entry_id: z.number().int().positive(),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type FormsWriteInput = z.infer<typeof FormsWriteInputSchema>;
@@ -1174,7 +1175,7 @@ export const CloneInputSchema = z.object({
     .array(z.enum(["db", "wp_content", "plugin_versions"]))
     .default(["db", "wp_content", "plugin_versions"]),
   rewrite_urls: z.boolean().default(true),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type CloneInput = z.infer<typeof CloneInputSchema>;
@@ -1216,7 +1217,7 @@ export const BackupRestoreInputSchema = z.object({
   target_id: TargetIdSchema,
   artifact_dir: z.string().min(1),
   scope: z.array(z.enum(["db", "wp_content"])).default(["db", "wp_content"]),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
 export type BackupRestoreInput = z.infer<typeof BackupRestoreInputSchema>;
@@ -1303,7 +1304,7 @@ export const ScaffoldPatternInputSchema = z.object({
     .describe(
       "Block markup body — pasted as-is between header comment and closing",
     ),
-  allow_destructive: z.literal(true),
+  allow_destructive: ConfirmTrueSchema,
 });
 export type ScaffoldPatternInput = z.infer<typeof ScaffoldPatternInputSchema>;
 

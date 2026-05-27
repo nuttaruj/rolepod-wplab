@@ -2,6 +2,23 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.3] — 2026-05-27 — Patch: ConfirmTrueSchema applied to all 17 `allow_destructive` fields
+
+v1.10.0 introduced `ConfirmTrueSchema` (`true | "true"` union → boolean) for
+`confirm` parameters on `execute_php` + `mail_test`. Round 4 stress test
+caught that **17 other schemas** still used raw `z.literal(true)` for
+`allow_destructive`, so `scaffold_theme`, `scaffold_plugin`,
+`scaffold_block`, `db_query`, `option_set` (in some paths), and all 11 page
+builder + SEO adapter `_write` tools rejected `"true"` from MCP clients
+that JSON-stringify booleans.
+
+Fix: bulk-replace all `allow_destructive: z.literal(true)` →
+`allow_destructive: ConfirmTrueSchema`. Moved `ConfirmTrueSchema`
+declaration to top of schemas file (used by schemas earlier than its
+previous position → TS2454).
+
+No behavior change for callers passing real boolean `true`.
+
 ## [1.11.2] — 2026-05-27 — Patch: diagnose large_options autoload filter (WP 6.6+ values)
 
 WP 6.6+ extended `wp_options.autoload` from `yes/no` to `yes/no/on/off/auto`.
