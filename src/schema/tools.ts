@@ -18,6 +18,23 @@ const ConfirmTrueSchema = z
   .union([z.literal(true), z.literal("true")])
   .transform(() => true as const);
 
+// JSON-object input that tolerates pre-stringified JSON from MCP clients
+// that serialize nested objects as strings (Round 6 caught this on
+// woo_write `fields` — "Expected object, received string"). Accepts either
+// a real object or a string that parses to a non-null object/array.
+const JsonObjectSchema = z.preprocess(
+  (v) => {
+    if (typeof v !== "string") return v;
+    try {
+      const parsed: unknown = JSON.parse(v);
+      return parsed;
+    } catch {
+      return v;
+    }
+  },
+  z.record(z.string(), z.unknown()),
+);
+
 // ---------------------------------------------------------------------------
 // rolepod_wp_connect_local
 // ---------------------------------------------------------------------------
@@ -775,7 +792,7 @@ export const WooWriteInputSchema = z.object({
   target_id: TargetIdSchema,
   op: z.enum(["update_product", "bulk_update_prices"]),
   product_id: z.number().int().positive().optional(),
-  fields: z.record(z.string(), z.unknown()).optional(),
+  fields: JsonObjectSchema.optional(),
   price_updates: z
     .array(
       z.object({

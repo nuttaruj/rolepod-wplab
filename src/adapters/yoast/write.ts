@@ -31,16 +31,20 @@ const KEY_MAP: Record<keyof YoastWriteFields, string> = {
 
 export const yoastWrite: YoastWriteAPI = {
   async setPostMeta(target, postId, fields) {
+    const updated: string[] = [];
+    // RestTarget + companion → use companion's wp-cli endpoint (v2.7.1+
+    // already routes through Bridge.wpCli automatically). Falls back to
+    // shell-capable target if companion absent.
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
-        "yoastWrite.setPostMeta requires a shell-capable target. RestTarget needs companion v0.2 fs/exec.",
+        "yoastWrite.setPostMeta requires a shell-capable target OR a RestTarget with companion enabled.",
       );
     }
-    const updated: string[] = [];
     for (const [field, value] of Object.entries(fields) as Array<
       [keyof YoastWriteFields, string | boolean | undefined]
     >) {

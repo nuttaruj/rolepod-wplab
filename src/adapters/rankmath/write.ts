@@ -28,10 +28,11 @@ export const rankmathWrite: RankMathWriteAPI = {
     if (
       target.kind !== "local" &&
       target.kind !== "ssh" &&
-      target.kind !== "docker"
+      target.kind !== "docker" &&
+      !(target.kind === "rest" && target.companion?.enabled)
     ) {
       throw new Error(
-        "rankmathWrite.setPostMeta requires shell-capable target.",
+        "rankmathWrite.setPostMeta requires shell-capable target OR a RestTarget with companion enabled.",
       );
     }
     const updated: string[] = [];

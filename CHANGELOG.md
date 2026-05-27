@@ -2,6 +2,46 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.7] — 2026-05-27 — JsonObjectSchema + yoast/rankmath write accept RestTarget+companion
+
+Round 6 Batch 4 (adapter writes) surfaced 2 issues fixed here.
+
+### Fixed — `woo_write fields` object-as-string preprocess (R6-3)
+
+MCP clients sometimes JSON-stringify nested object parameters as they
+travel through the transport. `woo_write { fields: { regular_price: "650" } }`
+arrived at the tool handler as a string `'{"regular_price":"650"}'`,
+which `z.record(z.string(), z.unknown())` rejected with
+`"Expected object, received string"`.
+
+New `JsonObjectSchema` preprocess attempts `JSON.parse` if the input is
+a string, then validates against `z.record(z.string(), z.unknown())`.
+Real objects pass through unchanged; pre-stringified ones get parsed.
+Used by `woo_write.fields`; can be applied to any future schema field
+that accepts a JSON object.
+
+### Fixed — `yoast_write` + `rankmath_write` work on RestTarget+companion (R6-4)
+
+Both adapters threw `"requires a shell-capable target. RestTarget needs
+companion v0.2 fs/exec"` for RestTarget — stale assumption from v0.1.
+Companion v2.7.x has wp-cli proxy via `Bridge.wpCli()`, and `target.wpCli`
+already routes through it for RestTarget. The adapter just needed to
+stop refusing.
+
+Fix: relax the kind gate to also accept `target.kind === "rest" &&
+target.companion?.enabled`. No code-path change otherwise; the existing
+`target.wpCli(["post", "meta", "update", ...])` call already works via
+companion route.
+
+### Known still-untested
+
+- `forms_write` — Gravity Forms required, none installed
+- `elementor_write` — requires Elementor-built page with widget tree
+- `jetengine_write` / `metabox_write` / `pods_write` — plugins not
+  installed on demo (free versions exist; deferred)
+- `acf_write` — free ACF doesn't expose `/wp-json/acf/v3/` REST namespace
+  (Pro-only). Detection returns `ADAPTER_NOT_DETECTED` correctly on free.
+
 ## [1.11.6] — 2026-05-27 — `pair_token` regex matches companion-issued `rolepod_wp_pair_` prefix
 
 Round 6 stress test of `wp_pair` flow exposed schema regex out-of-date.
