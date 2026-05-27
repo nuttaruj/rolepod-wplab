@@ -2,6 +2,67 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.11] — 2026-05-27 — Root cause: `replacePostMeta` shared helper + opt-in RestTarget+companion E2E smoke test
+
+Round 6 produced 7 production bugs across copy-pasted post-meta-replace
+helpers in elementor / bricks / oxygen / rankmath / divi / wpml / forms
+adapters. Each adapter reinvented the same sequence (verify shell, read
+prior meta for backup, write tmp file, run `wp post meta update
+--from-file` or `wp eval update_post_meta`, error format) and drifted
+independently. v1.11.6 → 1.11.10 patched the symptoms; this release
+patches the root cause.
+
+### Added — `src/adapters/_shared/replacePostMeta.ts`
+
+```ts
+await replacePostMeta(target, postId, "_elementor_data", widgetTree, {
+  backupPrefix: "elementor",
+  serialization: "json",     // or "raw" for plain string payloads
+});
+```
+
+Centralizes:
+- Shell-capable-OR-RestTarget+companion gate (was 9 duplicated checks).
+- Backup-read via `wp post meta get`, with stamped backup file under
+  `wp-content/uploads/wplab-backups/`.
+- Tmp file payload write under `wp-content/uploads/wplab-tmp/`, with
+  `absolutePath || relPath` fallback for older companions (≤2.7.2).
+- `wp eval update_post_meta(id, key, json_decode(file_get_contents(path), true))`
+  invocation (`--from-file` is NOT a valid flag on `post meta update`).
+- Error normalization — `stderr` then `stdout` (companion bridges merge).
+
+### Refactored — 4 adapters now thin wrappers
+
+- `elementorWrite.updatePageData`
+- `bricksWrite.updatePageContent / updateHeaderContent / updateFooterContent`
+- `oxygenWrite.updatePageShortcodes`
+- `rankmathWrite.setPostMeta` (the `noindex` → `rank_math_robots` path)
+
+Net diff: ~140 lines of duplicated logic → ~20 lines of helper calls.
+Future R6-style bugs in this pattern fix in one place.
+
+### Added — `tests/smoke/rest-companion-e2e.test.ts`
+
+Opt-in E2E test that runs the full RestTarget + companion path against a
+real WordPress install. Skipped by default; enabled when these env vars
+are set:
+
+- `WPLAB_TEST_URL`           HTTPS URL of a throwaway WP install
+- `WPLAB_TEST_USERNAME`      WP user login
+- `WPLAB_TEST_APP_PASSWORD`  WP Application Password
+
+The test installs Elementor (idempotent), creates a draft page, calls
+`elementorWrite.updatePageData`, verifies the meta persisted, and
+cleans up. Catches the entire R6 bug class — shell-only gates, missing
+flags, schema drift, companion response shape mismatches — before ship.
+
+### Unaffected
+
+- Adapters that don't use the temp-file pattern (yoast, jetengine,
+  metabox, pods, wpml, woo, acf, divi, forms) — they call `wp post meta
+  update <id> <key> <value>` directly with positional args and are fine.
+- Unit tests still pass (147/147).
+
 ## [1.11.10] — 2026-05-27 — `wp eval` path falls back to relative when companion fs-write omits absolute_path
 
 R6-7 v1.11.9 fix shipped but caught a second bug on RestTarget+companion:

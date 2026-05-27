@@ -1,4 +1,5 @@
 import type { Target } from "../../runtime/Target.js";
+import { replacePostMeta } from "../_shared/replacePostMeta.js";
 
 export interface OxygenWriteAPI {
   /**
@@ -13,51 +14,9 @@ export interface OxygenWriteAPI {
 }
 
 export const oxygenWrite: OxygenWriteAPI = {
-  async updatePageShortcodes(target, postId, shortcodes) {
-    if (
-      target.kind !== "local" &&
-      target.kind !== "ssh" &&
-      target.kind !== "docker" &&
-      !(target.kind === "rest" && target.companion?.enabled)
-    ) {
-      throw new Error(
-        "oxygenWrite.updatePageShortcodes requires a shell-capable target.",
-      );
-    }
-
-    const before = await target.wpCli([
-      "post",
-      "meta",
-      "get",
-      String(postId),
-      "ct_builder_shortcodes",
-    ]);
-    let backupPath: string | null = null;
-    if (before.exitCode === 0 && before.stdout.length > 0) {
-      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-      const relPath = `wp-content/uploads/wplab-backups/oxygen-${postId}-${stamp}.txt`;
-      const w = await target.fileWrite(relPath, before.stdout, {
-        backup: false,
-      });
-      backupPath = w.absolutePath;
-    }
-
-    const tmpRel = `wp-content/uploads/wplab-tmp/oxygen-${postId}-shortcodes.txt`;
-    const tmpWrite = await target.fileWrite(tmpRel, shortcodes, {
-      backup: false,
-    });
-
-    const filePath = tmpWrite.absolutePath || tmpRel;
-    const phpScript = `update_post_meta(${postId}, "ct_builder_shortcodes", file_get_contents(${JSON.stringify(filePath)}));`;
-    const result = await target.wpCli(["eval", phpScript], {
-      allowDestructive: true,
-    });
-    if (result.exitCode !== 0) {
-      throw new Error(
-        `wp eval update_post_meta(ct_builder_shortcodes) failed: ${result.stderr.slice(0, 200) || result.stdout.slice(0, 200)}`,
-      );
-    }
-
-    return { bytesWritten: shortcodes.length, backupPath };
-  },
+  updatePageShortcodes: (target, postId, shortcodes) =>
+    replacePostMeta(target, postId, "ct_builder_shortcodes", shortcodes, {
+      backupPrefix: "oxygen",
+      serialization: "raw",
+    }),
 };

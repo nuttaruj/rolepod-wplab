@@ -1,4 +1,5 @@
 import type { Target } from "../../runtime/Target.js";
+import { replacePostMeta } from "../_shared/replacePostMeta.js";
 
 export interface RankMathWriteFields {
   focus_keyword?: string;
@@ -41,19 +42,11 @@ export const rankmathWrite: RankMathWriteAPI = {
     >) {
       if (value === undefined) continue;
       if (field === "noindex") {
-        const robots = value ? '["noindex"]' : "[]";
-        const tmpRel = `wp-content/uploads/wplab-tmp/rankmath-${postId}-robots.json`;
-        const tmp = await target.fileWrite(tmpRel, robots, { backup: false });
-        const filePath = tmp.absolutePath || tmpRel;
-        const phpScript = `update_post_meta(${postId}, "rank_math_robots", json_decode(file_get_contents(${JSON.stringify(filePath)}), true));`;
-        const r = await target.wpCli(["eval", phpScript], {
-          allowDestructive: true,
+        const robots: string[] = value ? ["noindex"] : [];
+        await replacePostMeta(target, postId, "rank_math_robots", robots, {
+          backupPrefix: "rankmath-robots",
+          serialization: "json",
         });
-        if (r.exitCode !== 0) {
-          throw new Error(
-            `rankmath rank_math_robots failed: ${r.stderr.slice(0, 200) || r.stdout.slice(0, 200)}`,
-          );
-        }
         updated.push(field);
         continue;
       }
