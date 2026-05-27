@@ -2,6 +2,18 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.6] — 2026-05-27 — `pair_token` regex matches companion-issued `rolepod_wp_pair_` prefix
+
+Round 6 stress test of `wp_pair` flow exposed schema regex out-of-date.
+Companion `/wp-json/wplab/v1/pair/generate` issues tokens prefixed
+`rolepod_wp_pair_<48hex>` (since v2.0 rename) but `PairInputSchema`
+regex still required legacy `wplab_pair_<48hex>` → tool rejected real
+tokens with "must match the companion-issued format" error.
+
+Fix: regex updated to `/^rolepod_wp_pair_[a-f0-9]{48}$/` + error
+message aligned. Companion already issues correct format; this is
+pure MCP-side schema drift cleanup.
+
 ## [1.11.5] — 2026-05-27 — Recovery tools no longer gate on companion handshake
 
 Round 5 stress test exposed: all 7 `rolepod_wp_recovery_*` MCP tools were

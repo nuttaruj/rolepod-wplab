@@ -888,9 +888,9 @@ export const PairInputSchema = z.object({
       message:
         "siteurl must use https:// — pair token MUST NOT traverse plaintext",
     }),
-  pair_token: z.string().regex(/^wplab_pair_[a-f0-9]{48}$/, {
+  pair_token: z.string().regex(/^rolepod_wp_pair_[a-f0-9]{48}$/, {
     message:
-      'pair_token must match the companion-issued format "wplab_pair_<48 hex>"',
+      'pair_token must match the companion-issued format "rolepod_wp_pair_<48 hex>"',
   }),
 });
 export type PairInput = z.infer<typeof PairInputSchema>;
