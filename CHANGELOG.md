@@ -2,6 +2,20 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] — 2026-05-27 — Patch: profile enum schema missing `strict` + `personal`
+
+v1.11.0 added `profile.active` field to `connect_rest` response but the
+zod enum was `["default", "power"]` — only matches MCP-tool wording, not
+the actual `ProfileSchema` values from `profile/load.ts` which are
+`["strict", "personal", "power"]`. `connect_rest` failed validation with
+`"Expected 'default' | 'power', received 'strict'"` because new installs
+default to `strict`.
+
+Fix: align enum to the canonical `ProfileSchema` — `strict | personal | power`.
+Description updated to explain what each tier unlocks.
+
+No behavior change in tools. Pure schema fix.
+
 ## [1.11.0] — 2026-05-27 — Sub-gap closeout: backup tmp dir, db-query endpoint, power-profile UX
 
 Closes 3 sub-gaps surfaced during v1.10.1 retest of E2E gaps. Pairs with

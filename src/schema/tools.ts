@@ -76,13 +76,13 @@ export const ConnectRestOutputSchema = z.object({
     .nullable(),
   profile: z
     .object({
-      active: z.enum(["default", "power"]),
+      active: z.enum(["strict", "personal", "power"]),
       execute_php_unlocked: z.boolean(),
       env_var_name: z.string(),
     })
     .optional()
     .describe(
-      "Active MCP-server profile (default | power). Power unlocks wp_execute_php. Set via env var ROLEPOD_WPLAB_PROFILE=power in MCP client config.",
+      "Active MCP-server profile. strict = read-only + REST-bounded ops. personal = +wp-cli destructive ops. power = +execute_php arbitrary PHP. Set via env var ROLEPOD_WPLAB_PROFILE=power in MCP client config.",
     ),
   memory_summary: z
     .string()
