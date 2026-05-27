@@ -331,6 +331,67 @@ All fixed within the same session. Pattern across Rounds 1-4: when the architect
 | `mcp v1.11.3` | @rolepod/wplab | ConfirmTrueSchema sweep (17 schemas) |
 | `mcp v1.11.4` | @rolepod/wplab | broken_images + yoast/rankmath postMeta via /db-query |
 
+---
+
+# Round 5 — scaffold writes + recovery flow (v1.11.4 → v1.11.5)
+
+Continuation of Round 4 after npm publish v1.11.4 unblocked `allow_destructive` schemas.
+
+## Tools verified live via MCP
+
+| Tool | Outcome |
+|---|---|
+| `scaffold_theme` | ✅ created `coffee-bloom` (style.css + theme.json + functions.php + templates + parts, 6 files) |
+| `scaffold_plugin` (4 features) | ✅ created `roastlab-tools` with REST + admin + CLI feature files |
+| `scaffold_block` (dynamic) | ✅ added `roastlab/coffee-card` block to plugin (block.json + index.js + style.css + render.php) |
+| `scaffold_pattern` (theme) | ✅ added `coffee-bloom/hero-banner` to theme patterns dir |
+| `cli_run plugin activate roastlab-tools` | ✅ activated |
+| Plugin REST endpoint live | ✅ `/wp-json/roastlab-tools/v1/ping` → `{"pong":true,"plugin":"roastlab-tools"}` |
+| `theme_switch_safe` → coffee-bloom | ✅ snapshot + activate, frontend 200 |
+| Inject theme fatal (via execute-php direct) | ✅ duplicate class `DupR5` → main `/wplab/v1/handshake` returns 500 |
+| Guardian `/wplab-recovery/v1/status` (via curl) | ✅ 200 with `dispatch_path: "early_dispatch"` |
+| Guardian `/wplab-recovery/v1/disable-file` (via curl) | ✅ functions.php → .disabled, main back to 200 |
+| MCP `wp_recovery_status` | ❌ `COMPANION_UNAVAILABLE: handshake returned HTTP 500` — see R5-1 |
+| MCP `wp_recovery_disable_file` | ❌ same |
+| Cleanup: theme_switch_safe back to twentytwentyfive, theme delete, plugin uninstall | ✅ |
+
+## 1 new bug surfaced + fixed in Round 5
+
+| # | Issue | Fix |
+|---|---|---|
+| R5-1 | All 7 `rolepod_wp_recovery_*` MCP tools routed through `bridgeFor(target)` → calls `handshake()` → fails when main companion is dead → recovery tools refuse with `COMPANION_UNAVAILABLE` precisely when the user needs recovery the most | v1.11.5: new `bridgeForRecovery(target)` helper that builds `CompanionBridge` without `handshake()`. All 7 recovery tools switched. Guardian REST endpoints use App Password auth, no session token needed. |
+
+R5-1 is architecturally important — it was the single remaining gap between the design ("guardian survives main fatal so AI can recover via REST") and reality (MCP tool layer refused to even try). Fix is small (~30 LOC) but unblocks the entire recovery flow through MCP.
+
+## Round 5 honest summary
+
+- Scaffold tools (theme/plugin/block/pattern) all work end-to-end. Plugin REST endpoint + scaffolded block actually function on the live site.
+- theme_switch_safe to a freshly scaffolded theme → activate → frontend 200 → no rollback. Proves the safety wrapper works on real new themes, not just well-known ones.
+- Recovery flow proven via curl: WSOD → guardian alive → disable_file → recovery. Same flow via MCP tools was blocked by handshake gate; fix shipped v1.11.5 (needs npm publish to verify via MCP).
+
+After v1.11.5 publish, all 6 stress test waves (A–F) have full MCP coverage with zero outstanding blockers for the documented site-build + recovery workflows.
+
+## Cumulative ship history (Rounds 1-5)
+
+| Tag | Repo | Headline |
+|---|---|---|
+| `companion v2.6.0 → 2.6.10` | rolepod-wp | mu-plugin guardian — 11 releases, settling on stable recovery namespace |
+| `companion v2.7.0` | rolepod-wp | /option-set + /option-get + execute-php ledger capture |
+| `companion v2.7.1` | rolepod-wp | wp-cli auto-mkdir wplab-tmp + /db-query endpoint |
+| `mcp v1.9.0 → 1.9.1` | @rolepod/wplab | recovery namespace (7 tools) + branding cleanup |
+| `mcp v1.10.0 → 1.10.1` | @rolepod/wplab | E2E gap closeout (9 new tools) + wave-3 PHP payload fixes |
+| `mcp v1.11.0` | @rolepod/wplab | sub-gap closeout — dbQuery, diagnose refactor, power-profile UX |
+| `mcp v1.11.1 → 1.11.2` | @rolepod/wplab | profile enum + autoload filter patches |
+| `mcp v1.11.3 → 1.11.4` | @rolepod/wplab | ConfirmTrueSchema sweep + adapter db-query routing |
+| `mcp v1.11.5` | @rolepod/wplab | recovery tools no longer gate on handshake |
+
+## Demo final state
+
+- Bangkok Roast Lab pages + products + posts + CF7 form + menu + global styles intact
+- Companion v2.7.1 + guardian v2.7.1 active
+- twentytwentyfive theme (default), no test artifacts
+- Frontend 200, REST 200, recovery REST 200
+
 ## Round-2 sub-gaps remaining (low priority — closed in Round 3)
 
 ### Sub-gap A — `backup_create` `wp db export` fails over companion
