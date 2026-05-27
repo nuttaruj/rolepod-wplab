@@ -5,8 +5,7 @@ import { homedir } from "node:os";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 /**
- * Structured project-convention storage — equivalent to a third-party plugin Pro's
- * paywalled "project convention storage" feature, free.
+ * Structured project-convention storage.
  *
  * Persists a per-site style guide that AI references on subsequent sessions
  * so design decisions stay consistent across chats (colors, fonts, spacing,
@@ -66,7 +65,7 @@ export const ConventionsSetInputSchema = z.object({
 export const wpConventionsGetToolDef = {
   name: "rolepod_wp_conventions_get",
   description:
-    "Read the per-site project conventions (colors, fonts, spacing, style rules, code conventions, brand voice). Persisted between sessions at ~/.config/rolepod-wplab/memory/<site>/conventions.json. Free equivalent of a third-party plugin Pro's paywalled 'project convention storage'.",
+    "Read the per-site project conventions (colors, fonts, spacing, style rules, code conventions, brand voice). Persisted between sessions at ~/.config/rolepod-wplab/memory/<site>/conventions.json so design decisions stay consistent across AI sessions.",
   inputSchema: ConventionsGetInputSchema,
 };
 

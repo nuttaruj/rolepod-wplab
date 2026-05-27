@@ -2,6 +2,18 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] — 2026-05-27 — Branding cleanup (remove third-party references)
+
+Doc-only patch. Removed all references to the third-party WordPress AI plugin
+that originally inspired the project's design exploration. Independent
+implementation language used throughout README, CONTRIBUTING, package.json,
+CHANGELOG entries, and the `wp_conventions` tool description. The deleted
+`docs/MIGRATION-FROM-THIRD-PARTY.md` removed entirely (single-purpose migration
+guide).
+
+No behavior change. No new tools. No schema change. Tool count unchanged
+at 89.
+
 ## [1.9.0] — 2026-05-27 — Recovery namespace (mu-plugin guardian wrappers)
 
 Seven new MCP tools for crash recovery via the new `/wplab-recovery/v1/*`
@@ -95,22 +107,22 @@ boot through the fatal).
 TypeScript compile clean (`tsc --noEmit`). Bundle size: 2.33 MB (unchanged
 material, +~3 KB from 7 small tool files).
 
-## [1.8.0] — 2026-05-27 — a third-party plugin-parity closeout: one-time admin login + file toggle + 3 field-plugin adapters + conventions
+## [1.8.0] — 2026-05-27 — Capability closeout: one-time admin login + file toggle + 3 field-plugin adapters + conventions
 
-Eleven new MCP tools, all driven by the v2.4 a third-party plugin analysis pass. 71 → 82 tools.
+Eleven new MCP tools driven by the v2.4 competitive analysis pass. 71 → 82 tools.
 
-### Added — a third-party plugin gap closers
+### Added — admin + file ops
 
 - **`rolepod_wp_admin_one_time_link`** — mint a 5-min single-use wp-admin
   login URL (companion `/admin/one-time-login`). Browser-automation safe;
-  no admin password exposed. Closes a third-party plugin v1.3 admin link parity.
+  no admin password exposed.
 - **`rolepod_wp_file_disable`** — rename `<path>` → `<path>.disabled`
   (companion `/fs-rename`). PHP files become invisible to autoloader.
   Auto-ledger row category=file action=disable, reversible.
 - **`rolepod_wp_file_enable`** — reverse `wp_file_disable`. Refuses if
   destination already exists.
 
-### Added — field-plugin adapters (closes a third-party plugin Pro paywall coverage)
+### Added — field-plugin adapters
 
 - **`rolepod_wp_jetengine_{read,write}`** — JetEngine field groups + CCT
   list + post meta. Detection via REST plugin search.
@@ -122,13 +134,12 @@ Eleven new MCP tools, all driven by the v2.4 a third-party plugin analysis pass.
 All field-plugin writes auto-ledger (category=post) with before-state
 captured via REST GET ?context=edit.
 
-### Added — project conventions storage (free a third-party plugin Pro parity)
+### Added — project conventions storage
 
 - **`rolepod_wp_conventions_{get,set}`** — per-site structured style guide
   storage at `~/.config/rolepod-wplab/memory/<host>/conventions.json`.
   Schema: colors[], fonts[], spacing[], style_rules[], code_conventions[],
-  brand_voice, custom{}. Free equivalent of a third-party plugin Pro's paywalled
-  "project convention storage". `set` defaults to merge (deep); pass
+  brand_voice, custom{}. `set` defaults to merge (deep); pass
   `merge: false` to replace.
 
 ### Changed — Gutenberg block-count in post_create output
@@ -151,10 +162,10 @@ jetengine_write, metabox_read, metabox_write, pods_read, pods_write.
 
 ### Deferred — WordPress Abilities API wrapper
 
-Considered + deferred. WP Abilities API (WP 6.9+) has minimal ecosystem
-uptake outside a third-party plugin itself. Re-evaluate when:
+Considered + deferred. WP Abilities API (WP 6.9+) has minimal cross-ecosystem
+adoption today. Re-evaluate when:
 - WordPress 7.0 ships with Abilities in core.
-- A second well-known plugin adopts the API publicly.
+- Multiple well-known plugins adopt the API publicly.
 - Users explicitly ask for cross-consumer ability discovery.
 
 Standard MCP works with every MCP client today; WP-side ability registration
@@ -464,7 +475,7 @@ over RestTarget transparently.
 - MCP tools: **62** (unchanged).
 - Tests: 141 passing.
 
-## [1.2.0] — 2026-05-26 — One-click pair (a third-party plugin-style setup UX)
+## [1.2.0] — 2026-05-26 — One-click pair (token-redeem setup UX)
 
 ### Added
 
@@ -504,7 +515,7 @@ over RestTarget transparently.
 
 ## [1.1.0] — 2026-05-26 — Parity + lead expansion (Tier A/B/C/D)
 
-### Added — Tier A (close a third-party plugin gaps)
+### Added — Tier A (parity with existing WP AI tools)
 
 - `rolepod_wp_divi_read` / `rolepod_wp_divi_write` — Divi Builder pages (post_content shortcodes + `_et_pb_use_builder` flag).
 - `rolepod_wp_oxygen_read` / `rolepod_wp_oxygen_write` — Oxygen Builder (`ct_builder_shortcodes` post meta).
@@ -513,7 +524,7 @@ over RestTarget transparently.
 - `rolepod_wp_rankmath_write` — Rank Math SEO post meta (mirrors Yoast surface).
 - `rolepod_wp_wpml_write` — set_post_language / link_translations / duplicate_for_translation ops.
 
-### Added — Tier B (exceed a third-party plugin surface)
+### Added — Tier B (capability extensions)
 
 - `rolepod_wp_forms_read` / `rolepod_wp_forms_write` — unified Gravity / Contact Form 7 / WPForms adapter with auto-detect.
 - `rolepod_wp_cron_tool` — list / run / delete WP-Cron events.
@@ -603,10 +614,9 @@ The frozen schema:
 
 ### Added — Governance + docs
 
-- **CONTRIBUTING.md** — clean-room policy (W-002), quality gates, contribution checklist for new tools / adapters / companion endpoints, single-backend rule (W-011), DCO sign-off.
+- **CONTRIBUTING.md** — license hygiene, quality gates, contribution checklist for new tools / adapters / companion endpoints, single-backend rule, DCO sign-off.
 - **CODE_OF_CONDUCT.md** — Contributor Covenant v2.1.
 - **SECURITY.md** — supported-versions matrix, 90-day private disclosure window, threat model for Node MCP + companion, in-scope items for v1.0 external audit.
-- **docs/MIGRATION-FROM-THIRD-PARTY.md** — feature parity matrix, coexistence flow (Phase 0 → 4), key behavioral differences, "use which" honest framing.
 - **.github/ISSUE_TEMPLATE/{bug_report,feature_request}.md** — structured intake.
 
 ### Pairs with

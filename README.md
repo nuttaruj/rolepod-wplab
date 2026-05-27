@@ -203,8 +203,7 @@ If you also use [`rolepod`](https://github.com/nuttaruj/rolepod) (the markdown p
 ## Docs
 
 - [docs/RECIPES.md](docs/RECIPES.md) — 23 end-to-end recipes (connect, scaffold, audit, migrate, edit page builders, pair, diagnose, clone, backup).
-- [docs/MIGRATION-FROM-THIRD-PARTY.md](docs/MIGRATION-FROM-THIRD-PARTY.md) — coexistence flow + feature parity matrix.
-- [CHANGELOG.md](CHANGELOG.md) — release history (v0.0 → v1.2.2).
+- [CHANGELOG.md](CHANGELOG.md) — release history.
 - [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ## Sibling repos
@@ -215,4 +214,4 @@ If you also use [`rolepod`](https://github.com/nuttaruj/rolepod) (the markdown p
 
 ---
 
-MIT licensed — see [LICENSE](LICENSE). Clean-room from [a third-party plugin](https://github.com/use-third-party/third-party) (AGPL-3.0); no a third-party plugin code was read or copied. Feedback + runtime reports for Cursor / Codex / Gemini install paths especially welcome via [issues](https://github.com/nuttaruj/rolepod-wplab/issues).
+MIT licensed — see [LICENSE](LICENSE). Independent implementation, written from spec, not derived from any GPL/AGPL WordPress AI plugin. Feedback + runtime reports for Cursor / Codex / Gemini install paths especially welcome via [issues](https://github.com/nuttaruj/rolepod-wplab/issues).

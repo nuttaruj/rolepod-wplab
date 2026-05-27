@@ -2,11 +2,11 @@
 
 Thanks for your interest. This project is solo-maintained until v1.0; PRs are welcome but please open an issue first for anything beyond a small fix or doc tweak.
 
-## Clean-room from a third-party plugin (W-002 — non-negotiable)
+## License hygiene (non-negotiable)
 
-By contributing you confirm you have **NOT read the a third-party plugin PHP source**. We rely on public docs + the published feature list only. Per-file headers must NOT reference a third-party plugin code. Tool names must NOT match a third-party plugin's (`execute-php` etc. — we use `rolepod_wp_execute_php`).
+By contributing you confirm the code is your own work or contributed under MIT. Do NOT paste code from any GPL/AGPL WordPress AI plugin or similar copyleft-licensed project. Per-file headers must NOT reference third-party source. Tool names must use the `rolepod_wp_*` namespace.
 
-This rule keeps the codebase MIT-clean and avoids AGPL contamination risk.
+This keeps the codebase MIT-clean and free of copyleft contamination risk.
 
 ## Setup
 
@@ -85,9 +85,9 @@ The cross-component contract is locked in `src/companion/constants.ts`:
 
 Two-repo split is deliberate (parallel dev tracks, independent CI cadence). Do **not** propose monorepo restructure without an explicit maintainer ask — it has been considered and rejected.
 
-## Single-backend rule (W-011)
+## Single-backend rule
 
-Shipped skills under `skills/` call ONLY `rolepod_wp_*` tools — never a third-party plugin, raw wp-cli shell, or any other backend. If a skill cannot accomplish its task with wplab tools, return a structured failure and let the caller decide; do not silently degrade.
+Shipped skills under `skills/` call ONLY `rolepod_wp_*` tools — never raw wp-cli shell, third-party MCP servers, or any other backend. If a skill cannot accomplish its task with wplab tools, return a structured failure and let the caller decide; do not silently degrade.
 
 ## DCO sign-off
 
