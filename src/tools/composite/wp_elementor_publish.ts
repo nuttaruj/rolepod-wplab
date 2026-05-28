@@ -64,6 +64,15 @@ export async function wpElementorPublishHandler(
     { allowDestructive: true, timeoutMs: 10_000 },
   );
 
+  // Phase 2.5 — bump filemtime on theme assets so the enqueue ?ver= param
+  // updates and the CDN/browser cache stops serving stale CSS/JS bodies.
+  let themeBump:
+    | { ok: boolean; files_touched: number; theme_dir: string }
+    | undefined;
+  if (input.bump_theme_assets) {
+    themeBump = await bumpThemeAssets(target);
+  }
+
   let warm:
     | { ok: boolean; status: number; bytes: number; duration_ms: number }
     | undefined;
@@ -82,6 +91,7 @@ export async function wpElementorPublishHandler(
       ok: cacheFlush.exitCode === 0,
       message: cacheFlush.exitCode === 0 ? cacheFlush.stdout.trim() : cacheFlush.stderr.trim(),
     },
+    ...(themeBump !== undefined ? { theme_assets_bumped: themeBump } : {}),
     ...(warm !== undefined ? { warm_fetch: warm } : {}),
   });
 
@@ -92,6 +102,48 @@ export async function wpElementorPublishHandler(
     cache_flush_ok: out.object_cache_flush.ok,
   });
   return out;
+}
+
+/**
+ * Bump filemtime() on every *.css and *.js under the active theme's assets/
+ * dir. The theme's enqueue layer derives ?ver=<filemtime>, so this forces
+ * new query strings → CDN/browser cache miss → fresh asset bodies served.
+ *
+ * Walks via wp eval (avoids needing fs-list endpoint to be live).
+ */
+async function bumpThemeAssets(
+  target: import("../../runtime/Target.js").Target,
+): Promise<{ ok: boolean; files_touched: number; theme_dir: string }> {
+  const code = `
+    $theme = get_stylesheet_directory();
+    $count = 0;
+    if (is_dir($theme . '/assets')) {
+      $rii = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($theme . '/assets'));
+      foreach ($rii as $f) {
+        if (!$f->isFile()) continue;
+        $ext = strtolower($f->getExtension());
+        if ($ext === 'css' || $ext === 'js') {
+          @touch($f->getPathname(), time());
+          $count++;
+        }
+      }
+    }
+    echo wp_json_encode(['count' => $count, 'theme_dir' => $theme]);
+  `.trim().replace(/\s+/g, " ");
+  try {
+    const res = await target.wpCli(["eval", code], {
+      allowDestructive: true,
+      timeoutMs: 30_000,
+    });
+    if (res.exitCode !== 0) {
+      return { ok: false, files_touched: 0, theme_dir: "" };
+    }
+    const out = JSON.parse(res.stdout.trim()) as { count: number; theme_dir: string };
+    return { ok: true, files_touched: out.count ?? 0, theme_dir: out.theme_dir ?? "" };
+  } catch (err) {
+    log.debug("bumpThemeAssets failed", { err: (err as Error).message });
+    return { ok: false, files_touched: 0, theme_dir: "" };
+  }
 }
 
 async function warmFetch(url: string): Promise<{

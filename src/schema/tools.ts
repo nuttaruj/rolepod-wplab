@@ -1644,6 +1644,12 @@ export const WpElementorPublishInputSchema = z.object({
     .describe(
       "After flushing, fetch the post's permalink once so the Varnish/CDN layer pre-caches a hot copy. Disable to save the round trip when you'll be editing again before viewing.",
     ),
+  bump_theme_assets: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Bump filemtime() on every *.css and *.js under the active theme's assets/ dir. The enqueue layer derives the asset ?ver= query string from filemtime, so this forces brand-new query strings and busts the browser/CDN cache that would otherwise keep serving the old CSS body even after the file content changed. Disable only when you know nothing under assets/ was touched this round.",
+    ),
 });
 export type WpElementorPublishInput = z.infer<typeof WpElementorPublishInputSchema>;
 
@@ -1658,6 +1664,13 @@ export const WpElementorPublishOutputSchema = z.object({
     ok: z.boolean(),
     message: z.string(),
   }),
+  theme_assets_bumped: z
+    .object({
+      ok: z.boolean(),
+      files_touched: z.number().int().nonnegative(),
+      theme_dir: z.string(),
+    })
+    .optional(),
   warm_fetch: z
     .object({
       ok: z.boolean(),

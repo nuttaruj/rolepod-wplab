@@ -2,6 +2,58 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.1] — 2026-05-28 — Phase 4: post-ship polish findings (gaps #19 + #20)
+
+Pairs with rolepod-wp 2.12.1. Two new gaps surfaced during the
+WalnutZtudio polish session — both fixed.
+
+### Fixed
+
+- **`elementor_publish` now bumps theme asset filemtime (#20)** — added
+  `bump_theme_assets` (default true). After flushing object cache, the
+  tool walks every `*.css` / `*.js` under `wp-content/themes/<active>/
+  assets/` and `touch()`-es each one. The theme's enqueue layer derives
+  the `?ver=` query string from `filemtime()`, so this forces the CDN
+  / browser cache to miss on the next asset request — closes the class
+  of bug where the AI edits `walnut.css` but the served body keeps
+  showing the old rules because Varnish caches the old `?ver` query
+  string.
+
+### Compat note (paired companion fix)
+
+- **Section `_css_classes` now renders on the public `<section>` tag (#19)** —
+  the fix ships inside rolepod-wp 2.12.1's new `ElementorCompat` class.
+  See the companion changelog for the detection trail and why a
+  `the_content` filter is the correct workaround instead of the
+  `elementor/frontend/before_render` hook (which Elementor 4.x fires
+  only for widgets, not sections).
+
+### Internal
+
+- `WpElementorPublishInputSchema` adds `bump_theme_assets: boolean`
+  (default true).
+- `WpElementorPublishOutputSchema` adds `theme_assets_bumped: { ok,
+  files_touched, theme_dir }`.
+- `bumpThemeAssets()` runs via `wp eval` + RecursiveIteratorIterator
+  so the existing companion fs-list endpoint doesn't have to be live
+  for this to work.
+
+### Field-tested
+
+After hot-deploying companion 2.12.1's ElementorCompat to the
+WalnutZtudio Hostinger demo:
+
+- Section tag now shows: `class="elementor-section ... wnz-sec wnz-hero"`
+- Hero h1 wraps to mockup's 3-line layout (was 2 lines because
+  `.wnz-hero` selector never matched any DOM node before this fix)
+- `elementor_publish` reports `theme_assets_bumped.files_touched: 2`
+  on a build that touched walnut.css + walnut.js.
+
+### Gap status
+
+20/20 gaps closed. The wplab capability-gap audit is now an empty
+historical ledger.
+
 ## [1.17.0] — 2026-05-28 — Phase 3.2 final: 18/18 gaps closed
 
 Pairs with rolepod-wp 2.12.0. Closes every remaining item from
