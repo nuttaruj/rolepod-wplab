@@ -2,6 +2,24 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.1] — 2026-05-28 — Hotfix: smoke test tool list
+
+Pure test fix. No runtime change.
+
+### Fixed
+
+- `tests/smoke/mcp-handshake.test.ts` — expected `tools/list` snapshot
+  was missing tools added across Phases 4–7 (`builder_detect`,
+  `custom_init` + `custom_task_*` x5, `dir_ensure`,
+  `elementor_html_audit`, `elementor_publish`,
+  `elementor_template_apply`, `elementor_template_export`,
+  `elementor_validate_data`, `elementor_widget_attribute`,
+  `elementor_widget_schema`, `file_copy`, `file_list`,
+  `file_write_batch`, `job_create`, `job_status`, `target_alias`).
+  CI publish was blocked because the test failed in a fresh build
+  even though tools shipped correctly. List rebuilt from
+  `src/tools` source — 119 tools total.
+
 ## [1.20.0] — 2026-05-28 — Phase 7: catalog accuracy verification
 
 MCP-only release. No companion bump. No tool changes — catalog-only update.
