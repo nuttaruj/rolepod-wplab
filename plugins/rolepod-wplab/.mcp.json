@@ -1,1 +1,8 @@
-../../.mcp.json
+{
+  "mcpServers": {
+    "rolepod-wplab": {
+      "command": "npx",
+      "args": ["-y", "@rolepod/wplab@latest", "serve"]
+    }
+  }
+}

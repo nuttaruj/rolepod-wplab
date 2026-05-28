@@ -1,0 +1,140 @@
+---
+name: wp-health-check
+description: Run a sub-5s diagnostic of a connected WordPress target — versions, db_ok, rest_ok, companion_ok, plugins/theme active set, warnings. Phase = Verify.
+when_to_use: user asks "ping the site / is it healthy / what version is it / is the companion live", OR after a connect / pair / migration before continuing
+tier: 1
+phase: verify
+mode:
+  standalone:
+    role: WordPress smoke test entry — full system check
+    output: full health report with remediation suggestions
+  with-rolepod:
+    role: WP system snapshot provider
+    caller: rolepod:check-work
+    output: snapshot JSON (PHP version, plugin status, DB state) + manifest.json under .rolepod/evidence/
+---
+
+## Mode selection
+
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode declared in the frontmatter — the underlying
+`rolepod_wp_health_check` MCP tool automatically writes a `manifest.json` to
+`<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-health-check/` (protocol
+`rolepod/v1`, phase `verify`) so the parent's `check-work` orchestrator can
+consume it.
+
+Otherwise, follow **standalone** mode — print the full health report with
+remediation suggestions.
+
+```bash
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
+```
+
+The MCP tool handles evidence emission internally via
+`src/lib/rolepodEvidence.ts`; skill bodies do not need to write the manifest
+themselves.
+
+# WP Health Check
+
+Lightweight sanity probe. Cheap (<5s), idempotent, no writes. Answers "is this target workable for the next operation?" — NOT "what is wrong with this site overall" (that is `wp-diagnose`).
+
+## Iron Rule
+
+<EXTREMELY-IMPORTANT>
+1. NEVER substitute `wp-health-check` for `wp-diagnose` — health-check is a sub-5s ping; deep probes (slow queries, plugin conflicts, php errors) belong to diagnose.
+2. NEVER skip health-check after `wp-pair-setup` or `wp-migrate` apply — the pair/migrate's own success response does not prove the next-request side of the contract holds.
+3. ALWAYS report the warnings array verbatim — warnings frequently identify the EXACT host config that breaks downstream tools (permalinks, exec disabled, mod_security stripping headers).
+</EXTREMELY-IMPORTANT>
+
+## When to use
+
+- After `wp-pair-setup` or `wp-connect`.
+- Before `wp-migrate` apply (verify destination reachable).
+- After installing/activating a plugin.
+- User asks any of: "is it up", "is it healthy", "what version", "is the companion working".
+
+Skip when:
+- User wants a full audit → `wp-diagnose`.
+- User wants raw runtime state (hooks/transients/options) → `wp-introspect`.
+
+## Boundary
+
+Owns:
+- Single call to `rolepod_wp_health_check { target_id }`.
+- Surfacing the structured output (versions, *_ok flags, warnings).
+- Sub-5s budget per call.
+
+Does not own:
+- Multi-probe diagnostic sweep (plugin conflicts, slow queries, php errors) → `wp-diagnose`.
+- Runtime state snapshot → `wp-introspect`.
+- Security audit (outdated/weak users/WP_DEBUG) → `wp-diagnose`.
+
+Return / hand off:
+- Any `*_ok: false` with a fixable warning → suggest the fix inline.
+- Multiple warnings or unclear cause → hand off to `wp-diagnose`.
+
+## Inputs to gather
+
+- `target_id` — required, must come from a prior connect/pair.
+
+## Workflow
+
+### 1. Call
+
+Single tool call. The output template is in `templates/health-report.md`.
+
+### 2. Interpret
+
+| Flag | Meaning | Fix |
+|---|---|---|
+| `db_ok: false` | wp-cli probe could not reach DB | check site is up; if companion missing, install for wp-cli-via-companion |
+| `rest_ok: false` | REST probe failed | flush permalinks (`Settings → Permalinks → Save`) |
+| `wp_cli_ok: false` on RestTarget | companion missing OR `/wp-cli` endpoint disabled | install/upgrade `rolepod-wp` v2.1+ |
+| `companion_ok: false` | endpoints disabled OR plugin not active | enable in `Settings → Rolepod for WordPress` |
+| `warnings: [...]` | host quirks | report all, fix or defer per item |
+
+### 3. Surface
+
+Fill `templates/health-report.md`. If the user just asked "is it healthy?" — a one-line YES/NO with the failing flag is enough; do not over-format.
+
+## If a matching Rolepod agent is available
+
+- `rolepod:qa-tester` for verification chains across multiple sites.
+- `rolepod:devops-sre` for host-side warnings (exec disabled, mod_security, perm rules).
+
+## If no matching agent is available
+
+1. Call `rolepod_wp_health_check`.
+2. Surface per `templates/health-report.md`.
+3. If any flag false → quote the fix; do not retry automatically.
+
+## Output
+
+Health report — `templates/health-report.md` is the canonical shape. Do not restate inline.
+
+## Examples
+
+No examples file. The decision tree is single-layer (interpret table covers all cases).
+
+## References
+
+Inline only. The 5 flags + warnings are documented in the interpret table above.
+
+## Hard stops
+
+- `target_id` not found → STOP, ask user to re-connect via `wp-connect` or `wp-pair-setup`.
+- Health-check itself times out (>30s) → STOP, surface the timeout, do not retry; usually means the host blocked the IP or the site is fully down.
+
+## Full Rolepod enhancement
+
+Full Rolepod adds historical health tracking (per-site `~/.config/rolepod-wplab/memory/<site>/health.jsonl`) so trends across days are visible; standalone, each call is point-in-time.
+
+## Next phase
+
+- All green → continue with the user's intended skill (`wp-content`, `wp-edit-*`, etc.).
+- Any flag false → `wp-diagnose` for the full probe, OR the inline fix from the interpret table.
