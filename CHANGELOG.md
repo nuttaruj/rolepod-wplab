@@ -2,6 +2,109 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] — 2026-05-28 — Phase 6: builder catalogs + native-first decision rule
+
+MCP-only release. No companion bump.
+
+### Why
+
+Post-ship audit of the WalnutZtudio build found that ~78% of page
+content was in HTML widgets — defeating the page builder's value
+proposition (user can't visually edit). User pointed out the right
+fix: per-builder element reference + pattern recipes so the AI knows
+the universe of native widgets BEFORE reaching for HTML.
+
+### Added — skill references (LLM-facing)
+
+- **`skills/wp-edit-design/references/builders/elementor.md`** — full
+  Elementor 4.x widget catalog: section/column primitives, every
+  widget settings shape (heading, text-editor, button, image, icon,
+  icon-box, counter, accordion, tabs, image-carousel, divider,
+  spacer, html, shortcode, all Pro-only widgets flagged),
+  CSS-to-widget-DOM map, gotchas (accordion icon Array bug,
+  section `_css_classes` rendering quirk, counter screenshot
+  limitation, native widget data-attr stripping), quick reference
+  card mapping mockup patterns → native widgets.
+- **`skills/wp-edit-design/references/builders/bricks.md`** — Bricks
+  element catalog + pattern recipes.
+- **`skills/wp-edit-design/references/builders/divi.md`** — Divi
+  module catalog covering all `et_pb_*` shortcodes + pattern recipes.
+- **`skills/wp-edit-design/references/builders/gutenberg.md`** —
+  Gutenberg core block catalog + popular block library callouts
+  (Ultimate Blocks, Kadence, GenerateBlocks, Spectra, Stackable).
+- **`skills/wp-edit-design/references/builders/oxygen.md`** — Oxygen
+  primitive catalog.
+- **`skills/wp-edit-design/references/patterns.md`** — builder-
+  agnostic mockup pattern → recipe map. 12 canonical patterns
+  (P-001 hero, P-002 feature grid, P-003 FAQ accordion, P-004 stat
+  row, P-005 pricing, P-006 process, P-007 portfolio, P-008
+  marquee, P-009 terminal, P-010 big CTA, P-011 header, P-012
+  footer) with builder-specific recipes + theme CSS pairs + rules
+  + quirks.
+- Updated **`skills/wp-edit-design/SKILL.md`** with the native-first
+  Iron Rule (#1) + 9-step workflow including builder catalog read +
+  validate_data + html_audit + publish gates.
+
+### Added — tools
+
+- **`rolepod_wp_builder_detect`** — auto-detect active page builder(s)
+  on the target. Returns ranked list (Elementor / Bricks / Divi /
+  Oxygen / Gutenberg) with version + capability flags + Pro state.
+- **`rolepod_wp_elementor_html_audit`** — walk an Elementor page's
+  `_elementor_data` tree, count widget types, compute HTML widget %,
+  and inspect each HTML block's content for patterns that have a
+  clean native widget replacement (single `<h1>` → heading widget,
+  `<details>/<summary>` → accordion, `data-count` → counter, icon +
+  heading + paragraph → icon-box). Returns `over_threshold:true` when
+  HTML % > 30 (default) and per-widget suggestions. USE after every
+  Elementor page build before publishing.
+
+### Decision rule (now enforced via skill)
+
+```
+For each section of the mockup:
+1. Pattern match in references/patterns.md? → Use the recipe exactly.
+2. Otherwise look up a widget in the builder catalog that covers
+   ≥70% of the visual.
+3. Compose: section + column + that widget + _css_classes.
+4. Only when no native widget fits → HTML widget per CARD
+   (NOT per section).
+5. After build:
+   - rolepod_wp_elementor_validate_data → catches setting shape errors
+   - rolepod_wp_elementor_html_audit → flags HTML overuse
+   - rolepod_wp_elementor_publish → flush + warm-fetch
+```
+
+### Internal
+
+- New libs: `src/lib/elementorHtmlAudit.ts` — heuristic content
+  pattern matcher with conservative suggestions.
+- New tools: `src/tools/composite/wp_builder_detect.ts`,
+  `src/tools/composite/wp_elementor_html_audit.ts`.
+- Schemas: `WpBuilderDetectInput/OutputSchema`,
+  `WpElementorHtmlAuditInput/OutputSchema`.
+- 12 new unit tests for the html-audit logic (counts native widgets
+  correctly, flags single-heading / single-paragraph / single-button
+  / FAQ details / data-count / icon-box content, does NOT flag
+  custom marquee / terminal blocks, recurses inner sections).
+- Total suite: 216 passing.
+- TypeScript clean.
+
+### How a page build looks NOW
+
+1. AI calls `rolepod_wp_builder_detect` → "primary: elementor v4.1.1"
+2. AI reads `skills/wp-edit-design/references/builders/elementor.md`
+   and `references/patterns.md`
+3. For each mockup section: pattern match → native recipe
+4. Compose `_elementor_data` tree
+5. `rolepod_wp_elementor_validate_data` — catches setting errors
+6. `rolepod_wp_elementor_template_apply` — commits
+7. `rolepod_wp_elementor_html_audit` — verifies HTML % within budget
+8. `rolepod_wp_elementor_publish` — flushes + warm-fetches
+
+User opens Elementor editor → sees real heading widgets, real button
+widgets, real counter widgets — drag/drop and edit work as expected.
+
 ## [1.18.0] — 2026-05-28 — Rolepod Custom plugin scaffolder
 
 MCP-only release. No companion bump required.

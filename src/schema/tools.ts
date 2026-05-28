@@ -1933,3 +1933,60 @@ export const WpCustomTaskRemoveOutputSchema = z.object({
   file_deleted: z.boolean(),
 });
 export type WpCustomTaskRemoveOutput = z.infer<typeof WpCustomTaskRemoveOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_builder_detect / rolepod_wp_elementor_html_audit (v1.19 — Phase 6)
+// ---------------------------------------------------------------------------
+
+export const WpBuilderDetectInputSchema = z.object({
+  target_id: TargetIdSchema,
+});
+export type WpBuilderDetectInput = z.infer<typeof WpBuilderDetectInputSchema>;
+
+export const WpBuilderDetectOutputSchema = z.object({
+  active_builders: z.array(
+    z.object({
+      slug: z.enum(["elementor", "bricks", "divi", "oxygen", "gutenberg", "beaver-builder", "visual-composer"]),
+      version: z.string(),
+      capabilities: z.array(z.string()),
+      pro: z.boolean(),
+    }),
+  ),
+  primary: z
+    .enum(["elementor", "bricks", "divi", "oxygen", "gutenberg", "beaver-builder", "visual-composer"])
+    .nullable(),
+});
+export type WpBuilderDetectOutput = z.infer<typeof WpBuilderDetectOutputSchema>;
+
+export const WpElementorHtmlAuditInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  threshold_pct: z
+    .number()
+    .min(0)
+    .max(100)
+    .default(30)
+    .describe(
+      "Warn when HTML widget count / total widget count × 100 exceeds this percentage. Default 30. Set to 100 to disable the warning.",
+    ),
+});
+export type WpElementorHtmlAuditInput = z.infer<typeof WpElementorHtmlAuditInputSchema>;
+
+export const WpElementorHtmlAuditOutputSchema = z.object({
+  post_id: z.number().int(),
+  total_widgets: z.number().int().nonnegative(),
+  html_widgets: z.number().int().nonnegative(),
+  html_widget_pct: z.number(),
+  over_threshold: z.boolean(),
+  threshold_pct: z.number(),
+  widget_type_counts: z.record(z.string(), z.number()),
+  suggestions: z.array(
+    z.object({
+      widget_id: z.string(),
+      reason: z.string(),
+      suggested_widget: z.string().optional(),
+      suggested_pattern: z.string().optional(),
+    }),
+  ),
+});
+export type WpElementorHtmlAuditOutput = z.infer<typeof WpElementorHtmlAuditOutputSchema>;

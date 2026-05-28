@@ -116,6 +116,14 @@ import {
   wpCustomTaskRemoveToolDef,
 } from "./composite/wp_custom_task_remove.js";
 import {
+  wpBuilderDetectHandler,
+  wpBuilderDetectToolDef,
+} from "./composite/wp_builder_detect.js";
+import {
+  wpElementorHtmlAuditHandler,
+  wpElementorHtmlAuditToolDef,
+} from "./composite/wp_elementor_html_audit.js";
+import {
   resolveAliasInArgs,
   withAliasReconnect,
 } from "../lib/aliasResolver.js";
@@ -569,6 +577,14 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpCustomTaskRemoveToolDef,
     handler: (d, raw) => wpCustomTaskRemoveHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpBuilderDetectToolDef,
+    handler: (d, raw) => wpBuilderDetectHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorHtmlAuditToolDef,
+    handler: (d, raw) => wpElementorHtmlAuditHandler(d.registry, raw),
   },
   {
     def: wpPostGetToolDef,
