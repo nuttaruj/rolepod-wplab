@@ -1,6 +1,16 @@
+---
+verified_from: docs-and-ai-memory
+bricks_version: 2.x (general)
+verification_status: unverified-live — derived from Bricks public docs + AI memory
+to_verify: install Bricks on a target then `rolepod_wp_cli_run` to introspect `\Bricks\Elements::$elements` and re-tag
+verified_at: 2026-05-28 (metadata added; element list itself NOT live-verified)
+---
+
 # Bricks Builder — element catalog + decision rules
 
 Reference for native-first Bricks page builds. **Raw HTML element = last resort.**
+
+> **Accuracy note:** Element names + setting keys below match Bricks 2.x public docs at time of writing, but have NOT been live-verified against a runtime registry. Treat as a planning guide — confirm any specific setting key via the Bricks UI or `\Bricks\Elements` introspection before relying on it in JSON output.
 
 ## Detection
 

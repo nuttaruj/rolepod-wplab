@@ -2,6 +2,107 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.20.0] — 2026-05-28 — Phase 7: catalog accuracy verification
+
+MCP-only release. No companion bump. No tool changes — catalog-only update.
+
+### Why
+
+After Phase 6 shipped, user flagged that builder catalogs may have been
+AI-generated from memory rather than verified against the actual page
+builder runtime. Phase 7 closes the accuracy gap by re-deriving the
+Elementor + Gutenberg catalogs from live runtime introspection and
+tagging every builder catalog with explicit `verified_from` metadata
+so future maintainers (and the AI itself) know which entries are
+authoritative.
+
+### Added — verified frontmatter metadata
+
+Every builder catalog now carries YAML frontmatter declaring its
+verification source, target version, audit tool, and date:
+
+- `elementor.md` → `verified_from: live runtime introspection`,
+  Elementor 4.1.1, 38/149 widgets audited via
+  `Plugin::instance()->widgets_manager->get_widget_types()`.
+- `gutenberg.md` → `verified_from: live runtime introspection`,
+  WordPress 7.0, 102 core blocks + 3 plugin blocks audited via
+  `WP_Block_Type_Registry::get_instance()`.
+- `bricks.md`, `divi.md`, `oxygen.md` → `verified_from:
+  docs-and-ai-memory`, with explicit `to_verify:` instructions
+  documenting how to swap to a live audit when a target with that
+  builder is available.
+- `patterns.md` → mixed verification status per builder, accurately
+  reflected per-recipe.
+
+### Changed — `skills/wp-edit-design/references/builders/elementor.md`
+
+Full rewrite of the widget catalog section. Each widget block now
+includes the verified control name + type + default + (where present)
+the live enum options, pulled from the runtime. Universal /
+promotional / responsive-hide controls (`*_pro`,
+`display_conditions_*`, `scrolling_effects_*`, `mouse_effects_*`,
+`sticky_*`, `hide_*`, `custom_attributes_*`, `custom_css_*`,
+`animation_*`) are dropped from each widget table since they exist
+on every widget and add no signal.
+
+Added widget entries:
+
+- `image-box`, `image-carousel`, `image-gallery`, `video`,
+  `social-icons`, `alert`, `star-rating`, `menu-anchor`,
+  `blockquote` — newly tabled with verified defaults.
+- `nested-accordion` + `nested-tabs` — Elementor 4.x successors to
+  legacy `accordion` / `tabs` (109 / 107 controls each). Catalog now
+  recommends `nested-accordion` for new builds and notes the legacy
+  `accordion` deprecation message.
+
+Pro-only widgets explicitly noted as registered-but-unintrospectable
+on free-tier (Pro injects controls at runtime): `animated-headline`,
+`countdown`, `flip-box`, `form`, `nav-menu`, `portfolio`, `posts`,
+`price-table`, `price-list`, `slides`, `testimonial-carousel`.
+
+### Changed — `skills/wp-edit-design/references/builders/gutenberg.md`
+
+Full rewrite of the block catalog section, indexed by Gutenberg
+category (design, text, media, widgets, embed, theme, reusable) with
+parent / ancestor relationships from the live registry. Notable
+verified-live additions on the WP 7.0 target:
+
+- `core/accordion` + `core/accordion-item` + `core/accordion-heading`
+  + `core/accordion-panel` — native FAQ block family. P-003 FAQ
+  recipe updated to prefer this on WP 7.0+ and fall back to
+  `core/details` on WP 6.x.
+- `core/math` — LaTeX rendering block.
+- `core/breadcrumbs` — native breadcrumb trail (parallel to Yoast).
+- `core/icon` — SVG icon block.
+- `core/terms-query` + `core/term-template` + `core/term-name` +
+  `core/term-description` + `core/term-count` — taxonomy term loop
+  family (parallel to Query Loop for posts).
+- `core/post-time-to-read` + `core/query-total` — Query Loop helpers.
+
+Deprecation markers added for `core/post-author` and
+`core/text-columns` per registry signals.
+
+Verified third-party blocks on demo target (Contact Form 7 + Yoast
+SEO) are listed in their own section so users know what to expect on
+a typical install.
+
+### Tooling note
+
+Live introspection used existing wplab tools — no new code shipped.
+Audit recipe:
+
+```
+rolepod_wp_cli_run target_id args=["eval", "$reg = WP_Block_Type_Registry::get_instance(); ..."]
+rolepod_wp_cli_run target_id args=["eval", "$widgets = Plugin::instance()->widgets_manager->get_widget_types(); ..."]
+```
+
+To re-run on a future Elementor/WP version bump:
+
+```
+rolepod_wp_elementor_widget_schema target_id widget=<name>   # single widget
+rolepod_wp_rest_request target_id /wp/v2/block-types          # all blocks
+```
+
 ## [1.19.0] — 2026-05-28 — Phase 6: builder catalogs + native-first decision rule
 
 MCP-only release. No companion bump.

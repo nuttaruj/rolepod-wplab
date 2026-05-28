@@ -1,6 +1,16 @@
+---
+verified_from: docs-and-ai-memory
+oxygen_version: 4.x (general)
+verification_status: unverified-live — derived from Oxygen public docs + AI memory
+to_verify: install Oxygen on a target then `rolepod_wp_cli_run` to dump `\OxygenElements::get_registered()` (or read `ct_builder_shortcodes` from a sample page) and re-tag
+verified_at: 2026-05-28 (metadata added; primitive list itself NOT live-verified)
+---
+
 # Oxygen Builder — primitive catalog + decision rules
 
 Reference for native-first Oxygen page builds. **Code Block = last resort.**
+
+> **Accuracy note:** Primitive names + option keys below match Oxygen 4.x public docs at time of writing, but have NOT been live-verified against a runtime registry. Treat as a planning guide — confirm any specific option via the Oxygen UI or by reading an existing page's `ct_builder_json` before relying on it in JSON output.
 
 ## Detection
 

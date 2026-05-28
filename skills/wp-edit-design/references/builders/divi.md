@@ -1,6 +1,16 @@
+---
+verified_from: docs-and-ai-memory
+divi_version: 4.x / 5.x (general)
+verification_status: unverified-live — derived from Divi public docs + AI memory
+to_verify: install Divi on a target then `rolepod_wp_cli_run` to dump `ET_Builder_Element::get_modules()` and re-tag
+verified_at: 2026-05-28 (metadata added; module list itself NOT live-verified)
+---
+
 # Divi — module catalog + decision rules
 
 Reference for native-first Divi page builds. **Raw HTML / Code module = last resort.**
+
+> **Accuracy note:** Shortcode names + attributes below match Divi 4.x / 5.x public docs at time of writing, but have NOT been live-verified against a runtime registry. Treat as a planning guide — confirm any specific attribute via the Divi UI or `ET_Builder_Element` introspection before relying on it in shortcode output.
 
 ## Detection
 

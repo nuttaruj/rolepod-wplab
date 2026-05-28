@@ -1,8 +1,20 @@
+---
+verified_from: mixed
+elementor_recipes: live-verified (Elementor 4.1.1 on demo target, 2026-05-28)
+gutenberg_recipes: live-verified (WP 7.0 on demo target, 2026-05-28)
+bricks_recipes: docs-and-ai-memory (Bricks 2.x docs, not live-verified)
+divi_recipes: docs-and-ai-memory (Divi 4.x/5.x docs, not live-verified)
+oxygen_recipes: docs-and-ai-memory (Oxygen 4.x docs, not live-verified)
+verified_at: 2026-05-28
+---
+
 # Mockup pattern → builder recipe map
 
 Builder-agnostic recipe library. Each pattern maps a recurring mockup visual
 to the canonical builder recipe. AI must look here BEFORE deciding to use a
 raw HTML widget.
+
+> **Accuracy note:** Elementor + Gutenberg recipes match live-verified widget/block names. Bricks / Divi / Oxygen recipes are derived from public docs + AI memory and have NOT been live-verified — confirm element names against the actual project target before depending on a specific recipe.
 
 ## How to read a recipe
 
