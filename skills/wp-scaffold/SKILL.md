@@ -16,15 +16,21 @@ mode:
 
 ## Mode selection
 
-If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — return
-only the list of files created (absolute paths). Skip the structure walkthrough
-and next-step suggestions — the parent's `implement-plan` owns the build flow.
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode — return only the list of files created (absolute
+paths). Skip the structure walkthrough and next-step suggestions — the
+parent's `implement-plan` owns the build flow.
 
-If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — scaffold + guide
-the user through structure, conventions, and recommended next steps.
+Otherwise, follow **standalone** mode — scaffold + guide the user through
+structure, conventions, and recommended next steps.
 
 ```bash
-if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
 ```
 
 # WP Scaffold

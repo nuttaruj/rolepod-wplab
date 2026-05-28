@@ -16,20 +16,29 @@ mode:
 
 ## Mode selection
 
-If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
-in the frontmatter — emit a structured diff summary (files touched, category,
-risk level) to the parent's evidence directory via `manifest.json`
-(protocol `rolepod/v1`, phase `review`). Parent's `review-code` consumes it.
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode declared in the frontmatter — the underlying
+`rolepod_wp_changes_query` MCP tool automatically writes a `diff.json` +
+`manifest.json` to
+`<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-changes/` (protocol
+`rolepod/v1`, phase `review`) so the parent's `review-code` orchestrator can
+consume it.
 
-If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
-print the full diff report with risk annotations and remediation suggestions.
+Otherwise, follow **standalone** mode — print the full diff report with risk
+annotations and remediation suggestions.
 
 ```bash
-if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
 ```
 
-In with-rolepod mode, write evidence via `src/lib/rolepodEvidence.ts` (same
-helper as wp-health-check, phase `review`).
+The MCP tool handles evidence emission internally via
+`src/lib/rolepodEvidence.ts`; skill bodies do not need to write the manifest
+themselves.
 
 # WP Changes
 

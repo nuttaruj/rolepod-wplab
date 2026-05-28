@@ -16,36 +16,28 @@ mode:
 
 ## Mode selection
 
-If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
-in the frontmatter — write a structured snapshot to the parent's evidence
-directory using the `manifest.json` schema (protocol `rolepod/v1`,
-phase `verify`). The parent's `check-work` consumes the manifest to decide
-whether the change is ready to merge.
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode declared in the frontmatter — the underlying
+`rolepod_wp_health_check` MCP tool automatically writes a `manifest.json` to
+`<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-health-check/` (protocol
+`rolepod/v1`, phase `verify`) so the parent's `check-work` orchestrator can
+consume it.
 
-If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
-print the full health report with remediation suggestions.
+Otherwise, follow **standalone** mode — print the full health report with
+remediation suggestions.
 
 ```bash
-if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
 ```
 
-In with-rolepod mode, emit evidence with the `src/lib/rolepodEvidence.ts`
-helper:
-
-```ts
-import { resolveEvidenceDir, writeManifest, makeRunTimestamp } from "../../src/lib/rolepodEvidence.js";
-const ts = makeRunTimestamp();
-const dir = resolveEvidenceDir("wp-health-check", ts);
-writeManifest(dir, {
-  skill: "wp-health-check",
-  phase: "verify",
-  status: warnings.length ? "warn" : "pass",
-  summary: `WP ${wpVersion}, PHP ${phpVersion}, ${pluginCount} plugins active`,
-  startedAt, finishedAt,
-  artifacts: [{ type: "report", path: "./health.json" }],
-  metadata: { wp_version: wpVersion, php_version: phpVersion, plugin_count: pluginCount },
-});
-```
+The MCP tool handles evidence emission internally via
+`src/lib/rolepodEvidence.ts`; skill bodies do not need to write the manifest
+themselves.
 
 # WP Health Check
 

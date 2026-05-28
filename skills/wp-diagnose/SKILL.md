@@ -16,16 +16,22 @@ mode:
 
 ## Mode selection
 
-If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode declared
-in the frontmatter — produce reduced output suited to the parent's `debug-issue`
-phase orchestrator. Skip the fix-flow narrative; emit WP-runtime findings only
-(error log lines, hook trace, query log) and let the parent decide remediation.
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode declared in the frontmatter — produce reduced output
+suited to the parent's `debug-issue` phase orchestrator. Skip the fix-flow
+narrative; emit WP-runtime findings only (error log lines, hook trace, query
+log) and let the parent decide remediation.
 
-If `$ROLEPOD_PARENT` is unset or any other value, follow **standalone** mode —
-run the full diagnostic flow described below.
+Otherwise, follow **standalone** mode — run the full diagnostic flow described
+below.
 
 ```bash
-if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
 ```
 
 # WP Diagnose

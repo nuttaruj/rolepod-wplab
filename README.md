@@ -14,9 +14,10 @@ directly via skill commands. No external dependencies.
 
 **Combined with rolepod parent (v2.7+):** wplab phase-flavored skills narrow
 to WP-specific tool roles, deferring workflow orchestration to parent. Same
-14 skills, smarter division of labor. Detection is one env var
-(`ROLEPOD_PARENT=1`) set by parent's SessionStart hook — no install-time
-coupling.
+14 skills, smarter division of labor. Detection is a single filesystem
+marker (`<git-root>/.rolepod/parent-active` containing `v1`) written by the
+parent's SessionStart hook — no install-time coupling, no env-var
+propagation problems across Claude Code's subprocess boundaries.
 
 ### Mode summary
 

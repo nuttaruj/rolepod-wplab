@@ -16,15 +16,20 @@ mode:
 
 ## Mode selection
 
-If `$ROLEPOD_PARENT` is set to `1`, follow the **with-rolepod** mode — return
-the edit diff only. The parent's `implement-plan` owns verify + review; do not
-re-run them here.
+If the marker file `$GIT_ROOT/.rolepod/parent-active` exists, follow the
+**with-rolepod** mode — return the edit diff only. The parent's
+`implement-plan` owns verify + review; do not re-run them here.
 
-If `$ROLEPOD_PARENT` is unset, follow **standalone** mode — edit + impact
-analysis + verification suggestion in one flow.
+Otherwise, follow **standalone** mode — edit + impact analysis + verification
+suggestion in one flow.
 
 ```bash
-if [ "${ROLEPOD_PARENT:-}" = "1" ]; then MODE=with-rolepod; else MODE=standalone; fi
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then
+  MODE=with-rolepod
+else
+  MODE=standalone
+fi
 ```
 
 # WP Edit Theme

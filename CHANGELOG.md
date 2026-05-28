@@ -2,6 +2,82 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] — 2026-05-28 — Marker-only detection + manifest wiring (Protocol v1 fix-up)
+
+v1.12.0 shipped Extension Protocol v1 frontmatter on 8 skills plus a
+`rolepodEvidence.ts` helper. Two gaps made combined mode non-functional
+end-to-end and are fixed here.
+
+### Fixed
+
+- **Detection mechanism swapped from env var to filesystem marker.**
+  v1.12.0 read `process.env.ROLEPOD_PARENT === "1"`. Claude Code's
+  SessionStart hooks run in a subprocess and their env vars cannot
+  propagate to Claude's Bash / MCP tool calls — the env-var path never
+  fired in practice. v1.13.0 reads `<git-root>/.rolepod/parent-active`
+  (UTF-8 single line, contents `v1`). The parent v2.7 SessionStart hook
+  writes this file; its Stop hook removes it. Cross-subprocess, durable,
+  one source of truth.
+- **Evidence path now resolves relative to the git root.** Previously
+  `process.cwd()`-relative — a skill invoked from a subdir wrote
+  evidence to that subdir's `.rolepod/` instead of the project's.
+  `detectRolepodParent()` now shells out to
+  `git rev-parse --show-toplevel` once and uses that for the evidence
+  dir.
+
+### Added — manifest emission on the 2 phase-aligned tools
+
+`writeManifest()` existed in v1.12.0 but had zero call sites. Wired in:
+
+- **`rolepod_wp_health_check`** (verify phase) — writes `health.json`
+  + `manifest.json` to
+  `<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-health-check/`
+  when the marker is present. Status is `fail` when `db_ok` or
+  `wp_cli_ok` is false, `warn` when warnings are non-empty otherwise,
+  `pass` otherwise. Evidence emission failure is caught and
+  surfaced as a stderr warning — it never breaks the tool's
+  primary contract.
+- **`rolepod_wp_changes_query`** (review phase) — writes `diff.json`
+  + `manifest.json`. Status is `warn` when any change in the result
+  set is non-reversible, `pass` otherwise. Same failure-mode
+  treatment as health-check.
+
+### Changed — 8 SKILL.md mode-selection blocks
+
+All 8 phase-flavored skill markdown files (`wp-diagnose`,
+`wp-health-check`, `wp-changes`, `wp-full`, `wp-scaffold`,
+`wp-edit-{design,plugin,theme}`) swap the env-var check for the
+marker-file check:
+
+```bash
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || GIT_ROOT="$PWD"
+if [ -f "$GIT_ROOT/.rolepod/parent-active" ]; then MODE=with-rolepod; else MODE=standalone; fi
+```
+
+Skill bodies for `wp-health-check` and `wp-changes` no longer document
+manual `writeManifest` calls — the MCP tools handle emission
+automatically when the marker is present.
+
+### Removed
+
+- `isUnderRolepodParent()` and `rolepodProtocolVersion()` (env-var
+  helpers). Replaced by `detectRolepodParent()` which returns a
+  `ParentState` record (`{ active, protocol, gitRoot }`).
+
+### Tests
+
+Existing `rolepodEvidence.test.ts` rewritten for the marker-based API
+(9 tests, all passing — covers marker present/absent, protocol
+mismatch warning, env-var ignored, non-git fallback, subdir
+invocation, manifest schema, timestamp format).
+
+### Unchanged
+
+- All 14 skills work standalone identically to v1.12.0.
+- 89+ MCP tools — only 2 enriched with conditional manifest emission;
+  the other 87 are unchanged.
+- Skill names — no rename, no removal.
+
 ## [1.12.0] — 2026-05-27 — Rolepod Extension Protocol v1 (forward-compatible child mode)
 
 Implements the spec from `brief/handoff-wplab-v1.9.md` shipped here as

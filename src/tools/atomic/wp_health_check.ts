@@ -1,3 +1,5 @@
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   WpHealthCheckInputSchema,
   WpHealthCheckOutputSchema,
@@ -5,6 +7,12 @@ import {
   type WpHealthCheckOutput,
 } from "../../schema/tools.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  detectRolepodParent,
+  resolveEvidenceDir,
+  writeManifest,
+  makeRunTimestamp,
+} from "../../lib/rolepodEvidence.js";
 
 export const wpHealthCheckToolDef = {
   name: "rolepod_wp_health_check",
@@ -17,6 +25,7 @@ export async function wpHealthCheckHandler(
   registry: TargetRegistry,
   raw: unknown,
 ): Promise<WpHealthCheckOutput> {
+  const startedAt = new Date();
   const input: WpHealthCheckInput = WpHealthCheckInputSchema.parse(raw);
   const target = registry.get(input.target_id);
 
@@ -70,7 +79,7 @@ export async function wpHealthCheckHandler(
 
   const companionOk = target.companion?.enabled === true;
 
-  return WpHealthCheckOutputSchema.parse({
+  const output = WpHealthCheckOutputSchema.parse({
     wp_version: target.wpVersion,
     ...(target.phpVersion !== undefined
       ? { php_version: target.phpVersion }
@@ -82,4 +91,52 @@ export async function wpHealthCheckHandler(
     site_url: target.siteurl,
     warnings,
   });
+
+  // Rolepod Extension Protocol v1: when the parent plugin's marker file is
+  // present, write a `manifest.json` to the parent's evidence dir so its
+  // `check-work` orchestrator can aggregate verify-phase results.
+  const parent = detectRolepodParent();
+  if (parent.active) {
+    try {
+      const ts = makeRunTimestamp();
+      const { dir } = resolveEvidenceDir("wp-health-check", ts);
+      const status: "pass" | "warn" | "fail" =
+        !output.db_ok || !output.wp_cli_ok
+          ? "fail"
+          : output.warnings.length > 0
+            ? "warn"
+            : "pass";
+      writeFileSync(
+        join(dir, "health.json"),
+        JSON.stringify(output, null, 2),
+      );
+      writeManifest(dir, {
+        skill: "wp-health-check",
+        phase: "verify",
+        status,
+        summary: `WP ${output.wp_version}, PHP ${output.php_version ?? "unknown"}, ${output.warnings.length} warning(s)`,
+        startedAt: startedAt.toISOString(),
+        finishedAt: new Date().toISOString(),
+        artifacts: [{ type: "report", path: "./health.json" }],
+        metadata: {
+          wp_version: output.wp_version,
+          php_version: output.php_version ?? null,
+          db_ok: output.db_ok,
+          wp_cli_ok: output.wp_cli_ok,
+          rest_ok: output.rest_ok,
+          companion_ok: output.companion_ok,
+          site_url: output.site_url,
+        },
+      });
+    } catch (err) {
+      // Evidence emission failure must NOT break the tool's primary contract.
+      // Surface as a warning but return the health result unchanged.
+      // eslint-disable-next-line no-console
+      console.warn(
+        `wp-health-check: failed to write rolepod evidence: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  return output;
 }
