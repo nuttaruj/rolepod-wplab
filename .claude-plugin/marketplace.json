@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "rolepod-wplab",
-  "description": "WordPress operations toolkit for AI coding agents — 82 MCP tools (wp-cli + REST + scoped fs + page-builder adapters + SEO/i18n + WooCommerce + ACF + forms + cron + cache + clone + backup + diagnose + scaffold) + 11 user-invocable skills. The rolepod-wp WordPress plugin (optional) unlocks execute-php + runtime introspection + one-click pair setup.",
+  "description": "WordPress operations toolkit for AI coding agents — 89+ MCP tools (wp-cli + REST + scoped fs + page-builder adapters + SEO/i18n + WooCommerce + ACF + forms + cron + cache + clone + backup + diagnose + scaffold) + 14 user-invocable skills. Rolepod Extension Protocol v1 — runs as a child of the rolepod parent (v2.7+) when its `<git-root>/.rolepod/parent-active` marker is present, standalone otherwise. The rolepod-wp WordPress plugin (optional) unlocks execute-php + runtime introspection + one-click pair setup.",
   "owner": {
     "name": "nuttaruj"
   },
@@ -9,8 +9,8 @@
     {
       "name": "rolepod-wplab",
       "source": "./",
-      "description": "82 MCP tools (rolepod_wp_*) + 13 lean Rolepod-pattern skills (/wp-pair-setup, /wp-connect, /wp-health-check, /wp-content, /wp-edit-design, /wp-edit-theme, /wp-edit-plugin, /wp-scaffold, /wp-introspect, /wp-diagnose, /wp-migrate, /wp-changes, /wp-execute-php) + /wp-full alias. 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair flow.",
-      "version": "1.8.0",
+      "description": "89+ MCP tools (rolepod_wp_*) + 14 lean Rolepod-pattern skills (/wp-pair-setup, /wp-connect, /wp-health-check, /wp-content, /wp-edit-design, /wp-edit-theme, /wp-edit-plugin, /wp-scaffold, /wp-introspect, /wp-diagnose, /wp-migrate, /wp-changes, /wp-execute-php) + /wp-full alias. 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair flow. Extension Protocol v1 — combined mode under rolepod parent v2.7+, standalone otherwise.",
+      "version": "1.13.0",
       "author": {
         "name": "nuttaruj"
       },
