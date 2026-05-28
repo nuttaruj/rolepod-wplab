@@ -4,9 +4,19 @@ import { z } from "zod";
 // Shared
 // ---------------------------------------------------------------------------
 
-export const TargetIdSchema = z.string().regex(/^tgt_[a-z0-9]{8,}$/, {
-  message: "target_id must look like tgt_<8+ lowercase hex>",
-});
+/**
+ * target_id accepts either:
+ *   - `tgt_<8+ lowercase hex>` — live session id from connect_rest/connect_local/pair
+ *   - `@<alias>` — persistent alias configured via rolepod_wp_target_alias
+ *     (resolved + auto-reconnected by the dispatcher before the handler runs)
+ */
+export const TargetIdSchema = z.string().regex(
+  /^(?:tgt_[a-z0-9]{8,}|@[a-z][a-z0-9_-]{0,30})$/,
+  {
+    message:
+      "target_id must be either `tgt_<8+ lowercase hex>` (live session) or `@<alias>` (persistent alias)",
+  },
+);
 
 export const RunIdSchema = z.string().regex(/^wplab_\d{8}T\d{6}_[a-z0-9]{8}$/);
 
@@ -114,6 +124,18 @@ export const ConnectRestOutputSchema = z.object({
     .optional()
     .describe(
       "Populated when per-site memory directory exists (W-028, v0.2+). Brief recap of stored notes.",
+    ),
+  warnings: z
+    .array(
+      z.object({
+        code: z.string(),
+        message: z.string(),
+        suggested_fix: z.string().optional(),
+      }),
+    )
+    .optional()
+    .describe(
+      "Non-fatal issues detected at connect time (e.g. siteurl/home stored as http on an https-only site). Each entry has a machine-readable code and a human-readable suggested fix.",
     ),
 });
 export type ConnectRestOutput = z.infer<typeof ConnectRestOutputSchema>;
@@ -1404,3 +1426,381 @@ export const WpFileWriteOutputSchema = z.object({
   backup_path: z.string().nullable(),
 });
 export type WpFileWriteOutput = z.infer<typeof WpFileWriteOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_target_alias (v1.14 — persistent target aliases)
+// ---------------------------------------------------------------------------
+
+export const TargetAliasInputSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("set"),
+    alias: z
+      .string()
+      .regex(/^[a-z][a-z0-9_-]{0,30}$/, {
+        message:
+          "alias must be lowercase letters/digits/_/- starting with a letter (e.g. 'demo', 'staging-1')",
+      }),
+    siteurl: z
+      .string()
+      .url()
+      .refine((u) => u.startsWith("https://"), {
+        message: "siteurl must use https://",
+      }),
+    credential_ref: z
+      .string()
+      .optional()
+      .describe(
+        "Override credentials vault lookup key. Defaults to canonical hostname of siteurl.",
+      ),
+  }),
+  z.object({
+    action: z.literal("list"),
+  }),
+  z.object({
+    action: z.literal("rm"),
+    alias: z.string(),
+  }),
+  z.object({
+    action: z.literal("resolve"),
+    alias: z.string(),
+  }),
+]);
+export type TargetAliasInput = z.infer<typeof TargetAliasInputSchema>;
+
+export const TargetAliasOutputSchema = z.object({
+  action: z.enum(["set", "list", "rm", "resolve"]),
+  alias: z.string().optional(),
+  siteurl: z.string().optional(),
+  credential_ref: z.string().optional(),
+  target_id: z.string().optional(),
+  removed: z.boolean().optional(),
+  aliases: z
+    .array(
+      z.object({
+        alias: z.string(),
+        siteurl: z.string(),
+        credential_ref: z.string(),
+        added_at: z.string(),
+        last_used_at: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+export type TargetAliasOutput = z.infer<typeof TargetAliasOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_file_write_batch (v1.15 — Phase 2 atomic multi-file write)
+// ---------------------------------------------------------------------------
+
+export const WpFileWriteBatchInputSchema = z.object({
+  target_id: TargetIdSchema,
+  writes: z
+    .array(
+      z.object({
+        path: z.string().min(1),
+        content: z.string(),
+        mode: z.enum(["overwrite", "append"]).default("overwrite"),
+        confirm_unsafe_path: z.boolean().default(false),
+      }),
+    )
+    .min(1)
+    .max(100),
+  skip_php_lint: z.boolean().default(false),
+});
+export type WpFileWriteBatchInput = z.infer<typeof WpFileWriteBatchInputSchema>;
+
+export const WpFileWriteBatchOutputSchema = z.object({
+  batch_id: z.string(),
+  written: z.array(
+    z.object({
+      path: z.string(),
+      absolute_path: z.string(),
+      bytes_written: z.number().int().nonnegative(),
+      backup_path: z.string().nullable(),
+    }),
+  ),
+  preflight: z.object({
+    php_lint_ran: z.boolean(),
+    require_chain_ran: z.boolean(),
+    entries_scanned: z.number().int().nonnegative(),
+  }),
+});
+export type WpFileWriteBatchOutput = z.infer<typeof WpFileWriteBatchOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_dir_ensure
+// ---------------------------------------------------------------------------
+
+export const WpDirEnsureInputSchema = z.object({
+  target_id: TargetIdSchema,
+  path: z.string().min(1),
+});
+export type WpDirEnsureInput = z.infer<typeof WpDirEnsureInputSchema>;
+
+export const WpDirEnsureOutputSchema = z.object({
+  path: z.string(),
+  absolute_path: z.string(),
+  created: z.boolean(),
+});
+export type WpDirEnsureOutput = z.infer<typeof WpDirEnsureOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_file_copy
+// ---------------------------------------------------------------------------
+
+export const WpFileCopyInputSchema = z.object({
+  target_id: TargetIdSchema,
+  from: z.string().min(1),
+  to: z.string().min(1),
+  overwrite: z.boolean().default(false),
+});
+export type WpFileCopyInput = z.infer<typeof WpFileCopyInputSchema>;
+
+export const WpFileCopyOutputSchema = z.object({
+  from: z.string(),
+  to: z.string(),
+  bytes: z.number().int().nonnegative(),
+});
+export type WpFileCopyOutput = z.infer<typeof WpFileCopyOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_file_list
+// ---------------------------------------------------------------------------
+
+export const WpFileListInputSchema = z.object({
+  target_id: TargetIdSchema,
+  path: z.string().min(1),
+  depth: z.number().int().min(0).max(5).default(2),
+  include_hidden: z.boolean().default(false),
+});
+export type WpFileListInput = z.infer<typeof WpFileListInputSchema>;
+
+export const WpFileListOutputSchema = z.object({
+  root: z.string(),
+  truncated: z.boolean(),
+  entries: z.array(
+    z.object({
+      path: z.string(),
+      type: z.enum(["file", "dir"]),
+      bytes: z.number().int().nonnegative(),
+      mtime: z.number().int().nonnegative(),
+      depth: z.number().int().nonnegative(),
+    }),
+  ),
+});
+export type WpFileListOutput = z.infer<typeof WpFileListOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_widget_schema
+// ---------------------------------------------------------------------------
+
+export const WpElementorWidgetSchemaInputSchema = z.object({
+  target_id: TargetIdSchema,
+  widget: z
+    .string()
+    .optional()
+    .describe(
+      "Widget type name (e.g. 'heading', 'button', 'counter', 'accordion'). Omit to list every registered widget type.",
+    ),
+});
+export type WpElementorWidgetSchemaInput = z.infer<typeof WpElementorWidgetSchemaInputSchema>;
+
+export const WpElementorWidgetSchemaOutputSchema = z
+  .object({
+    ok: z.boolean(),
+    elementor_version: z.string(),
+  })
+  .passthrough();
+export type WpElementorWidgetSchemaOutput = z.infer<typeof WpElementorWidgetSchemaOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_template_export
+// ---------------------------------------------------------------------------
+
+export const WpElementorTemplateExportInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+});
+export type WpElementorTemplateExportInput = z.infer<typeof WpElementorTemplateExportInputSchema>;
+
+export const WpElementorTemplateExportOutputSchema = z
+  .object({
+    ok: z.boolean(),
+    post_id: z.number().int(),
+  })
+  .passthrough();
+export type WpElementorTemplateExportOutput = z.infer<typeof WpElementorTemplateExportOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_publish (v1.16 — one-shot flush chain)
+// ---------------------------------------------------------------------------
+
+export const WpElementorPublishInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  warm_cache: z
+    .boolean()
+    .default(true)
+    .describe(
+      "After flushing, fetch the post's permalink once so the Varnish/CDN layer pre-caches a hot copy. Disable to save the round trip when you'll be editing again before viewing.",
+    ),
+});
+export type WpElementorPublishInput = z.infer<typeof WpElementorPublishInputSchema>;
+
+export const WpElementorPublishOutputSchema = z.object({
+  post_id: z.number().int(),
+  permalink: z.string().url(),
+  elementor_flush: z.object({
+    ok: z.boolean(),
+    message: z.string(),
+  }),
+  object_cache_flush: z.object({
+    ok: z.boolean(),
+    message: z.string(),
+  }),
+  warm_fetch: z
+    .object({
+      ok: z.boolean(),
+      status: z.number().int(),
+      bytes: z.number().int().nonnegative(),
+      duration_ms: z.number().int().nonnegative(),
+    })
+    .optional(),
+});
+export type WpElementorPublishOutput = z.infer<typeof WpElementorPublishOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_validate_data (v1.16 — schema-driven JSON validation)
+// ---------------------------------------------------------------------------
+
+export const WpElementorValidateDataInputSchema = z.object({
+  target_id: TargetIdSchema,
+  sections: z
+    .array(z.record(z.string(), z.unknown()))
+    .describe(
+      "Same shape as `_elementor_data`: an array of section objects with elements: [{ widgetType, settings, ... }] nested inside columns.",
+    ),
+  strict: z
+    .boolean()
+    .default(false)
+    .describe(
+      "When true, unknown settings raise errors. Default: unknown settings are warnings (some control names vary across Elementor versions and you may want to tolerate that).",
+    ),
+});
+export type WpElementorValidateDataInput = z.infer<typeof WpElementorValidateDataInputSchema>;
+
+export const WpElementorValidateDataOutputSchema = z.object({
+  ok: z.boolean(),
+  widgets_scanned: z.number().int().nonnegative(),
+  widget_types_seen: z.array(z.string()),
+  errors: z.array(
+    z.object({
+      widget_id: z.string(),
+      widget_type: z.string(),
+      setting_key: z.string(),
+      reason: z.string(),
+      expected_type: z.string().optional(),
+      actual_type: z.string().optional(),
+    }),
+  ),
+  warnings: z.array(
+    z.object({
+      widget_id: z.string(),
+      widget_type: z.string(),
+      setting_key: z.string(),
+      reason: z.string(),
+    }),
+  ),
+});
+export type WpElementorValidateDataOutput = z.infer<typeof WpElementorValidateDataOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_widget_attribute (v1.17 — companion-side data-* rehydrate)
+// ---------------------------------------------------------------------------
+
+export const WpElementorWidgetAttributeInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  widget_id: z
+    .string()
+    .regex(/^[a-z0-9]{4,16}$/i, { message: "widget_id must be 4-16 alphanumeric chars (Elementor element id)" }),
+  attrs: z.record(z.string(), z.string()).describe(
+    "Map of attribute name (without `data-` prefix) → value. Pass an empty object to clear all attrs for this widget.",
+  ),
+});
+export type WpElementorWidgetAttributeInput = z.infer<typeof WpElementorWidgetAttributeInputSchema>;
+
+export const WpElementorWidgetAttributeOutputSchema = z.object({
+  post_id: z.number().int(),
+  widget_id: z.string(),
+  attrs_now: z.record(z.string(), z.string()),
+  widgets_total: z.number().int().nonnegative(),
+});
+export type WpElementorWidgetAttributeOutput = z.infer<typeof WpElementorWidgetAttributeOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_template_apply
+// ---------------------------------------------------------------------------
+
+export const WpElementorTemplateApplyInputSchema = z.object({
+  target_id: TargetIdSchema,
+  target_post_id: z.number().int().positive(),
+  sections: z.array(z.record(z.string(), z.unknown())).min(1),
+  replace_strings: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe(
+      "Optional map of literal find→replace pairs applied to the JSON-encoded sections before commit. Use for swapping per-clone strings (page titles, button labels, post IDs).",
+    ),
+  overwrite: z.boolean().default(false),
+});
+export type WpElementorTemplateApplyInput = z.infer<typeof WpElementorTemplateApplyInputSchema>;
+
+export const WpElementorTemplateApplyOutputSchema = z.object({
+  target_post_id: z.number().int(),
+  section_count: z.number().int().nonnegative(),
+  replacements_applied: z.number().int().nonnegative(),
+});
+export type WpElementorTemplateApplyOutput = z.infer<typeof WpElementorTemplateApplyOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_job_create / rolepod_wp_job_status (v1.17 — async wp-cli)
+// ---------------------------------------------------------------------------
+
+export const WpJobCreateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  args: z.array(z.string()).min(1),
+  timeout_seconds: z.number().int().min(60).max(3600).default(600),
+  allow_destructive: z.boolean().default(false),
+});
+export type WpJobCreateInput = z.infer<typeof WpJobCreateInputSchema>;
+
+export const WpJobCreateOutputSchema = z.object({
+  job_id: z.string(),
+  pid: z.number().int(),
+  log: z.object({ stdout: z.string(), stderr: z.string() }),
+  started_at: z.number().int(),
+  ttl_seconds: z.number().int(),
+});
+export type WpJobCreateOutput = z.infer<typeof WpJobCreateOutputSchema>;
+
+export const WpJobStatusInputSchema = z.object({
+  target_id: TargetIdSchema,
+  job_id: z.string().regex(/^[a-f0-9]{12}$/),
+  tail: z.number().int().min(256).max(65536).default(8192),
+});
+export type WpJobStatusInput = z.infer<typeof WpJobStatusInputSchema>;
+
+export const WpJobStatusOutputSchema = z.object({
+  job_id: z.string(),
+  pid: z.number().int(),
+  args: z.array(z.string()),
+  started_at: z.number().int(),
+  state: z.enum(["running", "completed", "failed", "unknown"]),
+  elapsed_seconds: z.number().int().nonnegative(),
+  stdout_tail: z.string(),
+  stderr_tail: z.string(),
+  log: z.object({ stdout: z.string(), stderr: z.string() }),
+  exit_code: z.number().int().optional(),
+});
+export type WpJobStatusOutput = z.infer<typeof WpJobStatusOutputSchema>;

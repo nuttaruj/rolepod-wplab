@@ -4,6 +4,7 @@ import { bridgeFor } from "../../companion/Bridge.js";
 import { flushObjectCache } from "../../companion/cacheFlush.js";
 import { WplabError } from "../../util/errors.js";
 import { log } from "../../util/log.js";
+import { checkRequireChain, isBootstrapPath } from "../../lib/requireChain.js";
 import {
   WpFileWriteInputSchema,
   WpFileWriteOutputSchema,
@@ -125,6 +126,8 @@ async function preWriteValidate(
   // have their own runtime; companion validator is REST-only).
   if (lower.endsWith(".php")) {
     if (target.kind !== "rest") return;
+
+    // (a) Syntax check via companion.
     try {
       const bridge = await bridgeFor(target);
       const result = await bridge.syntaxCheck("php", content);
@@ -156,6 +159,49 @@ async function preWriteValidate(
         path,
         reason: (err as Error).message,
       });
+    }
+
+    // (b) Require/include chain resolution for bootstrap files. A missing
+    //     `require_once` at boot time fatals the entire site — guard against
+    //     ordering bugs where the AI writes functions.php before the file
+    //     it requires exists. Best-effort: skips paths it cannot resolve
+    //     statically, never throws on infra errors.
+    if (isBootstrapPath(path)) {
+      try {
+        const result = await checkRequireChain(target, path, content);
+        if (result.missing.length > 0) {
+          const lines = result.missing.map(
+            (m) =>
+              `  - require '${m.required_path}' → ${m.resolved_path} (line ${m.line_hint ?? "?"})`,
+          );
+          throw new WplabError(
+            "FS_WRITE_REQUIRE_CHAIN_BROKEN",
+            [
+              `${path} requires files that do not exist on the target. Writing this would fatal the site at first load.`,
+              ``,
+              `Missing requires:`,
+              ...lines,
+              ``,
+              `Resolution: write the required files FIRST (or use the upcoming rolepod_wp_file_write_batch tool to stage the whole set atomically), then retry.`,
+            ].join("\n"),
+            {
+              path,
+              missing: result.missing,
+            },
+          );
+        }
+      } catch (err) {
+        if (
+          err instanceof WplabError &&
+          err.code === "FS_WRITE_REQUIRE_CHAIN_BROKEN"
+        ) {
+          throw err;
+        }
+        log.debug("file_write: require chain check skipped on infra error", {
+          path,
+          reason: (err as Error).message,
+        });
+      }
     }
   }
 }

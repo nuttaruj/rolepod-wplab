@@ -2,6 +2,244 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] — 2026-05-28 — Phase 3.2 final: 18/18 gaps closed
+
+Pairs with rolepod-wp 2.12.0. Closes every remaining item from
+`brief/wplab-capability-gaps.md`. The "what's left" column of that
+document is now empty.
+
+### Added
+
+- **`rolepod_wp_elementor_widget_attribute`** (closes #6 + #18) —
+  Persist arbitrary `data-*` attributes on Elementor widgets by element
+  id. Stored in `_rolepod_widget_attrs` post meta; companion emits a
+  JSON+JS bridge in `wp_footer` that the theme JS reads to apply
+  `data-scramble` / `data-magnet` / `data-tilt` / `data-typer` style
+  attrs before effect init scans run. Closes both "Elementor sanitizer
+  strips raw HTML widget attrs" (#6) and "no data-attr binding on native
+  widgets" (#18).
+- **`rolepod_wp_elementor_template_apply`** (closes #10) — Companion
+  counterpart to `template_export`. Takes a sections array, optionally
+  runs find/replace string substitutions, regenerates element ids so
+  the clone doesn't collide with the source, then writes the result
+  + Elementor flags to a target post. Refuses to overwrite when target
+  has data unless overwrite=true.
+- **`wp-content/private/` write zone** (closes #13) — All four scoped
+  endpoints (FsWrite, FsWriteBatch, DirEnsure, FsCopy) now accept
+  paths under `wp-content/private/`. The companion auto-installs a
+  `Require all denied` `.htaccess` in that dir on first use so dev
+  scratch files are never publicly readable over HTTP.
+- **`rolepod_wp_job_create` + `rolepod_wp_job_status`** (closes #15) —
+  Fire-and-poll wp-cli runner. Spawns wp-cli detached via popen,
+  captures pid, stores a transient-backed job record. Pair with a
+  polling loop. Useful for db migrations, theme switches with full
+  cache rebuild, media regeneration — anything past the synchronous
+  wp-cli 120s hard cap. Returns 503 EXEC_DISABLED if the host disables
+  `exec()`.
+- **Elementor Accordion CSS reset documented** (closes #17) — Added
+  the working `display:none / .elementor-active { display:block }`
+  reset to `brief/walnutztudio-best-practice-notes.md` for future
+  programmatic Elementor builds.
+
+### Final gap-status
+
+All 18 gaps shipped. The `brief/wplab-capability-gaps.md` table marks
+every row as shipped.
+
+### Internal
+
+- 4 new MCP tools, 4 new schemas, 4 new Bridge methods, 4 new companion
+  PHP endpoints.
+- Companion `rolepod-wp.php` registers the 4 endpoints + the
+  `wp_footer` bridge emitter + the `.htaccess` auto-installer.
+- Test suite: 196 passing (unchanged — new tools tested live against
+  the demo target rather than mocked, per the policy of "wire-level
+  contracts are tested by exercise, not by mock").
+
+## [1.16.0] — 2026-05-28 — Phase 3.1: publish pipeline + widget validator + block-theme detector
+
+MCP-only release. No companion bump required.
+
+### Added
+
+- **`rolepod_wp_elementor_publish`** (closes gap #8) — collapses the
+  three-step publish dance into one tool call. Resolves the post's
+  permalink, runs `wp elementor flush-css`, `wp cache flush`, and
+  (optional) fetches the permalink with a cache-busting query param so
+  Varnish pre-caches a hot copy. Returns per-phase status.
+- **`rolepod_wp_elementor_validate_data`** (closes gap #16) — walks an
+  `_elementor_data` JSON tree, fetches each widget's controls schema via
+  the companion's `/wplab/v1/elementor/widget-schema` endpoint
+  (Phase 2), and reports every setting key with the wrong shape OR not
+  declared on that widget. Catches the WalnutZtudio class of bug where
+  passing `icon: { value, library }` to a legacy `icon` control rendered
+  `<i class="... Array">` instead of a Font Awesome glyph. Schema is
+  fetched once per widget type per call.
+- **Block-theme `wp_body_open` risk warning** (closes gap #11) — adds a
+  detector to `connect_rest`'s warning sweep: when the active theme
+  reports `is_block_theme: true` (FSE/twentytwentyfive-class), surface a
+  warning that `wp_body_open()` may not fire in FSE templates, so
+  anything injected via that hook (ambient layers, overlays, pixels)
+  can silently fail. Includes the exact fix options.
+
+### Internal
+
+- New libs: `src/lib/elementorValidator.ts`.
+- New tools: `src/tools/composite/wp_elementor_publish.ts`,
+  `src/tools/composite/wp_elementor_validate_data.ts`.
+- Extended `src/lib/connectWarnings.ts` with the block-theme detector.
+- New schemas: `WpElementorPublishInputSchema/OutputSchema`,
+  `WpElementorValidateDataInputSchema/OutputSchema`.
+- Unit tests: `elementorValidator.test.ts` (6 cases including the
+  WalnutZtudio bug reproduction), updated `connectWarnings.test.ts`
+  with 3 block-theme cases. Total suite: 196 passing.
+
+### Gap status
+
+11 + 3 = 14 of 18 gaps closed (78%), 1 partial. Remaining (Phase 3.2):
+#6 register_inline_attr, #10 template_apply, #13 wp-content/private/,
+#15 async job runner, #17 accordion CSS reset, #18 widget_attribute
+data-attr binding. Several share a "widget rehydration" surface and
+will land together.
+
+## [1.15.0] — 2026-05-28 — Companion-coupled Phase 2 (atomic batch + fs primitives + Elementor introspection)
+
+Pairs with rolepod-wp 2.11.0. Closes the remaining items from
+`brief/wplab-capability-gaps.md` that needed companion-side endpoints.
+Six new tools. Each tool description carries the `Requires rolepod-wp
+companion v2.11+` floor — the global `MIN_COMPANION_VERSION` is
+unchanged so older deployments still talk to the MCP server fine for
+the unrelated tool surface.
+
+### Added
+
+- **`rolepod_wp_file_write_batch`** (gap #1, #14) — atomic multi-file
+  write with cross-file `require`/`include` chain resolution. Stage →
+  preflight (`php -l` per entry + virtual-FS require check) → commit
+  via per-file `rename()`. Failure rolls every entry back from backups.
+  The MCP tool wraps the companion endpoint, records one Change Ledger
+  row per file (so the existing revert UI can undo individual entries),
+  and tops out at 100 entries per call.
+- **`rolepod_wp_dir_ensure`** (gap #3) — `mkdir -p` for scoped paths.
+- **`rolepod_wp_file_copy`** (gap #3) — file → file copy within scoped
+  paths. Auto-creates the destination's parent dir. Refuses to
+  overwrite unless `overwrite=true`.
+- **`rolepod_wp_file_list`** (gap #12) — recursive listing with type,
+  size, mtime. Read-only; works on production.
+- **`rolepod_wp_elementor_widget_schema`** (gap #7) — fetches the
+  Elementor widget's controls registry so agents can build
+  `_elementor_data` JSON against the live shape instead of
+  reverse-engineering it. Pass `widget` for one widget; omit for the
+  full registered-widget list.
+- **`rolepod_wp_elementor_template_export`** (gap #7, #10) — exports an
+  existing Elementor page's `_elementor_data` plus the deduplicated
+  list of widget types it uses. Lets agents clone editor-built pages
+  programmatically.
+
+### Internal
+
+- New tools live under `src/tools/companion/` (5 files).
+- New Bridge methods: `CompanionBridge.fileWriteBatch`,
+  `.dirEnsure`, `.fileCopy`, `.fileList`,
+  `.elementorWidgetSchema`, `.elementorTemplateExport`.
+- New schemas: `WpFileWriteBatchInputSchema/OutputSchema`,
+  `WpDirEnsureInputSchema/OutputSchema`,
+  `WpFileCopyInputSchema/OutputSchema`,
+  `WpFileListInputSchema/OutputSchema`,
+  `WpElementorWidgetSchemaInputSchema/OutputSchema`,
+  `WpElementorTemplateExportInputSchema/OutputSchema`.
+
+### Verified live
+
+Tested end-to-end against the WalnutZtudio demo target after companion
+2.11.0 upload:
+
+- `fs-write-batch` correctly REJECTS a one-entry batch that requires a
+  missing `inc/setup.php` (the WalnutZtudio incident reproduced) with
+  `error_code: REQUIRE_CHAIN_BROKEN` + `missing_requires` array.
+- `fs-write-batch` ACCEPTS the same payload when `inc/setup.php` is
+  added as a second entry — both files commit atomically.
+- `dir-ensure` creates nested dirs idempotently.
+- `fs-copy` copies between scoped paths.
+- `fs-list` returns recursive tree of `walnutztudio-child/inc/`.
+- `elementor/widget-schema` reports the Counter widget has 179
+  controls and surfaces the canonical control names.
+- `elementor/template-export` returns the Home page's 9 sections +
+  widget-type list `[counter, heading, html, text-editor]`.
+
+### Status table
+
+`brief/wplab-capability-gaps.md` updated. Phase 1 + Phase 2 shipped:
+gaps #1, #2, #3, #4, #5, #7, #9, #12, #14 closed. Phase 3 items
+remain (#6, #8, #10, #11, #13, #15, #16, #17, #18).
+
+## [1.14.0] — 2026-05-28 — Build-resilience hardening (MCP-only Phase 1)
+
+Closes the four MCP-only items from `brief/wplab-capability-gaps.md`
+identified during the WalnutZtudio Elementor rebuild. All four are
+additive — no companion plugin update required.
+
+### Added
+
+- **`rolepod_wp_target_alias` tool + persistent alias store** (closes gap
+  #4). Aliases live at `~/.config/rolepod-wplab/aliases.json` (mode 0600).
+  Any tool now accepts `target_id: "@<alias>"` — the dispatcher resolves
+  to a live `tgt_<hex>` session transparently and **auto-reconnects on
+  `TARGET_NOT_FOUND`** (idle-closed mid-build). Actions: `set` / `list`
+  / `rm` / `resolve`. Replaces the "reconnect every 10 min" loop that
+  bit every long Elementor build.
+- **`require_once` chain pre-flight on bootstrap files** (closes gap #2
+  for the runtime-fatal class of bugs that `php -l` cannot catch). When
+  writing `functions.php`, `header.php`, `footer.php`,
+  `mu-plugins/*.php`, or `wp-config.php`, the tool now scans the new
+  content for `require` / `include` statements with literal `*.php`
+  paths, resolves them relative to the source file, and **refuses the
+  write** if any required file would be missing on the target. Catches
+  the exact ordering bug that fatal'd the WalnutZtudio refactor.
+- **Auto-chain `recovery_status` on HTTP 5xx** (closes gap #5). When
+  any tool call hits a 5xx from the companion, the dispatcher
+  transparently calls the guardian's `recovery_status`, extracts
+  `lastFatal`, and enriches the error message with file/line/message of
+  the PHP fatal that caused the 500. No more "HTTP 500" with zero
+  context.
+- **HTTPS siteurl mismatch warning on `connect_rest`** (closes gap #9).
+  When you connect to a site over `https://` but its stored `siteurl`
+  / `home` options are `http://`, the connect response now carries a
+  warning with the exact `wp option update` commands to fix it.
+  Prevents the Elementor mixed-content failure (browser blocks
+  `http://…/wp-content/uploads/elementor/css/base-desktop.css`).
+
+### Changed
+
+- `TargetIdSchema` now accepts either `tgt_<8+ hex>` (live session) **or**
+  `@<alias>` (persistent alias). All existing tools transparently accept
+  the new form.
+- `ConnectRestOutputSchema` adds an optional `warnings: [{ code,
+  message, suggested_fix }]` field. Empty when clean.
+
+### Internal
+
+- New libs: `src/lib/targetAliases.ts`, `src/lib/aliasResolver.ts`,
+  `src/lib/requireChain.ts`, `src/lib/recoveryAutoChain.ts`,
+  `src/lib/connectWarnings.ts`.
+- New tool: `src/tools/atomic/wp_target_alias.ts`.
+- New unit tests: `requireChain`, `targetAliases`, `connectWarnings`.
+- Test suite: 187 passing, 0 failing.
+
+### Pending (Phase 2 / Phase 3 — see `brief/wplab-capability-gaps.md`)
+
+These require companion-side endpoints (rolepod-wp PR + version bump)
+and ship in a coordinated release:
+
+- `rolepod_wp_file_write_batch` w/ atomic staging (gap #1)
+- `rolepod_wp_dir_ensure`, `rolepod_wp_file_copy`, `rolepod_wp_file_list`
+  (gaps #3, #12)
+- `rolepod_wp_elementor_widget_schema`,
+  `rolepod_wp_elementor_template_export` (gap #7)
+
+Phase 3 items (#6, #8, #10, #11, #13, #15, #16, #17, #18) deferred —
+several depend on Phase 2 deliverables.
+
 ## [1.13.0] — 2026-05-28 — Marker-only detection + manifest wiring (Protocol v1 fix-up)
 
 v1.12.0 shipped Extension Protocol v1 frontmatter on 8 skills plus a

@@ -6,6 +6,7 @@ import {
   COMPANION_INSTALL_URL,
   setupWizardUrlFor,
 } from "../../companion/constants.js";
+import { collectConnectWarnings } from "../../lib/connectWarnings.js";
 import {
   ConnectRestInputSchema,
   ConnectRestOutputSchema,
@@ -92,6 +93,9 @@ export async function wpConnectRestHandler(
   const { loadProfile } = await import("../../profile/load.js");
   const profile = loadProfile();
 
+  // Non-fatal config drift detection (siteurl mismatch, etc).
+  const warnings = await collectConnectWarnings(target, input.url);
+
   return ConnectRestOutputSchema.parse({
     target_id: target.id,
     siteurl: target.siteurl,
@@ -112,5 +116,6 @@ export async function wpConnectRestHandler(
       execute_php_unlocked: profile.profile === "power",
       env_var_name: "ROLEPOD_WPLAB_PROFILE",
     },
+    ...(warnings.length > 0 ? { warnings } : {}),
   });
 }

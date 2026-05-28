@@ -29,3 +29,6 @@ Thumbs.db
 yarn.lock
 pnpm-lock.yaml
 bun.lockb
+
+# Browser-driven UI verification artifacts (local-only, can be regenerated)
+.rolepod-uiproof/

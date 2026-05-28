@@ -39,6 +39,63 @@ import {
   wpFileWriteHandler,
   wpFileWriteToolDef,
 } from "./atomic/wp_file_write.js";
+import {
+  wpTargetAliasHandler,
+  wpTargetAliasToolDef,
+} from "./atomic/wp_target_alias.js";
+import {
+  wpFileWriteBatchHandler,
+  wpFileWriteBatchToolDef,
+} from "./companion/wp_file_write_batch.js";
+import {
+  wpDirEnsureHandler,
+  wpDirEnsureToolDef,
+} from "./companion/wp_dir_ensure.js";
+import {
+  wpFileCopyHandler,
+  wpFileCopyToolDef,
+} from "./companion/wp_file_copy.js";
+import {
+  wpFileListHandler,
+  wpFileListToolDef,
+} from "./companion/wp_file_list.js";
+import {
+  wpElementorWidgetSchemaHandler,
+  wpElementorWidgetSchemaToolDef,
+} from "./companion/wp_elementor_widget_schema.js";
+import {
+  wpElementorTemplateExportHandler,
+  wpElementorTemplateExportToolDef,
+} from "./companion/wp_elementor_template_export.js";
+import {
+  wpElementorPublishHandler,
+  wpElementorPublishToolDef,
+} from "./composite/wp_elementor_publish.js";
+import {
+  wpElementorValidateDataHandler,
+  wpElementorValidateDataToolDef,
+} from "./composite/wp_elementor_validate_data.js";
+import {
+  wpElementorWidgetAttributeHandler,
+  wpElementorWidgetAttributeToolDef,
+} from "./companion/wp_elementor_widget_attribute.js";
+import {
+  wpElementorTemplateApplyHandler,
+  wpElementorTemplateApplyToolDef,
+} from "./companion/wp_elementor_template_apply.js";
+import {
+  wpJobCreateHandler,
+  wpJobCreateToolDef,
+} from "./companion/wp_job_create.js";
+import {
+  wpJobStatusHandler,
+  wpJobStatusToolDef,
+} from "./companion/wp_job_status.js";
+import {
+  resolveAliasInArgs,
+  withAliasReconnect,
+} from "../lib/aliasResolver.js";
+import { withRecoveryContext } from "../lib/recoveryAutoChain.js";
 import { wpPostGetHandler, wpPostGetToolDef } from "./atomic/wp_post_get.js";
 import { wpPostListHandler, wpPostListToolDef } from "./atomic/wp_post_list.js";
 import {
@@ -398,6 +455,10 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
     handler: (d, raw) => wpDisconnectHandler(d.registry, raw),
   },
   {
+    def: wpTargetAliasToolDef,
+    handler: (d, raw) => wpTargetAliasHandler(d.registry, raw),
+  },
+  {
     def: wpCliRunToolDef,
     handler: (d, raw) => wpCliRunHandler(d.registry, raw),
   },
@@ -412,6 +473,54 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpFileWriteToolDef,
     handler: (d, raw) => wpFileWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpFileWriteBatchToolDef,
+    handler: (d, raw) => wpFileWriteBatchHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpDirEnsureToolDef,
+    handler: (d, raw) => wpDirEnsureHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpFileCopyToolDef,
+    handler: (d, raw) => wpFileCopyHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpFileListToolDef,
+    handler: (d, raw) => wpFileListHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorWidgetSchemaToolDef,
+    handler: (d, raw) => wpElementorWidgetSchemaHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorTemplateExportToolDef,
+    handler: (d, raw) => wpElementorTemplateExportHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorPublishToolDef,
+    handler: (d, raw) => wpElementorPublishHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorValidateDataToolDef,
+    handler: (d, raw) => wpElementorValidateDataHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorWidgetAttributeToolDef,
+    handler: (d, raw) => wpElementorWidgetAttributeHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpElementorTemplateApplyToolDef,
+    handler: (d, raw) => wpElementorTemplateApplyHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpJobCreateToolDef,
+    handler: (d, raw) => wpJobCreateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpJobStatusToolDef,
+    handler: (d, raw) => wpJobStatusHandler(d.registry, raw),
   },
   {
     def: wpPostGetToolDef,
@@ -790,7 +899,26 @@ export function registerTools(server: Server, deps: RegisterDeps): void {
       };
     }
     try {
-      const result = await tool.handler(deps, req.params.arguments ?? {});
+      // (1) Alias resolution — rewrites target_id like "@demo" to a live
+      //     tgt_<hex>, opening a fresh session if the alias is configured
+      //     but not yet connected this process.
+      const { args: resolvedArgs, alias } = await resolveAliasInArgs(
+        { registry: deps.registry },
+        req.params.arguments ?? {},
+      );
+
+      // (2) Auto-reconnect on TargetNotFoundError when an alias was used.
+      // (3) Auto-chain recovery_status on 5xx companion errors so the AI
+      //     sees the actual PHP fatal that caused the HTTP 500.
+      const result = await withAliasReconnect(
+        { registry: deps.registry },
+        alias,
+        resolvedArgs,
+        (a) =>
+          withRecoveryContext(deps.registry, req.params.name, a, () =>
+            tool.handler(deps, a),
+          ),
+      );
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };

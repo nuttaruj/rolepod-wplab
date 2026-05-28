@@ -1148,6 +1148,411 @@ export class CompanionBridge {
       auditId: b.audit_id ?? "",
     };
   }
+
+  // ─── v2.11 — Phase 2 endpoints ──────────────────────────────────────────
+
+  async fileWriteBatch(
+    writes: ReadonlyArray<{
+      path: string;
+      content: string;
+      mode?: "overwrite" | "append";
+      confirmUnsafePath?: boolean;
+    }>,
+    opts: { skipPhpLint?: boolean } = {},
+  ): Promise<{
+    batchId: string;
+    written: Array<{ path: string; absolutePath: string; bytesWritten: number; backupPath: string | null }>;
+    preflight: { phpLintRan: boolean; requireChainRan: boolean; entriesScanned: number };
+  }> {
+    const token = await this.ensureFreshToken();
+    const body = {
+      session_token: token,
+      writes: writes.map((w) => ({
+        path: w.path,
+        content: w.content,
+        mode: w.mode ?? "overwrite",
+        confirm_unsafe_path: w.confirmUnsafePath ?? false,
+      })),
+      skip_php_lint: opts.skipPhpLint ?? false,
+    };
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/fs-write-batch",
+      body,
+    });
+    if (res.status === 401) {
+      const fresh = await this.handshake();
+      const retry = await this.target.rest({
+        method: "POST",
+        path: "/wplab/v1/fs-write-batch",
+        body: { ...body, session_token: fresh.session_token },
+      });
+      return this.coerceBatchResponse(retry.status, retry.body);
+    }
+    return this.coerceBatchResponse(res.status, res.body);
+  }
+
+  private coerceBatchResponse(status: number, body: unknown): {
+    batchId: string;
+    written: Array<{ path: string; absolutePath: string; bytesWritten: number; backupPath: string | null }>;
+    preflight: { phpLintRan: boolean; requireChainRan: boolean; entriesScanned: number };
+  } {
+    const b = (body ?? {}) as Record<string, unknown>;
+    if (status >= 200 && status < 300 && b["ok"] === true) {
+      const writtenRaw = Array.isArray(b["written"]) ? (b["written"] as Array<Record<string, unknown>>) : [];
+      const pre = (b["preflight"] as Record<string, unknown> | undefined) ?? {};
+      return {
+        batchId: typeof b["batch_id"] === "string" ? (b["batch_id"] as string) : "",
+        written: writtenRaw.map((w) => ({
+          path: typeof w["path"] === "string" ? (w["path"] as string) : "",
+          absolutePath: typeof w["absolute_path"] === "string" ? (w["absolute_path"] as string) : "",
+          bytesWritten: typeof w["bytes_written"] === "number" ? (w["bytes_written"] as number) : 0,
+          backupPath: typeof w["backup_path"] === "string" ? (w["backup_path"] as string) : null,
+        })),
+        preflight: {
+          phpLintRan: !!pre["php_lint_ran"],
+          requireChainRan: !!pre["require_chain_ran"],
+          entriesScanned: typeof pre["entries_scanned"] === "number" ? (pre["entries_scanned"] as number) : 0,
+        },
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_WRITE_BATCH_HTTP_${status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `fs-write-batch via companion returned HTTP ${status}`,
+      {
+        status,
+        failed_index: b["failed_index"],
+        failed_path: b["failed_path"],
+        missing_requires: b["missing_requires"],
+        error_line: b["error_line"],
+      },
+    );
+  }
+
+  async dirEnsure(path: string): Promise<{ path: string; absolutePath: string; created: boolean }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/dir-ensure",
+      body: { session_token: token, path },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return {
+        path: typeof b["path"] === "string" ? (b["path"] as string) : path,
+        absolutePath: typeof b["absolute_path"] === "string" ? (b["absolute_path"] as string) : "",
+        created: !!b["created"],
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `DIR_ENSURE_HTTP_${res.status}`,
+      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `dir-ensure HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async fileCopy(
+    from: string,
+    to: string,
+    opts: { overwrite?: boolean } = {},
+  ): Promise<{ from: string; to: string; bytes: number }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/fs-copy",
+      body: { session_token: token, from, to, overwrite: opts.overwrite ?? false },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return {
+        from: typeof b["from"] === "string" ? (b["from"] as string) : from,
+        to: typeof b["to"] === "string" ? (b["to"] as string) : to,
+        bytes: typeof b["bytes"] === "number" ? (b["bytes"] as number) : 0,
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_COPY_HTTP_${res.status}`,
+      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `fs-copy HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async fileList(
+    path: string,
+    opts: { depth?: number; includeHidden?: boolean } = {},
+  ): Promise<{
+    root: string;
+    entries: Array<{ path: string; type: "file" | "dir"; bytes: number; mtime: number; depth: number }>;
+    truncated: boolean;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/fs-list",
+      query: {
+        session_token: token,
+        path,
+        depth: opts.depth ?? 2,
+        include_hidden: opts.includeHidden ?? false,
+      },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      const rawEntries = Array.isArray(b["entries"]) ? (b["entries"] as Array<Record<string, unknown>>) : [];
+      return {
+        root: typeof b["root"] === "string" ? (b["root"] as string) : path,
+        entries: rawEntries.map((e) => ({
+          path: typeof e["path"] === "string" ? (e["path"] as string) : "",
+          type: e["type"] === "dir" ? "dir" : "file",
+          bytes: typeof e["bytes"] === "number" ? (e["bytes"] as number) : 0,
+          mtime: typeof e["mtime"] === "number" ? (e["mtime"] as number) : 0,
+          depth: typeof e["depth"] === "number" ? (e["depth"] as number) : 0,
+        })),
+        truncated: !!b["truncated"],
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_LIST_HTTP_${res.status}`,
+      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `fs-list HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async elementorWidgetSchema(widget?: string): Promise<Record<string, unknown>> {
+    const token = await this.ensureFreshToken();
+    const query: Record<string, string | number | boolean> = { session_token: token };
+    if (widget !== undefined && widget !== "") query["widget"] = widget;
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/elementor/widget-schema",
+      query,
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return b;
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `ELEMENTOR_WIDGET_SCHEMA_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `elementor widget-schema HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async elementorTemplateExport(postId: number): Promise<Record<string, unknown>> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/elementor/template-export",
+      query: { session_token: token, post_id: postId },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return b;
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `ELEMENTOR_TEMPLATE_EXPORT_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `elementor template-export HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  // ─── v2.12 — Phase 3.2 endpoints ────────────────────────────────────────
+
+  async elementorWidgetAttribute(
+    postId: number,
+    widgetId: string,
+    attrs: Record<string, string>,
+  ): Promise<{ postId: number; widgetId: string; attrsNow: Record<string, string>; widgetsTotal: number }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/elementor/widget-attribute",
+      body: { session_token: token, post_id: postId, widget_id: widgetId, attrs },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return {
+        postId: typeof b["post_id"] === "number" ? (b["post_id"] as number) : postId,
+        widgetId: typeof b["widget_id"] === "string" ? (b["widget_id"] as string) : widgetId,
+        attrsNow: (b["attrs_now"] ?? {}) as Record<string, string>,
+        widgetsTotal: typeof b["widgets_total"] === "number" ? (b["widgets_total"] as number) : 0,
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `ELEMENTOR_WIDGET_ATTR_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `elementor widget-attribute HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async elementorTemplateApply(input: {
+    targetPostId: number;
+    sections: ReadonlyArray<Record<string, unknown>>;
+    replaceStrings?: Record<string, string>;
+    overwrite?: boolean;
+  }): Promise<{ targetPostId: number; sectionCount: number; replacementsApplied: number }> {
+    const token = await this.ensureFreshToken();
+    const body: Record<string, unknown> = {
+      session_token: token,
+      target_post_id: input.targetPostId,
+      sections: input.sections,
+      overwrite: input.overwrite ?? false,
+    };
+    if (input.replaceStrings && Object.keys(input.replaceStrings).length > 0) {
+      body["replace_strings"] = input.replaceStrings;
+    }
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/elementor/template-apply",
+      body,
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return {
+        targetPostId: typeof b["target_post_id"] === "number" ? (b["target_post_id"] as number) : input.targetPostId,
+        sectionCount: typeof b["section_count"] === "number" ? (b["section_count"] as number) : 0,
+        replacementsApplied: typeof b["replacements_applied"] === "number" ? (b["replacements_applied"] as number) : 0,
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `ELEMENTOR_TEMPLATE_APPLY_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `elementor template-apply HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async jobCreate(input: {
+    args: ReadonlyArray<string>;
+    timeoutSeconds?: number;
+    allowDestructive?: boolean;
+  }): Promise<{
+    jobId: string;
+    pid: number;
+    log: { stdout: string; stderr: string };
+    startedAt: number;
+    ttlSeconds: number;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "POST",
+      path: "/wplab/v1/job/create",
+      body: {
+        session_token: token,
+        args: input.args,
+        timeout_seconds: input.timeoutSeconds ?? 600,
+        allow_destructive: input.allowDestructive ?? false,
+      },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      const log = (b["log"] ?? {}) as Record<string, unknown>;
+      return {
+        jobId: typeof b["job_id"] === "string" ? (b["job_id"] as string) : "",
+        pid: typeof b["pid"] === "number" ? (b["pid"] as number) : 0,
+        log: {
+          stdout: typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
+          stderr: typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
+        },
+        startedAt: typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
+        ttlSeconds: typeof b["ttl_seconds"] === "number" ? (b["ttl_seconds"] as number) : 3600,
+      };
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `JOB_CREATE_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `job-create HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
+
+  async jobStatus(
+    jobId: string,
+    opts: { tail?: number } = {},
+  ): Promise<{
+    jobId: string;
+    pid: number;
+    args: string[];
+    startedAt: number;
+    state: "running" | "completed" | "failed" | "unknown";
+    elapsedSeconds: number;
+    stdoutTail: string;
+    stderrTail: string;
+    log: { stdout: string; stderr: string };
+    exitCode?: number;
+  }> {
+    const token = await this.ensureFreshToken();
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/job/status",
+      query: { session_token: token, job_id: jobId, tail: opts.tail ?? 8192 },
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      const log = (b["log"] ?? {}) as Record<string, unknown>;
+      const state = typeof b["state"] === "string" ? (b["state"] as string) : "unknown";
+      const out: {
+        jobId: string;
+        pid: number;
+        args: string[];
+        startedAt: number;
+        state: "running" | "completed" | "failed" | "unknown";
+        elapsedSeconds: number;
+        stdoutTail: string;
+        stderrTail: string;
+        log: { stdout: string; stderr: string };
+        exitCode?: number;
+      } = {
+        jobId: typeof b["job_id"] === "string" ? (b["job_id"] as string) : jobId,
+        pid: typeof b["pid"] === "number" ? (b["pid"] as number) : 0,
+        args: Array.isArray(b["args"]) ? (b["args"] as string[]) : [],
+        startedAt: typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
+        state: (["running", "completed", "failed", "unknown"].includes(state) ? state : "unknown") as
+          | "running"
+          | "completed"
+          | "failed"
+          | "unknown",
+        elapsedSeconds: typeof b["elapsed_seconds"] === "number" ? (b["elapsed_seconds"] as number) : 0,
+        stdoutTail: typeof b["stdout_tail"] === "string" ? (b["stdout_tail"] as string) : "",
+        stderrTail: typeof b["stderr_tail"] === "string" ? (b["stderr_tail"] as string) : "",
+        log: {
+          stdout: typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
+          stderr: typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
+        },
+      };
+      if (typeof b["exit_code"] === "number") out.exitCode = b["exit_code"] as number;
+      return out;
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `JOB_STATUS_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `job-status HTTP ${res.status}`,
+      { status: res.status },
+    );
+  }
 }
 
 /**
