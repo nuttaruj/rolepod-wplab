@@ -1817,3 +1817,119 @@ export const WpJobStatusOutputSchema = z.object({
   exit_code: z.number().int().optional(),
 });
 export type WpJobStatusOutput = z.infer<typeof WpJobStatusOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_custom_* (v1.18 — Rolepod Custom plugin scaffolding)
+// ---------------------------------------------------------------------------
+
+export const WpCustomInitInputSchema = z.object({
+  target_id: TargetIdSchema,
+  activate: z.boolean().default(true).describe("Activate the plugin after install (recommended). When false, plugin files are written but stay inactive — useful for staged rollouts."),
+});
+export type WpCustomInitInput = z.infer<typeof WpCustomInitInputSchema>;
+
+export const WpCustomInitOutputSchema = z.object({
+  plugin_dir: z.string(),
+  files_written: z.number().int().nonnegative(),
+  was_already_installed: z.boolean(),
+  activated: z.boolean(),
+});
+export type WpCustomInitOutput = z.infer<typeof WpCustomInitOutputSchema>;
+
+const TaskSettingFieldSchema = z.object({
+  key: z.string().regex(/^[a-z][a-z0-9_]{0,30}$/),
+  type: z.enum(["text", "email", "url", "number", "textarea", "checkbox", "select"]),
+  label: z.string().min(1),
+  default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  help: z.string().optional(),
+  options: z.record(z.string(), z.string()).optional(),
+});
+
+export const WpCustomTaskScaffoldInputSchema = z.object({
+  target_id: TargetIdSchema,
+  task_id: z
+    .string()
+    .regex(/^[a-z][a-z0-9-]{1,40}$/, { message: "task_id must be kebab-case, lowercase, 2-40 chars" })
+    .describe("Stable slug identifier — used in option keys, file name, URLs. e.g. 'contact-snippet'."),
+  title: z.string().min(1).max(80).describe("Human-readable label shown in the admin menu + Overview page."),
+  description: z.string().min(1).max(500).describe("Why this task exists. Surfaced on the Overview page so the user remembers what each task does."),
+  settings: z.array(TaskSettingFieldSchema).default([]).describe("Field definitions for the auto-generated settings page. Use [] when the task has no configurable settings."),
+  hooks_body: z.string().describe("Raw PHP body of register_hooks(). Should typically start with `if ( ! $this->is_enabled() ) { return; }` then call add_action / add_filter / add_shortcode. Use $this->settings()['<key>'] to read values."),
+  extra_methods: z.string().optional().describe("Optional extra PHP methods to append to the task class (callback handlers etc)."),
+  auto_init: z.boolean().default(true).describe("Run rolepod_wp_custom_init first if the plugin isn't installed yet. Default true so first-task-on-new-site Just Works."),
+});
+export type WpCustomTaskScaffoldInput = z.infer<typeof WpCustomTaskScaffoldInputSchema>;
+
+export const WpCustomTaskScaffoldOutputSchema = z.object({
+  task_id: z.string(),
+  title: z.string(),
+  module_path: z.string(),
+  bytes_written: z.number().int().nonnegative(),
+  plugin_initialized: z.boolean(),
+});
+export type WpCustomTaskScaffoldOutput = z.infer<typeof WpCustomTaskScaffoldOutputSchema>;
+
+export const WpCustomTaskListInputSchema = z.object({
+  target_id: TargetIdSchema,
+});
+export type WpCustomTaskListInput = z.infer<typeof WpCustomTaskListInputSchema>;
+
+export const WpCustomTaskListOutputSchema = z.object({
+  plugin_installed: z.boolean(),
+  tasks: z.array(
+    z.object({
+      task_id: z.string(),
+      title: z.string(),
+      description: z.string(),
+      enabled: z.boolean(),
+      module_path: z.string(),
+    }),
+  ),
+});
+export type WpCustomTaskListOutput = z.infer<typeof WpCustomTaskListOutputSchema>;
+
+export const WpCustomTaskToggleInputSchema = z.object({
+  target_id: TargetIdSchema,
+  task_id: z.string(),
+  enabled: z.boolean().describe("true = enable, false = disable. Toggle is option-based — module file untouched, hooks short-circuit via $this->is_enabled()."),
+});
+export type WpCustomTaskToggleInput = z.infer<typeof WpCustomTaskToggleInputSchema>;
+
+export const WpCustomTaskToggleOutputSchema = z.object({
+  task_id: z.string(),
+  enabled: z.boolean(),
+});
+export type WpCustomTaskToggleOutput = z.infer<typeof WpCustomTaskToggleOutputSchema>;
+
+export const WpCustomTaskUpdateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  task_id: z.string(),
+  title: z.string().optional().describe("New human label. Optional — omit to keep existing."),
+  description: z.string().optional(),
+  settings: z.array(TaskSettingFieldSchema).optional(),
+  hooks_body: z.string().optional(),
+  extra_methods: z.string().optional(),
+});
+export type WpCustomTaskUpdateInput = z.infer<typeof WpCustomTaskUpdateInputSchema>;
+
+export const WpCustomTaskUpdateOutputSchema = z.object({
+  task_id: z.string(),
+  module_path: z.string(),
+  bytes_written: z.number().int().nonnegative(),
+});
+export type WpCustomTaskUpdateOutput = z.infer<typeof WpCustomTaskUpdateOutputSchema>;
+
+export const WpCustomTaskRemoveInputSchema = z.object({
+  target_id: TargetIdSchema,
+  task_id: z.string(),
+  run_uninstall: z.boolean().default(true).describe("Call the task's uninstall() method via wp eval before deleting the module file. Default true. Set false if uninstall() is broken and you just want the file gone."),
+});
+export type WpCustomTaskRemoveInput = z.infer<typeof WpCustomTaskRemoveInputSchema>;
+
+export const WpCustomTaskRemoveOutputSchema = z.object({
+  task_id: z.string(),
+  module_path: z.string(),
+  uninstall_run: z.boolean(),
+  file_deleted: z.boolean(),
+});
+export type WpCustomTaskRemoveOutput = z.infer<typeof WpCustomTaskRemoveOutputSchema>;

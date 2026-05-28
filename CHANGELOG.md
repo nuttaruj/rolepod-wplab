@@ -2,6 +2,100 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.18.0] — 2026-05-28 — Rolepod Custom plugin scaffolder
+
+MCP-only release. No companion bump required.
+
+Introduces a **lazy-install bespoke-feature plugin** scaffolder. The
+"Rolepod Custom" plugin is NOT shipped with rolepod-wp — it's written
+to the target site on demand when the user asks the AI to add a
+per-site feature.
+
+### Architectural rationale
+
+Per WordPress best-practice (separation of concerns + update safety):
+
+- **rolepod-wp** = AI bridge core (REST endpoints, recovery, ledger).
+  Updates independently. Stays minimal.
+- **rolepod-custom** = per-site bespoke features. One plugin per
+  client site. Lifecycle independent of rolepod-wp.
+- Deactivating one doesn't kill the other. Updating one doesn't
+  touch the other.
+
+Within rolepod-custom, **each feature is a "task"** — an isolated
+module under `inc/Modules/<PascalCase>Task.php` extending
+`BaseTask`. Each task has its own:
+
+- Stable id (kebab-case slug)
+- Title + description (human-facing)
+- Settings schema (auto-rendered as admin form)
+- register_hooks() / uninstall() lifecycle
+- Per-task enabled flag (toggle without code change)
+- Submenu under "Rolepod Custom" → user discovers + edits the right
+  task by name
+
+User says "ปรับ contact snippet field email" → AI knows = task id
+`contact-snippet` → grep `Modules/ContactSnippetTask.php` →
+`rolepod_wp_custom_task_update` with the right id.
+
+### Added
+
+- **`rolepod_wp_custom_init`** — lazy-install the plugin via
+  fs-write-batch (atomic, all 8 skeleton files or none) + activate via
+  wp-cli. Idempotent.
+- **`rolepod_wp_custom_task_scaffold`** — drops a new
+  `<PascalCase>Task.php` module under `inc/Modules/`. Auto-runs init
+  if the plugin isn't installed yet (auto_init default true). Refuses
+  if a task with the same id already exists.
+- **`rolepod_wp_custom_task_list`** — enumerates registered tasks by
+  scanning the modules dir, parsing each for id/title/description,
+  and reading each enabled flag from wp_options.
+- **`rolepod_wp_custom_task_update`** — modifies an existing task in
+  place. Pass only the fields you want to change; the rest is read
+  from the current module file. Writes via fs-write-batch so the
+  PHP-lint preflight runs on the new content (catches typos before
+  commit).
+- **`rolepod_wp_custom_task_toggle`** — flips
+  `rolepod_custom_<task>_enabled` option. Task's
+  `register_hooks()` calls `$this->is_enabled()` first, so hooks
+  short-circuit instantly without a code reload.
+- **`rolepod_wp_custom_task_remove`** — runs the task's `uninstall()`
+  method via wp eval (deletes options, drops CPTs the task created,
+  unhooks callbacks) then deletes the module file. Recorded in the
+  Change Ledger with the old content snapshot for revert.
+
+### Internal
+
+- New libs:
+  - `src/lib/rolepodCustomTemplates.ts` — PHP plugin file templates
+    + per-task PHP code generator with proper quote escaping.
+  - `src/lib/rolepodCustomOps.ts` — shared lazy-install + parse + run
+    helpers used by all 6 tools.
+- New tools under `src/tools/composite/wp_custom_*`.
+- 8 unit tests for the template generator. Total suite: 204 passing.
+
+### How a "small feature with settings" lands
+
+1. User: "add a contact snippet shortcode `[rc_contact]` that shows
+   our email + LINE id, editable from admin"
+2. AI calls `rolepod_wp_custom_task_scaffold`:
+   ```
+   task_id: "contact-snippet"
+   title: "Contact Snippet"
+   description: "Renders contact info via [rc_contact] shortcode."
+   settings: [{ key: "email", ... }, { key: "line", ... }]
+   hooks_body: "if ( ! $this->is_enabled() ) return; add_shortcode('rc_contact', [$this, 'render']);"
+   extra_methods: "public function render() { ... }"
+   ```
+3. The plugin auto-installs (first task → init runs).
+4. Module file lands at `inc/Modules/ContactSnippetTask.php`.
+5. User sees "Contact Snippet" submenu under "Rolepod Custom" in
+   wp-admin with the auto-generated settings form.
+6. User edits email later → form save → option updated.
+7. Later user asks AI to "ปรับ contact snippet เพิ่ม field tel" →
+   AI calls `rolepod_wp_custom_task_update` with the same task_id
+   and merged settings array. Done.
+
 ## [1.17.1] — 2026-05-28 — Phase 4: post-ship polish findings (gaps #19 + #20)
 
 Pairs with rolepod-wp 2.12.1. Two new gaps surfaced during the

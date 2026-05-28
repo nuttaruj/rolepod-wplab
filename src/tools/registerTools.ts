@@ -92,6 +92,30 @@ import {
   wpJobStatusToolDef,
 } from "./companion/wp_job_status.js";
 import {
+  wpCustomInitHandler,
+  wpCustomInitToolDef,
+} from "./composite/wp_custom_init.js";
+import {
+  wpCustomTaskScaffoldHandler,
+  wpCustomTaskScaffoldToolDef,
+} from "./composite/wp_custom_task_scaffold.js";
+import {
+  wpCustomTaskListHandler,
+  wpCustomTaskListToolDef,
+} from "./composite/wp_custom_task_list.js";
+import {
+  wpCustomTaskToggleHandler,
+  wpCustomTaskToggleToolDef,
+} from "./composite/wp_custom_task_toggle.js";
+import {
+  wpCustomTaskUpdateHandler,
+  wpCustomTaskUpdateToolDef,
+} from "./composite/wp_custom_task_update.js";
+import {
+  wpCustomTaskRemoveHandler,
+  wpCustomTaskRemoveToolDef,
+} from "./composite/wp_custom_task_remove.js";
+import {
   resolveAliasInArgs,
   withAliasReconnect,
 } from "../lib/aliasResolver.js";
@@ -521,6 +545,30 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpJobStatusToolDef,
     handler: (d, raw) => wpJobStatusHandler(d.registry, raw),
+  },
+  {
+    def: wpCustomInitToolDef,
+    handler: (d, raw) => wpCustomInitHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCustomTaskScaffoldToolDef,
+    handler: (d, raw) => wpCustomTaskScaffoldHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCustomTaskListToolDef,
+    handler: (d, raw) => wpCustomTaskListHandler(d.registry, raw),
+  },
+  {
+    def: wpCustomTaskToggleToolDef,
+    handler: (d, raw) => wpCustomTaskToggleHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCustomTaskUpdateToolDef,
+    handler: (d, raw) => wpCustomTaskUpdateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCustomTaskRemoveToolDef,
+    handler: (d, raw) => wpCustomTaskRemoveHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpPostGetToolDef,
