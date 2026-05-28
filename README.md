@@ -57,7 +57,7 @@ Manifest schema (Extension Protocol v1): `src/lib/rolepodEvidence.ts`.
 - **Diagnose + back up before risky ops.** `diagnose` (plugin conflicts / slow queries / large autoloads / php errors), `backup_create` + `backup_restore`, `cache_tool`, `cron_tool`, `mail_test`.
 - **Safe `execute-php` (companion only).** AST screen on Node side AND PHP side, production-block unconditional, append-only audit log.
 
-## The 11 skills
+## The 14 skills
 
 | Skill | Wraps | What it does |
 |---|---|---|
@@ -95,7 +95,7 @@ claude plugin uninstall rolepod-wplab@rolepod-wplab
 claude plugin marketplace remove rolepod-wplab
 ```
 
-The plugin auto-registers the 11 `/wp-*` skills AND spawns the MCP server (`npx -y @rolepod/wplab@latest serve`) on session start.
+The plugin auto-registers the 14 `/wp-*` skills AND spawns the MCP server (`npx -y @rolepod/wplab@latest serve`) on session start.
 
 ### Cursor IDE
 
@@ -113,17 +113,31 @@ curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/.cursor
 
 Then **fully restart Cursor** — MCP servers load only at startup. Verify under **Settings → MCP**.
 
-Skills are not auto-registered under Cursor (no unified plugin format yet). The 62 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+**Update:** re-run the `curl` command above to overwrite `.cursor/mcp.json`, then restart Cursor.
+**Uninstall:** delete `.cursor/mcp.json` (or `~/.cursor/mcp.json` for the global install) and restart.
+
+Skills are not auto-registered under Cursor (no unified plugin format yet). The 89+ MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Codex CLI
 
 ```bash
-# Install via marketplace (reads .agents/plugins/marketplace.json + .codex-plugin/plugin.json from this repo)
+# Install (reads .agents/plugins/marketplace.json + .codex-plugin/plugin.json)
 codex plugin marketplace add nuttaruj/rolepod-wplab
-codex plugin install rolepod-wplab@rolepod-wplab
+codex plugin add rolepod-wplab@rolepod-wplab
+
+# Update
+codex plugin marketplace remove rolepod-wplab
+codex plugin marketplace add nuttaruj/rolepod-wplab
+codex plugin add rolepod-wplab@rolepod-wplab
+
+# Uninstall
+codex plugin remove rolepod-wplab@rolepod-wplab
+codex plugin marketplace remove rolepod-wplab
 ```
 
-Or drop-in config (no plugin install — just MCP wiring):
+If the MCP server doesn't show up in Codex's **Settings → MCP** after install, fully restart Codex — MCP servers load only at startup.
+
+Or drop-in config (no plugin install — just MCP wiring, also works as "uninstall via config-edit"):
 
 ```toml
 # ~/.codex/config.toml
@@ -146,7 +160,10 @@ args = ["-y", "@rolepod/wplab@latest", "serve"]
 }
 ```
 
-Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 62 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+**Update:** no command needed — `npx -y @rolepod/wplab@latest serve` pulls the latest version on every Gemini restart.
+**Uninstall:** remove the `rolepod-wplab` entry from `~/.gemini/settings.json` and restart.
+
+Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 89+ MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Direct npm (any MCP-aware tool)
 
@@ -161,7 +178,10 @@ Skills are not auto-registered under Gemini (no unified plugin format yet — `g
 }
 ```
 
-62 MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
+89+ MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
+
+**Update:** `npx -y @rolepod/wplab@latest …` always fetches the latest published version. Pin to an exact version (e.g. `@rolepod/wplab@1.13.0`) if you want lockstep behavior.
+**Uninstall:** remove the `rolepod-wplab` entry from your client's MCP config.
 
 ## Quick start
 
