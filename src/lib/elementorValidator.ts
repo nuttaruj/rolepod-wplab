@@ -43,7 +43,89 @@ export interface ValidationResult {
   warnings: ValidationWarning[];
 }
 
-const SCHEMA_CACHE_KEY = Symbol("elementor-schema-cache");
+/** Block-level tags that break when emitted inside a widget's `<p>` description. */
+const BLOCK_TAG_RE = /<(?:ul|ol|li|div|p|table|section|article|h[1-6])\b/i;
+
+/**
+ * Structural warnings that DON'T need the live widget schema — they're about
+ * the shape of the data itself. These catch two traps that cost real debugging
+ * time on hand-built pages:
+ *
+ *   1. Section-level `_css_classes`. Free Elementor does NOT render section
+ *      CSS classes to the DOM (only widgets + Elementor Pro / a theme render
+ *      filter do). CSS keyed to `.your-section-class` then silently no-ops.
+ *   2. Block-level HTML inside an icon-box `description_text`. Elementor wraps
+ *      the description in a `<p>`, so the browser auto-closes it before a
+ *      `<ul>`/`<div>` — the block escapes the description container and any
+ *      `.elementor-icon-box-description <block>` CSS misses.
+ *
+ * Pure + synchronous so it can be unit-tested without a live target.
+ */
+export function collectStructuralWarnings(
+  sections: ReadonlyArray<Record<string, unknown>>,
+): ValidationWarning[] {
+  const warnings: ValidationWarning[] = [];
+  const sectionClassHits: Array<{ id: string; classes: string }> = [];
+
+  function walk(node: Record<string, unknown>): void {
+    const elType = typeof node["elType"] === "string" ? node["elType"] : "";
+    const id = typeof node["id"] === "string" ? (node["id"] as string) : "<no-id>";
+    const settings =
+      node["settings"] && typeof node["settings"] === "object"
+        ? (node["settings"] as Record<string, unknown>)
+        : null;
+
+    if (elType === "section" && settings) {
+      const cls = settings["_css_classes"];
+      if (typeof cls === "string" && cls.trim() !== "") {
+        sectionClassHits.push({ id, classes: cls.trim() });
+      }
+    }
+
+    const widgetType =
+      typeof node["widgetType"] === "string" ? (node["widgetType"] as string) : "";
+    if (widgetType === "icon-box" && settings) {
+      const desc = settings["description_text"];
+      if (typeof desc === "string" && BLOCK_TAG_RE.test(desc)) {
+        warnings.push({
+          widget_id: id,
+          widget_type: widgetType,
+          setting_key: "description_text",
+          reason:
+            "description_text contains block-level HTML (<ul>/<div>/<p>/<table>…). Elementor renders the description inside a <p>, so the browser auto-closes it and the block becomes a sibling — scope CSS to the widget wrapper (your _css_classes / .elementor-widget-icon-box), not to '.elementor-icon-box-description <block>'.",
+        });
+      }
+    }
+
+    const elements = node["elements"];
+    if (Array.isArray(elements)) {
+      for (const child of elements) {
+        if (child && typeof child === "object") {
+          walk(child as Record<string, unknown>);
+        }
+      }
+    }
+  }
+
+  for (const section of sections) {
+    if (section && typeof section === "object") {
+      walk(section);
+    }
+  }
+
+  if (sectionClassHits.length > 0) {
+    const ids = sectionClassHits.map((s) => s.id).join(", ");
+    warnings.push({
+      widget_id: ids.length > 120 ? `${sectionClassHits.length} sections` : ids,
+      widget_type: "section",
+      setting_key: "_css_classes",
+      reason:
+        `${sectionClassHits.length} section(s) set _css_classes. Free Elementor does NOT emit section-level CSS classes to the rendered DOM (only Elementor Pro or a server-side render filter does). If your CSS targets those classes, confirm with render_get — or scope it to the stable '.elementor-element-{id}' class instead, which always renders.`,
+    });
+  }
+
+  return warnings;
+}
 
 interface WidgetSchema {
   controls: Record<string, ControlSchema>;
@@ -156,6 +238,9 @@ export async function validateElementorData(
       await walk(section);
     }
   }
+
+  // Schema-free structural warnings (section _css_classes, icon-box block HTML).
+  warnings.push(...collectStructuralWarnings(sections));
 
   return {
     ok: errors.length === 0,

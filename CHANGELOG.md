@@ -2,6 +2,33 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.1] — 2026-05-29 — validate_data structural warnings
+
+### Added
+
+- `rolepod_wp_elementor_validate_data` now emits two schema-free **structural
+  warnings**, catching traps that cost real debugging on hand-built pages:
+  - **section-level `_css_classes`** — free Elementor does NOT render section
+    CSS classes to the DOM (only Pro / a server-side render filter does), so
+    `.your-section-class` CSS silently no-ops. Aggregated into one warning
+    listing the section ids; suggests verifying with `render_get` or scoping to
+    the always-rendered `.elementor-element-{id}`.
+  - **block-level HTML in an icon-box `description_text`** (`<ul>`/`<div>`/…) —
+    Elementor wraps the description in a `<p>`, so the browser auto-closes it
+    and the block escapes the container.
+  Pure helper `collectStructuralWarnings` (unit-tested; verified live).
+  `src/lib/elementorValidator.ts`.
+
+### Removed
+
+- Dead `SCHEMA_CACHE_KEY` symbol in the validator (unused since inception).
+
+### Notes
+
+- Investigated the "target alias doesn't persist across sessions" report — not a
+  bug. Aliases persist to `~/.config/rolepod-wplab/aliases.json` (verified); an
+  empty `alias list` just means none were set yet in that environment.
+
 ## [1.22.0] — 2026-05-29 — Elementor surgical edits, restore, render-get, ranged reads
 
 Batch of ergonomics fixes + new tools, all driven by friction hit while
