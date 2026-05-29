@@ -2,6 +2,30 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.2] — 2026-05-29 — Fix: Elementor read/write on RestTarget
+
+Two bugs made Elementor page editing unusable (and silently destructive) on
+REST targets. Found while rebuilding a live Elementor site from HTML widgets to
+native widgets.
+
+### Fixed
+
+- **`elementor_write` corrupted `_elementor_data`.** The shared `replacePostMeta`
+  helper ran `json_decode(..., true)` and stored a PHP **array** in the meta.
+  Elementor reads `_elementor_data` as a JSON **string**, so the editor saw an
+  invalid document and rendered the page **empty**. Added a `"json-string"`
+  serialization mode (`wp_slash`'d JSON string, no decode) and switched the
+  Elementor write adapter to it. `src/adapters/_shared/replacePostMeta.ts`,
+  `src/adapters/elementor/write.ts`.
+- **`elementor_read` / `elementor_template_export` threw on RestTarget.**
+  `getPage` had a hardcoded "requires companion v0.2" throw even though a
+  RestTarget with the companion routes `wp-cli` fine. Extended the wp-cli branch
+  to cover `rest` + companion, and added a double-decode guard for the
+  `--format=json` scalar-string double-encoding. `src/adapters/elementor/read.ts`.
+
+Verified live: read → write → audit round-trip keeps the page intact (was:
+`EMPTY_ELEMENTOR_DATA`).
+
 ## [1.21.1] — 2026-05-29 — Fix: MCP tools/list rejected by strict clients
 
 Critical fix. Every wplab tool silently failed to register in MCP clients

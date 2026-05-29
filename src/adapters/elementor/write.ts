@@ -12,9 +12,12 @@ export interface ElementorWriteAPI {
 
 export const elementorWrite: ElementorWriteAPI = {
   async updatePageData(target, postId, widgetTree) {
+    // Elementor reads _elementor_data as a JSON STRING, not a PHP array — use
+    // json-string so we store wp_slash'd JSON (storing a decoded array makes
+    // Elementor render the page empty).
     return replacePostMeta(target, postId, "_elementor_data", widgetTree, {
       backupPrefix: "elementor",
-      serialization: "json",
+      serialization: "json-string",
     });
   },
 };

@@ -6,10 +6,16 @@ export interface ReplacePostMetaOpts {
   /**
    * Serialization mode for the payload written to the tmp file + decoded
    * inside `wp eval`.
-   *   - "json": JSON.stringify value → file, json_decode inside wp eval
-   *   - "raw": value MUST be a string, written verbatim → file_get_contents
+   *   - "json": JSON.stringify value → file, json_decode(..., true) → PHP array
+   *     stored as meta. Correct for builders whose meta is a serialized PHP
+   *     array.
+   *   - "json-string": JSON.stringify value → file, stored as a wp_slash'd JSON
+   *     STRING (no decode). Correct for Elementor `_elementor_data`, which the
+   *     editor reads as a JSON string — storing a decoded PHP array there makes
+   *     Elementor fail to parse the page (renders empty).
+   *   - "raw": value MUST be a string, written + stored verbatim.
    */
-  serialization?: "json" | "raw";
+  serialization?: "json" | "raw" | "json-string";
 }
 
 export interface ReplacePostMetaResult {
@@ -69,7 +75,7 @@ export async function replacePostMeta(
   let backupPath: string | null = null;
   if (before.exitCode === 0 && before.stdout.trim().length > 0) {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const ext = serialization === "json" ? "json" : "txt";
+    const ext = serialization === "raw" ? "txt" : "json";
     const backupRel = `wp-content/uploads/wplab-backups/${opts.backupPrefix}-${postId}-${stamp}.${ext}`;
     const w = await target.fileWrite(backupRel, before.stdout, {
       backup: false,
@@ -78,13 +84,13 @@ export async function replacePostMeta(
   }
 
   const payload =
-    serialization === "json"
-      ? JSON.stringify(value)
-      : typeof value === "string"
+    serialization === "raw"
+      ? typeof value === "string"
         ? value
-        : String(value);
+        : String(value)
+      : JSON.stringify(value);
 
-  const tmpExt = serialization === "json" ? "json" : "txt";
+  const tmpExt = serialization === "raw" ? "txt" : "json";
   const tmpRel = `wp-content/uploads/wplab-tmp/${opts.backupPrefix}-${postId}-payload.${tmpExt}`;
   const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
   const filePath = tmpWrite.absolutePath || tmpRel;
@@ -92,7 +98,9 @@ export async function replacePostMeta(
   const decodeExpr =
     serialization === "json"
       ? `json_decode(file_get_contents(${JSON.stringify(filePath)}), true)`
-      : `file_get_contents(${JSON.stringify(filePath)})`;
+      : serialization === "json-string"
+        ? `wp_slash(file_get_contents(${JSON.stringify(filePath)}))`
+        : `file_get_contents(${JSON.stringify(filePath)})`;
 
   const phpScript = `update_post_meta(${postId}, ${JSON.stringify(metaKey)}, ${decodeExpr});`;
   const result = await target.wpCli(["eval", phpScript], {

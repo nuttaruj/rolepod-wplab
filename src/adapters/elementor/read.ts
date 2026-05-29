@@ -106,12 +106,14 @@ export const elementorAdapter: Adapter<ElementorReadAPI> = {
     },
 
     async getPage(target, postId) {
-      // v0.1: pull post meta via wp-cli (shell-capable targets).
-      // RestTarget hits this gap — needs companion introspect (v0.2).
+      // Pull post meta via wp-cli. Shell targets spawn `wp` directly; a
+      // RestTarget routes wp-cli through the companion endpoint, so it works
+      // too whenever the companion is enabled.
       if (
         target.kind === "local" ||
         target.kind === "ssh" ||
-        target.kind === "docker"
+        target.kind === "docker" ||
+        (target.kind === "rest" && target.companion?.enabled)
       ) {
         const meta = await target.wpCli([
           "post",
@@ -129,7 +131,14 @@ export const elementorAdapter: Adapter<ElementorReadAPI> = {
             meta_size_bytes: 0,
           };
         }
-        const widgetTree = JSON.parse(meta.stdout) as ElementorWidget[];
+        // `--format=json` on a scalar JSON-string meta double-encodes it: the
+        // value comes back as a JSON string of a JSON string. Decode once more
+        // when the first parse yields a string rather than the section array.
+        let parsed: unknown = JSON.parse(meta.stdout);
+        if (typeof parsed === "string") {
+          parsed = JSON.parse(parsed);
+        }
+        const widgetTree = parsed as ElementorWidget[];
         const title = await target.wpCli([
           "post",
           "get",
@@ -144,9 +153,10 @@ export const elementorAdapter: Adapter<ElementorReadAPI> = {
         };
       }
 
-      // RestTarget — _elementor_data isn't in REST. v0.2 will use companion.
+      // RestTarget without a companion can't reach post meta (REST doesn't
+      // expose _elementor_data). Install/enable the rolepod-wp companion.
       throw new Error(
-        `elementor.getPage on RestTarget requires companion v0.2 (post meta access). v0.1 limitation.`,
+        `elementor.getPage on a RestTarget requires the rolepod-wp companion (post meta access). Enable it on the target.`,
       );
     },
   },
