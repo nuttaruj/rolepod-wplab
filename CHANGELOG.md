@@ -2,6 +2,37 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.0] — 2026-05-29 — Site-owned skills (5 tools)
+
+Surfaces the companion's new site-owned skill store as MCP tools with
+progressive disclosure: the agent lists slugs + trigger descriptions, then
+loads one skill's full body only when a description matches the task. Skills
+live ON the WordPress install, so per-site/per-project procedural knowledge
+travels with the site instead of the client. Requires companion v2.13.0+
+(capability `skills`).
+
+### Added
+
+- **5 skill tools** (`src/tools/companion/wp_skill_*.ts`):
+  - `rolepod_wp_skill_catalog` — slug + trigger description only (no bodies)
+  - `rolepod_wp_skill_get` — load one skill's full SKILL.md body on match
+  - `rolepod_wp_skill_write` — create/update (`on_conflict` fail|replace|rename)
+  - `rolepod_wp_skill_edit` — patch specific fields (iterative refinement)
+  - `rolepod_wp_skill_delete` — trash (recoverable)
+- **Bridge skill methods** (`src/companion/Bridge.ts`) — capability-gated;
+  mutations carry a session token with one 401 re-handshake retry. Errors
+  surface the companion's structured repair hints (`suggested_slug`,
+  `warnings`) through `WplabError.meta` so the agent self-corrects without a
+  second probe.
+- Schemas in `src/schema/tools.ts`; tool count 119 → 124; smoke `tools/list`
+  snapshot updated; unit coverage in `tests/unit/skillBridge.test.ts`.
+
+### Notes
+
+- `MIN_COMPANION_VERSION` stays at 2.1.0 — skill tools self-gate on the
+  `skills` capability and fail with a clear upgrade hint against older
+  companions, so non-skill operations keep working on 2.1+.
+
 ## [1.20.1] — 2026-05-28 — Hotfix: smoke test tool list
 
 Pure test fix. No runtime change.

@@ -36,6 +36,26 @@ export interface IntrospectResponse {
   [k: string]: unknown;
 }
 
+export interface SkillCatalogEntry {
+  slug: string;
+  name: string;
+  description: string;
+  enable_agentic: boolean;
+  enable_prompt: boolean;
+}
+
+export interface SkillRecord extends SkillCatalogEntry {
+  content: string;
+  skill_md: string;
+}
+
+export interface SkillWriteResult {
+  slug: string;
+  action: string;
+  warnings: string[];
+  audit_id: string;
+}
+
 /**
  * Companion REST client wrapper. Manages session token TTL + AST pre-screen +
  * production guard short-circuit + auto-refresh.
@@ -1552,6 +1572,165 @@ export class CompanionBridge {
         : `job-status HTTP ${res.status}`,
       { status: res.status },
     );
+  }
+
+  // --- site-owned skills (companion v2.13+) -------------------------------
+
+  private requireSkills(): void {
+    if (!this.hasCapability("skills")) {
+      throw new CompanionUnavailableError(
+        this.target.id,
+        "skills capability not advertised — upgrade the companion plugin to v2.13+",
+      );
+    }
+  }
+
+  /**
+   * Build a WplabError that carries the companion's structured repair hints
+   * (suggested_slug, warnings, …) through to the agent so it can self-correct
+   * without a second probe round-trip.
+   */
+  private skillError(status: number, body: unknown, prefix: string): WplabError {
+    const b = (body ?? {}) as Record<string, unknown>;
+    const { ok: _ok, error_code, error_message, ...rest } = b;
+    return new WplabError(
+      typeof error_code === "string" ? error_code : `${prefix}_HTTP_${status}`,
+      typeof error_message === "string"
+        ? (error_message as string)
+        : `${prefix} returned HTTP ${status}`,
+      { status, ...rest },
+    );
+  }
+
+  /** Discovery view — slug + description + flags, no bodies. */
+  async skillCatalog(): Promise<SkillCatalogEntry[]> {
+    this.requireSkills();
+    const res = await this.target.rest({ method: "GET", path: "/wplab/v1/skills" });
+    const b = (res.body ?? {}) as { ok?: boolean; skills?: SkillCatalogEntry[] };
+    if (res.status >= 200 && res.status < 300 && Array.isArray(b.skills)) {
+      return b.skills;
+    }
+    throw this.skillError(res.status, res.body, "SKILL_CATALOG");
+  }
+
+  /** Full record (incl. body + rendered SKILL.md) by slug; null when absent. */
+  async skillGet(slug: string): Promise<SkillRecord | null> {
+    this.requireSkills();
+    const res = await this.target.rest({
+      method: "GET",
+      path: `/wplab/v1/skills/${encodeURIComponent(slug)}`,
+    });
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      if (b["found"] !== true) return null;
+      return {
+        slug: String(b["slug"] ?? slug),
+        name: String(b["name"] ?? ""),
+        description: String(b["description"] ?? ""),
+        content: String(b["content"] ?? ""),
+        skill_md: String(b["skill_md"] ?? ""),
+        enable_agentic: b["enable_agentic"] === true,
+        enable_prompt: b["enable_prompt"] === true,
+      };
+    }
+    throw this.skillError(res.status, res.body, "SKILL_GET");
+  }
+
+  /** Token + 401-retry envelope shared by the three skill mutations. */
+  private async skillMutate(
+    method: "POST" | "DELETE",
+    path: string,
+    body: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const token = await this.ensureFreshToken();
+    const send = (tok: string) =>
+      method === "DELETE"
+        ? this.target.rest({ method, path, query: { session_token: tok } })
+        : this.target.rest({ method, path, body: { ...body, session_token: tok } });
+
+    let res = await send(token);
+    if (res.status === 401) {
+      const fresh = await this.handshake();
+      res = await send(fresh.session_token);
+    }
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
+      return b;
+    }
+    throw this.skillError(res.status, res.body, "SKILL_WRITE");
+  }
+
+  async skillWrite(input: {
+    title: string;
+    description?: string;
+    content: string;
+    enable_agentic?: boolean;
+    enable_prompt?: boolean;
+    on_conflict?: "fail" | "replace" | "rename";
+  }): Promise<SkillWriteResult> {
+    this.requireSkills();
+    const body: Record<string, unknown> = {
+      title: input.title,
+      description: input.description ?? "",
+      content: input.content,
+    };
+    if (input.enable_agentic !== undefined) body["enable_agentic"] = input.enable_agentic;
+    if (input.enable_prompt !== undefined) body["enable_prompt"] = input.enable_prompt;
+    if (input.on_conflict) body["on_conflict"] = input.on_conflict;
+
+    const b = await this.skillMutate("POST", "/wplab/v1/skills", body);
+    return {
+      slug: String(b["slug"] ?? ""),
+      action: String(b["action"] ?? ""),
+      warnings: Array.isArray(b["warnings"]) ? (b["warnings"] as string[]) : [],
+      audit_id: String(b["audit_id"] ?? ""),
+    };
+  }
+
+  async skillEdit(
+    slug: string,
+    patch: {
+      description?: string;
+      content?: string;
+      enable_agentic?: boolean;
+      enable_prompt?: boolean;
+    },
+  ): Promise<{ slug: string; action: string; skill: SkillRecord | null; audit_id: string }> {
+    this.requireSkills();
+    const body: Record<string, unknown> = {};
+    if (patch.description !== undefined) body["description"] = patch.description;
+    if (patch.content !== undefined) body["content"] = patch.content;
+    if (patch.enable_agentic !== undefined) body["enable_agentic"] = patch.enable_agentic;
+    if (patch.enable_prompt !== undefined) body["enable_prompt"] = patch.enable_prompt;
+
+    const b = await this.skillMutate(
+      "POST",
+      `/wplab/v1/skills/${encodeURIComponent(slug)}/edit`,
+      body,
+    );
+    return {
+      slug: String(b["slug"] ?? slug),
+      action: String(b["action"] ?? "updated"),
+      skill: (b["skill"] as SkillRecord | null) ?? null,
+      audit_id: String(b["audit_id"] ?? ""),
+    };
+  }
+
+  async skillDelete(
+    slug: string,
+  ): Promise<{ slug: string; action: string; recoverable: boolean; audit_id: string }> {
+    this.requireSkills();
+    const b = await this.skillMutate(
+      "DELETE",
+      `/wplab/v1/skills/${encodeURIComponent(slug)}`,
+      {},
+    );
+    return {
+      slug: String(b["slug"] ?? slug),
+      action: String(b["action"] ?? "trashed"),
+      recoverable: b["recoverable"] === true,
+      audit_id: String(b["audit_id"] ?? ""),
+    };
   }
 }
 

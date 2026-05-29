@@ -625,6 +625,107 @@ export const ExecutePhpOutputSchema = z.object({
 });
 export type ExecutePhpOutput = z.infer<typeof ExecutePhpOutputSchema>;
 
+// ---------------------------------------------------------------------------
+// Site-owned skills — CPT-backed playbooks (companion v2.13+). Mutations are
+// recoverable (CPT revisions + trash), so no confirm gate.
+// ---------------------------------------------------------------------------
+
+const SkillCatalogEntrySchema = z.object({
+  slug: z.string(),
+  name: z.string(),
+  description: z.string(),
+  enable_agentic: z.boolean(),
+  enable_prompt: z.boolean(),
+});
+
+export const SkillCatalogInputSchema = z.object({
+  target_id: TargetIdSchema,
+});
+export type SkillCatalogInput = z.infer<typeof SkillCatalogInputSchema>;
+
+export const SkillCatalogOutputSchema = z.object({
+  skills: z.array(SkillCatalogEntrySchema),
+});
+export type SkillCatalogOutput = z.infer<typeof SkillCatalogOutputSchema>;
+
+export const SkillGetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  slug: z.string().min(1),
+});
+export type SkillGetInput = z.infer<typeof SkillGetInputSchema>;
+
+export const SkillGetOutputSchema = z.object({
+  found: z.boolean(),
+  slug: z.string().optional(),
+  name: z.string().optional(),
+  description: z.string().optional(),
+  content: z.string().optional(),
+  skill_md: z.string().optional(),
+  enable_agentic: z.boolean().optional(),
+  enable_prompt: z.boolean().optional(),
+});
+export type SkillGetOutput = z.infer<typeof SkillGetOutputSchema>;
+
+export const SkillWriteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  title: z.string().min(1),
+  description: z.string().default(""),
+  content: z.string().min(1),
+  enable_agentic: z.boolean().optional(),
+  enable_prompt: z.boolean().optional(),
+  on_conflict: z.enum(["fail", "replace", "rename"]).default("fail"),
+});
+export type SkillWriteInput = z.infer<typeof SkillWriteInputSchema>;
+
+export const SkillWriteOutputSchema = z.object({
+  slug: z.string(),
+  action: z.string(),
+  warnings: z.array(z.string()),
+  audit_id: z.string(),
+});
+export type SkillWriteOutput = z.infer<typeof SkillWriteOutputSchema>;
+
+export const SkillEditInputSchema = z
+  .object({
+    target_id: TargetIdSchema,
+    slug: z.string().min(1),
+    description: z.string().optional(),
+    content: z.string().optional(),
+    enable_agentic: z.boolean().optional(),
+    enable_prompt: z.boolean().optional(),
+  })
+  .refine(
+    (v) =>
+      v.description !== undefined ||
+      v.content !== undefined ||
+      v.enable_agentic !== undefined ||
+      v.enable_prompt !== undefined,
+    { message: "At least one field to patch is required." },
+  );
+export type SkillEditInput = z.infer<typeof SkillEditInputSchema>;
+
+export const SkillEditOutputSchema = z.object({
+  slug: z.string(),
+  action: z.string(),
+  skill: z.unknown().nullable().optional(),
+  audit_id: z.string(),
+});
+export type SkillEditOutput = z.infer<typeof SkillEditOutputSchema>;
+
+export const SkillDeleteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  slug: z.string().min(1),
+});
+export type SkillDeleteInput = z.infer<typeof SkillDeleteInputSchema>;
+
+export const SkillDeleteOutputSchema = z.object({
+  slug: z.string(),
+  action: z.string(),
+  recoverable: z.boolean(),
+  audit_id: z.string(),
+});
+export type SkillDeleteOutput = z.infer<typeof SkillDeleteOutputSchema>;
+
 export const IntrospectInputSchema = z.object({
   target_id: TargetIdSchema,
   scope: z.enum(["hooks", "transients", "options_full", "request_state"]),

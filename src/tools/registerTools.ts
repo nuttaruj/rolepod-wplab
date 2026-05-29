@@ -92,6 +92,26 @@ import {
   wpJobStatusToolDef,
 } from "./companion/wp_job_status.js";
 import {
+  wpSkillCatalogHandler,
+  wpSkillCatalogToolDef,
+} from "./companion/wp_skill_catalog.js";
+import {
+  wpSkillGetHandler,
+  wpSkillGetToolDef,
+} from "./companion/wp_skill_get.js";
+import {
+  wpSkillWriteHandler,
+  wpSkillWriteToolDef,
+} from "./companion/wp_skill_write.js";
+import {
+  wpSkillEditHandler,
+  wpSkillEditToolDef,
+} from "./companion/wp_skill_edit.js";
+import {
+  wpSkillDeleteHandler,
+  wpSkillDeleteToolDef,
+} from "./companion/wp_skill_delete.js";
+import {
   wpCustomInitHandler,
   wpCustomInitToolDef,
 } from "./composite/wp_custom_init.js";
@@ -657,6 +677,26 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpHookStateToolDef,
     handler: (d, raw) => wpHookStateHandler(d.registry, raw),
+  },
+  {
+    def: wpSkillCatalogToolDef,
+    handler: (d, raw) => wpSkillCatalogHandler(d.registry, raw),
+  },
+  {
+    def: wpSkillGetToolDef,
+    handler: (d, raw) => wpSkillGetHandler(d.registry, raw),
+  },
+  {
+    def: wpSkillWriteToolDef,
+    handler: (d, raw) => wpSkillWriteHandler(d.registry, raw),
+  },
+  {
+    def: wpSkillEditToolDef,
+    handler: (d, raw) => wpSkillEditHandler(d.registry, raw),
+  },
+  {
+    def: wpSkillDeleteToolDef,
+    handler: (d, raw) => wpSkillDeleteHandler(d.registry, raw),
   },
   {
     def: wpChangesQueryToolDef,
