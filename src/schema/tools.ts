@@ -2087,7 +2087,26 @@ export const WpElementorHtmlAuditOutputSchema = z.object({
       reason: z.string(),
       suggested_widget: z.string().optional(),
       suggested_pattern: z.string().optional(),
+      fidelity_risk: z
+        .enum(["low", "high"])
+        .optional()
+        .describe(
+          "Risk that converting this widget loses design. low = custom CSS reproducible via native style controls if carried over; high = animation/JS with no Elementor-free equivalent.",
+        ),
+      would_lose: z
+        .array(z.string())
+        .optional()
+        .describe("What a naive native conversion would drop."),
     }),
   ),
+  lossy_widgets: z
+    .number()
+    .int()
+    .nonnegative()
+    .describe("HTML widgets carrying custom CSS/JS the design depends on."),
+  guidance: z
+    .string()
+    .optional()
+    .describe("Directive to extract styling/behaviour before converting. Present when lossy_widgets > 0."),
 });
 export type WpElementorHtmlAuditOutput = z.infer<typeof WpElementorHtmlAuditOutputSchema>;

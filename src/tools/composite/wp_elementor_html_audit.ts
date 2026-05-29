@@ -12,7 +12,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpElementorHtmlAuditToolDef = {
   name: "rolepod_wp_elementor_html_audit",
   description:
-    "Audit an Elementor page for HTML widget overuse. Walks the `_elementor_data` tree, counts each widget type, computes HTML widget percentage, and inspects each HTML block's content for patterns that have a clean native widget replacement (single <h1> → heading widget, <details>/<summary> → accordion, data-count → counter, icon + heading + paragraph → icon-box, etc). Returns over_threshold:true when HTML widget % > threshold_pct (default 30). USE after every Elementor page build before publishing — if over threshold, refactor toward native widgets per the patterns catalog (skills/wp-edit-design/references/patterns.md).",
+    "Audit an Elementor page for HTML widget overuse AND conversion fidelity risk. Walks the `_elementor_data` tree, counts each widget type, computes HTML widget percentage, and inspects each HTML block for patterns with a clean native replacement (single <h1> → heading, <details>/<summary> → accordion, data-count → counter, icon + heading + paragraph → icon-box, etc). For each block it ALSO scans for custom CSS/JS the design depends on (inline <style>, font-family, gradients, @keyframes/animation, <script>/JS data-hooks) and grades fidelity_risk (low = reproducible via native style controls if carried over; high = animation/JS with no Elementor-free equivalent). Returns over_threshold:true when HTML widget % > threshold_pct (default 30), plus lossy_widgets count and a `guidance` directive. CRITICAL: never convert a widget with fidelity_risk to native without first replicating its styling/behaviour — that is the silent-design-loss trap. USE after every Elementor page build before publishing.",
   inputSchema: WpElementorHtmlAuditInputSchema,
 };
 
@@ -49,6 +49,10 @@ export async function wpElementorHtmlAuditHandler(
       reason: s.reason,
       ...(s.suggestedWidget !== undefined ? { suggested_widget: s.suggestedWidget } : {}),
       ...(s.suggestedPattern !== undefined ? { suggested_pattern: s.suggestedPattern } : {}),
+      ...(s.fidelityRisk !== undefined ? { fidelity_risk: s.fidelityRisk } : {}),
+      ...(s.wouldLose !== undefined ? { would_lose: s.wouldLose } : {}),
     })),
+    lossy_widgets: audit.lossyWidgets,
+    ...(audit.guidance !== undefined ? { guidance: audit.guidance } : {}),
   });
 }

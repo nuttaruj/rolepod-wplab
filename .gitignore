@@ -32,3 +32,6 @@ bun.lockb
 
 # Browser-driven UI verification artifacts (local-only, can be regenerated)
 .rolepod-uiproof/
+
+# Browser-driven UI verification artifacts (consolidated namespace, local-only)
+.rolepod/

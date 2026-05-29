@@ -2,6 +2,40 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.4] — 2026-05-29 — Fidelity-aware Elementor HTML audit
+
+`elementor_html_audit` used to push "convert HTML widget → native widget"
+purely on structure (single `<h1>` → heading, `<details>` → accordion, …)
+with no regard for the custom CSS/JS packed into that widget. Following that
+advice blind silently destroys the design — the Phase 8 failure where a
+hand-crafted site converted to generic Elementor and lost its typography,
+gradients, and JS effects.
+
+### Added
+
+- **Fidelity grading per HTML widget.** Each block is now scanned for the
+  styling/behaviour a naive conversion would drop: inline `<style>`/`style=`,
+  `font-family`, CSS gradients, `@keyframes`/`animation`/`transition`, and
+  `<script>`/inline `on*=`/JS data-hooks (`data-typer`, `data-scramble`,
+  `data-tilt`, `data-marquee`, …). Conversion suggestions now carry
+  `fidelity_risk` (`low` = reproducible via native style controls if carried
+  over; `high` = animation/JS with no Elementor-free equivalent) and a
+  `would_lose[]` list. `src/lib/elementorHtmlAudit.ts`.
+- **`lossy_widgets` count + `guidance`** at the top level — present whenever any
+  HTML widget carries design-bearing CSS/JS, even widgets we (correctly) do NOT
+  suggest converting (custom cards/terminals/marquees). The guidance tells the
+  agent to extract styling/behaviour into native controls / Motion FX / custom
+  code BEFORE converting, and to verify against a post-reveal screenshot.
+- Reason strings on at-risk suggestions now append an explicit warning so the
+  fidelity cost is visible inline, not just in a separate field.
+
+### Why
+
+The audit is the gate agents run before refactoring an Elementor page. Making
+it surface the fidelity cost is the wplab-side fix for the "convert ≠ match the
+mockup" trap: the agent is now told what it would destroy instead of being
+nudged to destroy it.
+
 ## [1.21.3] — 2026-05-29 — Consolidated data namespace (backups + tmp)
 
 ### Changed

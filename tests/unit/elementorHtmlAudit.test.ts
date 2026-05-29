@@ -157,6 +157,67 @@ describe("auditElementorTree", () => {
     expect(r.htmlWidgetPct).toBe(40);
   });
 
+  it("plain markup conversions carry no fidelity risk", () => {
+    const sections = [
+      makeSection([widget("wid1", "html", { html: "<h1>We build websites</h1>" })]),
+    ];
+    const r = auditElementorTree(sections);
+    expect(r.lossyWidgets).toBe(0);
+    expect(r.guidance).toBeUndefined();
+    expect(r.suggestions[0]!.fidelityRisk).toBeUndefined();
+    expect(r.suggestions[0]!.wouldLose).toBeUndefined();
+  });
+
+  it("grades inline CSS / gradient / font as LOW fidelity risk on a converted widget", () => {
+    const sections = [
+      makeSection([
+        widget("wid1", "html", {
+          html: '<h1 style="font-family:\'JetBrains Mono\';background:linear-gradient(90deg,#fff,#000)">Headline</h1>',
+        }),
+      ]),
+    ];
+    const r = auditElementorTree(sections);
+    expect(r.suggestions[0]!.suggestedWidget).toBe("heading");
+    expect(r.suggestions[0]!.fidelityRisk).toBe("low");
+    expect(r.suggestions[0]!.wouldLose).toContain("custom font-family (typography identity)");
+    expect(r.suggestions[0]!.wouldLose).toContain("CSS gradients");
+    expect(r.lossyWidgets).toBe(1);
+    expect(r.guidance).toBeTruthy();
+  });
+
+  it("grades animation / JS as HIGH fidelity risk", () => {
+    const sections = [
+      makeSection([
+        widget("wid1", "html", {
+          html: '<div data-count="120">0</div><style>@keyframes pop{from{opacity:0}}</style>',
+        }),
+      ]),
+    ];
+    const r = auditElementorTree(sections);
+    expect(r.suggestions[0]!.suggestedWidget).toBe("counter");
+    expect(r.suggestions[0]!.fidelityRisk).toBe("high");
+    expect(r.suggestions[0]!.wouldLose).toContain("CSS animations / transitions");
+  });
+
+  it("counts lossy widgets even when no conversion is suggested", () => {
+    const sections = [
+      makeSection([
+        widget("term", "html", {
+          html: `<div class="terminal" data-typer='[]'><script>init()</script></div>`,
+        }),
+        widget("marq", "html", {
+          html: `<div class="marquee" style="animation:scroll 10s linear infinite">x</div>`,
+        }),
+      ]),
+    ];
+    const r = auditElementorTree(sections);
+    // Custom blocks → correctly NOT suggested for conversion...
+    expect(r.suggestions).toHaveLength(0);
+    // ...but still flagged lossy so the agent knows the page carries design.
+    expect(r.lossyWidgets).toBe(2);
+    expect(r.guidance).toBeTruthy();
+  });
+
   it("recurses into inner sections", () => {
     const sections = [
       {

@@ -14,6 +14,22 @@ export interface AuditSuggestion {
   reason: string;
   suggestedWidget?: string;
   suggestedPattern?: string;
+  /**
+   * How much visual/behavioural fidelity is at risk if this HTML widget is
+   * blindly replaced by its native equivalent.
+   *   - "low":  the widget carries custom CSS (colors/fonts/gradients) that a
+   *             native widget CAN reproduce, but ONLY if those values are
+   *             carried over into the widget's style controls. Drop them and
+   *             the look drifts.
+   *   - "high": the widget carries CSS animations or JavaScript behaviour that
+   *             Elementor's free widget set has NO equivalent for. Converting
+   *             without re-implementing these in custom CSS/Motion FX/custom
+   *             code WILL lose the effect.
+   * Absent → the widget is plain markup, conversion is loss-free.
+   */
+  fidelityRisk?: "low" | "high";
+  /** Human-readable list of what a naive conversion would drop. */
+  wouldLose?: string[];
 }
 
 export interface AuditResult {
@@ -22,6 +38,71 @@ export interface AuditResult {
   htmlWidgetPct: number;
   widgetTypeCounts: Record<string, number>;
   suggestions: AuditSuggestion[];
+  /**
+   * Count of HTML widgets that carry custom CSS/JS the page's design depends
+   * on. These are the widgets where a "just convert to native" pass silently
+   * destroys the design — the Phase 8 failure mode.
+   */
+  lossyWidgets: number;
+  /**
+   * Present whenever `lossyWidgets > 0`. A short directive telling the agent
+   * to extract the widget's styling/behaviour into the native widget's
+   * controls (or custom CSS / Motion FX / custom code) BEFORE converting —
+   * never convert blind.
+   */
+  guidance?: string;
+}
+
+/** Flags describing the custom styling/behaviour packed into an HTML widget. */
+interface FidelityFlags {
+  hasStyle: boolean;
+  hasCustomFont: boolean;
+  hasGradient: boolean;
+  hasAnimation: boolean;
+  hasScript: boolean;
+}
+
+/**
+ * Scan a raw HTML widget body for the styling/behaviour that a native-widget
+ * conversion would drop. Pure string heuristics — no DOM, no browser.
+ */
+function detectFidelity(html: string): FidelityFlags {
+  return {
+    // <style> block = the widget paints itself; inline style= attrs count too.
+    hasStyle: /<style[\s>]/i.test(html) || /\sstyle\s*=\s*["']/i.test(html),
+    hasCustomFont: /font-family\s*:/i.test(html),
+    hasGradient: /(?:linear|radial|conic)-gradient\s*\(/i.test(html),
+    hasAnimation:
+      /@keyframes\b/i.test(html) ||
+      /\banimation\s*:/i.test(html) ||
+      /\btransition\s*:/i.test(html),
+    // <script>, inline on*= handlers, or JS-effect data hooks (typer, scramble,
+    // tilt, magnet, marquee, reveal, parallax). Elementor free has no equivalent.
+    hasScript:
+      /<script[\s>]/i.test(html) ||
+      /\son[a-z]+\s*=\s*["']/i.test(html) ||
+      /\bdata-(?:typer|scramble|tilt|magnet|marquee|reveal|parallax|count)\b/i.test(
+        html,
+      ),
+  };
+}
+
+/** Turn fidelity flags into a "what you'd lose" list + a low/high risk grade. */
+function gradeFidelity(
+  f: FidelityFlags,
+): { risk: "low" | "high"; wouldLose: string[] } | null {
+  const wouldLose: string[] = [];
+  if (f.hasStyle) wouldLose.push("inline CSS (colors / spacing / layout)");
+  if (f.hasCustomFont) wouldLose.push("custom font-family (typography identity)");
+  if (f.hasGradient) wouldLose.push("CSS gradients");
+  if (f.hasAnimation) wouldLose.push("CSS animations / transitions");
+  if (f.hasScript)
+    wouldLose.push("JavaScript behaviour (no Elementor-free equivalent)");
+  if (wouldLose.length === 0) return null;
+  // Animation or JS = genuinely irreplaceable in free Elementor → high.
+  const risk: "low" | "high" =
+    f.hasAnimation || f.hasScript ? "high" : "low";
+  return { risk, wouldLose };
 }
 
 /**
@@ -32,6 +113,7 @@ export function auditElementorTree(sections: ReadonlyArray<Record<string, unknow
   const counts: Record<string, number> = {};
   let total = 0;
   let htmlCount = 0;
+  let lossyWidgets = 0;
   const suggestions: AuditSuggestion[] = [];
 
   function walk(node: Record<string, unknown>): void {
@@ -44,13 +126,26 @@ export function auditElementorTree(sections: ReadonlyArray<Record<string, unknow
         htmlCount++;
         const htmlContent =
           (node["settings"] as Record<string, unknown> | undefined)?.["html"];
+        const html = typeof htmlContent === "string" ? htmlContent : "";
         const widgetId =
           typeof node["id"] === "string" ? (node["id"] as string) : "<no-id>";
-        const suggestion = analyzeHtmlBlock(
-          typeof htmlContent === "string" ? htmlContent : "",
-          widgetId,
-        );
+
+        // Fidelity grade is independent of whether a structural conversion
+        // match exists — a custom card carrying gradients/JS is "lossy" even
+        // when we (correctly) don't suggest converting it.
+        const fidelity = gradeFidelity(detectFidelity(html));
+        if (fidelity) lossyWidgets++;
+
+        const suggestion = analyzeHtmlBlock(html, widgetId);
         if (suggestion) {
+          if (fidelity) {
+            suggestion.fidelityRisk = fidelity.risk;
+            suggestion.wouldLose = fidelity.wouldLose;
+            suggestion.reason +=
+              fidelity.risk === "high"
+                ? " — WARNING: carries animation/JS with no Elementor-free equivalent; re-implement via custom CSS / Motion FX / custom code or the effect is lost"
+                : " — carry its inline CSS (fonts/colors/gradients) into the native widget's style controls or the look will drift";
+          }
           suggestions.push(suggestion);
         }
       }
@@ -73,13 +168,23 @@ export function auditElementorTree(sections: ReadonlyArray<Record<string, unknow
 
   const pct = total === 0 ? 0 : Math.round((htmlCount / total) * 1000) / 10;
 
-  return {
+  const result: AuditResult = {
     totalWidgets: total,
     htmlWidgets: htmlCount,
     htmlWidgetPct: pct,
     widgetTypeCounts: counts,
     suggestions,
+    lossyWidgets,
   };
+  if (lossyWidgets > 0) {
+    result.guidance =
+      `${lossyWidgets} HTML widget(s) carry custom CSS/JS the design depends on. ` +
+      `Do NOT convert blind: first read each widget's <style>/<script>, then replicate ` +
+      `typography, colors, gradients in the native widget's style controls (or Elementor ` +
+      `global styles), and re-build any animation/JS via Motion FX or custom code. ` +
+      `Verify against a screenshot taken AFTER scroll-reveal/JS has settled.`;
+  }
+  return result;
 }
 
 /**
