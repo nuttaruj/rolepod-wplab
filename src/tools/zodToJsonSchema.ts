@@ -53,6 +53,50 @@ export function zodToJsonSchema(schema: ZodTypeAny): Record<string, unknown> {
     );
     return { ...inner, nullable: true };
   }
+  // refine()/transform() wrap the real schema in ZodEffects. The JSON shape is
+  // unchanged by the effect, so unwrap to the inner schema. Without this the
+  // tool's inputSchema collapses to `{}` (no `type`), and MCP clients that
+  // validate tools/list reject the WHOLE list — silently dropping every tool
+  // on the server.
+  if (schema instanceof z.ZodEffects) {
+    return zodToJsonSchema((schema._def as { schema: ZodTypeAny }).schema);
+  }
+  // discriminatedUnion has no single JSON-Schema `type`. MCP requires
+  // inputSchema.type === "object", so flatten to one object: merge every
+  // variant's properties, expose the discriminator as an enum of its literal
+  // values, and require only the discriminator. Per-variant strictness is still
+  // enforced by the Zod schema at parse time in the handler.
+  if (schema instanceof z.ZodDiscriminatedUnion) {
+    const discriminator = (schema._def as { discriminator: string }).discriminator;
+    const properties: Record<string, unknown> = {};
+    const discValues: unknown[] = [];
+    for (const opt of schema.options as z.ZodObject<z.ZodRawShape>[]) {
+      const converted = zodToJsonSchema(opt);
+      Object.assign(properties, (converted["properties"] as Record<string, unknown>) ?? {});
+      const discField = opt.shape[discriminator];
+      const litVal = (discField?._def as { value?: unknown } | undefined)?.value;
+      if (litVal !== undefined) discValues.push(litVal);
+    }
+    if (discValues.length > 0) {
+      properties[discriminator] = { type: "string", enum: discValues };
+    }
+    return {
+      type: "object",
+      properties,
+      required: [discriminator],
+      additionalProperties: false,
+    };
+  }
+  if (schema instanceof z.ZodLiteral) {
+    const value = (schema._def as { value: unknown }).value;
+    const type =
+      typeof value === "number"
+        ? "number"
+        : typeof value === "boolean"
+          ? "boolean"
+          : "string";
+    return { type, enum: [value] };
+  }
   if (schema instanceof z.ZodUnknown || schema instanceof z.ZodAny) {
     return {};
   }
