@@ -1,6 +1,6 @@
 {
   "name": "rolepod-wplab",
-  "version": "1.21.0",
+  "version": "1.21.1",
   "description": "WordPress operations toolkit for AI coding agents — 82 MCP tools + 13 lean Rolepod-pattern skills (/wp-pair-setup, /wp-connect, /wp-health-check, /wp-content, /wp-edit-design, /wp-edit-theme, /wp-edit-plugin, /wp-scaffold, /wp-introspect, /wp-diagnose, /wp-migrate, /wp-changes, /wp-execute-php) + /wp-full alias. 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair setup.",
   "author": {
     "name": "nuttaruj",
@@ -28,7 +28,11 @@
     "longDescription": "rolepod-wplab ships an MCP server with 62 tools and 11 user-invocable skills. Connect any WordPress install via local filesystem, HTTPS REST + App Password, SSH, or Docker. Default-safe surface covers wp-cli (allow-listed), REST CRUD, scoped fs writes, page-builder adapters (Elementor / Divi / Oxygen / Bricks), SEO + WPML write, WooCommerce, ACF, forms (Gravity / CF7 / WPForms), cron, cache, mail-test, full site clone, backup, diagnose, scaffold (block / plugin / theme / pattern). Install the optional rolepod-wp WordPress plugin to unlock execute-php (AST-screened on both sides), runtime introspection, and the one-click 'Generate setup prompt' wizard that pairs the AI in 30 seconds.",
     "developerName": "nuttaruj",
     "category": "Productivity",
-    "capabilities": ["Read", "Write", "Bash"],
+    "capabilities": [
+      "Read",
+      "Write",
+      "Bash"
+    ],
     "websiteURL": "https://github.com/nuttaruj/rolepod-wplab",
     "defaultPrompt": [
       "Use /wp-pair-setup with this pair token to connect my WordPress site.",

@@ -2,6 +2,28 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.1] — 2026-05-29 — Fix: MCP tools/list rejected by strict clients
+
+Critical fix. Every wplab tool silently failed to register in MCP clients
+that validate `tools/list` (Claude Code among them) — the server connected,
+but zero tools were exposed. Pre-existing across all prior releases; surfaced
+once the new skill tools were added.
+
+### Fixed
+
+- **`zodToJsonSchema` now handles `ZodEffects`, `ZodDiscriminatedUnion`, and
+  `ZodLiteral`.** The minimal converter fell through to `{}` (no `type`) for
+  these, producing an `inputSchema` that violates the MCP requirement
+  `type === "object"`. A strict client rejects the WHOLE `tools/list` on the
+  first invalid entry, so two bad schemas dropped all 124 tools:
+  - `rolepod_wp_target_alias` (`z.discriminatedUnion`) → now `type: "object"`
+    with the discriminator exposed as an enum + every variant's properties merged.
+  - `rolepod_wp_skill_edit` (`z.object().refine()`) → `ZodEffects` now unwraps
+    to its inner object.
+  - `ZodLiteral` → `{ type, enum: [value] }`.
+- Regression guard: `tests/unit/zodToJsonSchema.test.ts` asserts these shapes
+  plus both real tool schemas resolve to valid MCP objects.
+
 ## [1.21.0] — 2026-05-29 — Site-owned skills (5 tools)
 
 Surfaces the companion's new site-owned skill store as MCP tools with
