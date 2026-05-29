@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { decodeElementorData } from "../../src/lib/elementorData.js";
 
-const TREE = [{ id: "a", elType: "section", settings: { _css_classes: "wnz-hero" } }];
+const TREE = [
+  { id: "a", elType: "section", settings: { _css_classes: "wnz-hero" } },
+];
 
 describe("decodeElementorData", () => {
   it("passes through a plain array", () => {
@@ -23,6 +25,8 @@ describe("decodeElementorData", () => {
   });
 
   it("throws when the payload is not a section array", () => {
-    expect(() => decodeElementorData('{"not":"an array"}')).toThrow(/section array/);
+    expect(() => decodeElementorData('{"not":"an array"}')).toThrow(
+      /section array/,
+    );
   });
 });

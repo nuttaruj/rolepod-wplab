@@ -93,15 +93,15 @@ function gradeFidelity(
 ): { risk: "low" | "high"; wouldLose: string[] } | null {
   const wouldLose: string[] = [];
   if (f.hasStyle) wouldLose.push("inline CSS (colors / spacing / layout)");
-  if (f.hasCustomFont) wouldLose.push("custom font-family (typography identity)");
+  if (f.hasCustomFont)
+    wouldLose.push("custom font-family (typography identity)");
   if (f.hasGradient) wouldLose.push("CSS gradients");
   if (f.hasAnimation) wouldLose.push("CSS animations / transitions");
   if (f.hasScript)
     wouldLose.push("JavaScript behaviour (no Elementor-free equivalent)");
   if (wouldLose.length === 0) return null;
   // Animation or JS = genuinely irreplaceable in free Elementor → high.
-  const risk: "low" | "high" =
-    f.hasAnimation || f.hasScript ? "high" : "low";
+  const risk: "low" | "high" = f.hasAnimation || f.hasScript ? "high" : "low";
   return { risk, wouldLose };
 }
 
@@ -109,7 +109,9 @@ function gradeFidelity(
  * Walk a sections array (verbatim from `_elementor_data` JSON) and produce
  * an audit summary.
  */
-export function auditElementorTree(sections: ReadonlyArray<Record<string, unknown>>): AuditResult {
+export function auditElementorTree(
+  sections: ReadonlyArray<Record<string, unknown>>,
+): AuditResult {
   const counts: Record<string, number> = {};
   let total = 0;
   let htmlCount = 0;
@@ -118,14 +120,17 @@ export function auditElementorTree(sections: ReadonlyArray<Record<string, unknow
 
   function walk(node: Record<string, unknown>): void {
     const widgetType =
-      typeof node["widgetType"] === "string" ? (node["widgetType"] as string) : "";
+      typeof node["widgetType"] === "string"
+        ? (node["widgetType"] as string)
+        : "";
     if (widgetType !== "") {
       counts[widgetType] = (counts[widgetType] ?? 0) + 1;
       total++;
       if (widgetType === "html") {
         htmlCount++;
-        const htmlContent =
-          (node["settings"] as Record<string, unknown> | undefined)?.["html"];
+        const htmlContent = (
+          node["settings"] as Record<string, unknown> | undefined
+        )?.["html"];
         const html = typeof htmlContent === "string" ? htmlContent : "";
         const widgetId =
           typeof node["id"] === "string" ? (node["id"] as string) : "<no-id>";
@@ -195,7 +200,10 @@ export function auditElementorTree(sections: ReadonlyArray<Record<string, unknow
  * grids, terminal blocks, marquees) are deliberately NOT flagged because
  * the HTML widget is the right choice for those.
  */
-function analyzeHtmlBlock(html: string, widgetId: string): AuditSuggestion | null {
+function analyzeHtmlBlock(
+  html: string,
+  widgetId: string,
+): AuditSuggestion | null {
   const trimmed = html.trim();
   if (trimmed === "") return null;
 
@@ -214,17 +222,21 @@ function analyzeHtmlBlock(html: string, widgetId: string): AuditSuggestion | nul
   if (paraOnly && !/<(?:h[1-6]|button|a\b|svg|img|table)/i.test(paraOnly[1]!)) {
     return {
       widgetId,
-      reason: "widget contains only a single <p> — replace with Elementor's native text-editor widget",
+      reason:
+        "widget contains only a single <p> — replace with Elementor's native text-editor widget",
       suggestedWidget: "text-editor",
     };
   }
 
   // Whole content = one anchor styled as button
-  const anchorOnly = trimmed.match(/^<a\b[^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>([\s\S]+?)<\/a>$/i);
+  const anchorOnly = trimmed.match(
+    /^<a\b[^>]*class="[^"]*\bbtn\b[^"]*"[^>]*>([\s\S]+?)<\/a>$/i,
+  );
   if (anchorOnly) {
     return {
       widgetId,
-      reason: "widget contains only a single button-styled anchor — replace with Elementor's native button widget",
+      reason:
+        "widget contains only a single button-styled anchor — replace with Elementor's native button widget",
       suggestedWidget: "button",
     };
   }
@@ -236,17 +248,22 @@ function analyzeHtmlBlock(html: string, widgetId: string): AuditSuggestion | nul
   ) {
     return {
       widgetId,
-      reason: "widget contains <details>/<summary> FAQ markup — replace with the native accordion widget (pattern P-003)",
+      reason:
+        "widget contains <details>/<summary> FAQ markup — replace with the native accordion widget (pattern P-003)",
       suggestedWidget: "accordion",
       suggestedPattern: "P-003",
     };
   }
 
   // Single ".stat-num" or counter-style number — could be a counter widget
-  if (/data-count\s*=/.test(trimmed) && (trimmed.match(/data-count\s*=/g)?.length ?? 0) >= 1) {
+  if (
+    /data-count\s*=/.test(trimmed) &&
+    (trimmed.match(/data-count\s*=/g)?.length ?? 0) >= 1
+  ) {
     return {
       widgetId,
-      reason: "widget contains data-count counter markup — Elementor has a native counter widget (pattern P-004)",
+      reason:
+        "widget contains data-count counter markup — Elementor has a native counter widget (pattern P-004)",
       suggestedWidget: "counter",
       suggestedPattern: "P-004",
     };
@@ -261,7 +278,8 @@ function analyzeHtmlBlock(html: string, widgetId: string): AuditSuggestion | nul
   ) {
     return {
       widgetId,
-      reason: "widget contains icon + heading + paragraph — consider Elementor's icon-box widget for editable per-card content (pattern P-002)",
+      reason:
+        "widget contains icon + heading + paragraph — consider Elementor's icon-box widget for editable per-card content (pattern P-002)",
       suggestedWidget: "icon-box",
       suggestedPattern: "P-002",
     };

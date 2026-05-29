@@ -63,5 +63,9 @@ export async function wpJetengineWriteHandler(
     sourceTool: "wp_jetengine_write",
   });
 
-  return { ok: true, post_id: input.post_id, written: Object.keys(input.meta).length };
+  return {
+    ok: true,
+    post_id: input.post_id,
+    written: Object.keys(input.meta).length,
+  };
 }

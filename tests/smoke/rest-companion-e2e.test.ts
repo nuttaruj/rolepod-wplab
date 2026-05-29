@@ -100,7 +100,11 @@ describe.skipIf(!enabled)("RestTarget + companion E2E", () => {
           },
         ];
 
-        const result = await elementorWrite.updatePageData(target, postId, tree);
+        const result = await elementorWrite.updatePageData(
+          target,
+          postId,
+          tree,
+        );
         expect(result.bytesWritten).toBeGreaterThan(0);
 
         // Verify meta persisted — read via wp-cli (PHP-serialized).

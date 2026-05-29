@@ -12,7 +12,9 @@ import type { Target } from "../runtime/Target.js";
  */
 export async function flushObjectCache(target: Target): Promise<void> {
   try {
-    const r = await target.wpCli(["cache", "flush"], { allowDestructive: true });
+    const r = await target.wpCli(["cache", "flush"], {
+      allowDestructive: true,
+    });
     if (r.exitCode !== 0) {
       log.debug("auto cache flush: non-zero exit (continuing)", {
         exitCode: r.exitCode,

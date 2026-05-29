@@ -26,7 +26,8 @@ export async function wpCustomTaskRemoveHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpCustomTaskRemoveOutput> {
-  const input: WpCustomTaskRemoveInput = WpCustomTaskRemoveInputSchema.parse(raw);
+  const input: WpCustomTaskRemoveInput =
+    WpCustomTaskRemoveInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
   if (target.kind !== "rest") {
@@ -69,7 +70,8 @@ export async function wpCustomTaskRemoveHandler(
     ],
     { allowDestructive: true, timeoutMs: 10_000 },
   );
-  const fileDeleted = deleteResult.exitCode === 0 && deleteResult.stdout.trim() === "deleted";
+  const fileDeleted =
+    deleteResult.exitCode === 0 && deleteResult.stdout.trim() === "deleted";
   if (!fileDeleted) {
     throw new WplabError(
       "CUSTOM_TASK_REMOVE_FAILED",

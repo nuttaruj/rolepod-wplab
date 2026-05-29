@@ -35,7 +35,8 @@ export async function wpElementorPublishHandler(
   registry: TargetRegistry,
   raw: unknown,
 ): Promise<WpElementorPublishOutput> {
-  const input: WpElementorPublishInput = WpElementorPublishInputSchema.parse(raw);
+  const input: WpElementorPublishInput =
+    WpElementorPublishInputSchema.parse(raw);
   const target = registry.get(input.target_id);
 
   // Resolve permalink once via wp eval (no companion required).
@@ -48,21 +49,25 @@ export async function wpElementorPublishHandler(
     throw new WplabError(
       "ELEMENTOR_PUBLISH_BAD_POST",
       `wp could not resolve a permalink for post ${input.post_id}. Verify the post exists and is published.`,
-      { post_id: input.post_id, wp_cli_stdout: permalinkCall.stdout, wp_cli_stderr: permalinkCall.stderr },
+      {
+        post_id: input.post_id,
+        wp_cli_stdout: permalinkCall.stdout,
+        wp_cli_stderr: permalinkCall.stderr,
+      },
     );
   }
 
   // Phase 1: per-page CSS regen.
-  const flushCss = await target.wpCli(
-    ["elementor", "flush-css"],
-    { allowDestructive: true, timeoutMs: 60_000 },
-  );
+  const flushCss = await target.wpCli(["elementor", "flush-css"], {
+    allowDestructive: true,
+    timeoutMs: 60_000,
+  });
 
   // Phase 2: object cache flush.
-  const cacheFlush = await target.wpCli(
-    ["cache", "flush"],
-    { allowDestructive: true, timeoutMs: 10_000 },
-  );
+  const cacheFlush = await target.wpCli(["cache", "flush"], {
+    allowDestructive: true,
+    timeoutMs: 10_000,
+  });
 
   // Phase 2.5 — bump filemtime on theme assets so the enqueue ?ver= param
   // updates and the CDN/browser cache stops serving stale CSS/JS bodies.
@@ -85,11 +90,17 @@ export async function wpElementorPublishHandler(
     permalink,
     elementor_flush: {
       ok: flushCss.exitCode === 0,
-      message: flushCss.exitCode === 0 ? flushCss.stdout.trim() : flushCss.stderr.trim(),
+      message:
+        flushCss.exitCode === 0
+          ? flushCss.stdout.trim()
+          : flushCss.stderr.trim(),
     },
     object_cache_flush: {
       ok: cacheFlush.exitCode === 0,
-      message: cacheFlush.exitCode === 0 ? cacheFlush.stdout.trim() : cacheFlush.stderr.trim(),
+      message:
+        cacheFlush.exitCode === 0
+          ? cacheFlush.stdout.trim()
+          : cacheFlush.stderr.trim(),
     },
     ...(themeBump !== undefined ? { theme_assets_bumped: themeBump } : {}),
     ...(warm !== undefined ? { warm_fetch: warm } : {}),
@@ -129,7 +140,9 @@ async function bumpThemeAssets(
       }
     }
     echo wp_json_encode(['count' => $count, 'theme_dir' => $theme]);
-  `.trim().replace(/\s+/g, " ");
+  `
+    .trim()
+    .replace(/\s+/g, " ");
   try {
     const res = await target.wpCli(["eval", code], {
       allowDestructive: true,
@@ -138,8 +151,15 @@ async function bumpThemeAssets(
     if (res.exitCode !== 0) {
       return { ok: false, files_touched: 0, theme_dir: "" };
     }
-    const out = JSON.parse(res.stdout.trim()) as { count: number; theme_dir: string };
-    return { ok: true, files_touched: out.count ?? 0, theme_dir: out.theme_dir ?? "" };
+    const out = JSON.parse(res.stdout.trim()) as {
+      count: number;
+      theme_dir: string;
+    };
+    return {
+      ok: true,
+      files_touched: out.count ?? 0,
+      theme_dir: out.theme_dir ?? "",
+    };
   } catch (err) {
     log.debug("bumpThemeAssets failed", { err: (err as Error).message });
     return { ok: false, files_touched: 0, theme_dir: "" };

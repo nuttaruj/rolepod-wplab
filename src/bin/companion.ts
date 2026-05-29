@@ -66,7 +66,9 @@ async function runInstall(args: string[]): Promise<number> {
   process.stderr.write(
     `○ no companion detected. Run this on the target host:\n\n`,
   );
-  process.stderr.write(`  wp plugin install ${COMPANION_INSTALL_URL} --activate\n\n`);
+  process.stderr.write(
+    `  wp plugin install ${COMPANION_INSTALL_URL} --activate\n\n`,
+  );
   process.stderr.write(
     `  Or, via the WP admin: Plugins → Add New → Upload Plugin → pick the zip.\n`,
   );

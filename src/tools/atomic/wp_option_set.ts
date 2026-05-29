@@ -42,7 +42,12 @@ export async function wpOptionSetHandler(
       target.kind === "ssh" ||
       target.kind === "docker"
     ) {
-      const r = await target.wpCli(["option", "get", input.name, "--format=json"]);
+      const r = await target.wpCli([
+        "option",
+        "get",
+        input.name,
+        "--format=json",
+      ]);
       if (r.exitCode === 0) {
         try {
           beforeValue = JSON.parse(r.stdout.trim());
@@ -53,7 +58,8 @@ export async function wpOptionSetHandler(
     } else {
       const r = await target.rest({ method: "GET", path: "/wp/v2/settings" });
       if (r.status >= 200 && r.status < 300) {
-        beforeValue = ((r.body ?? {}) as Record<string, unknown>)[input.name] ?? null;
+        beforeValue =
+          ((r.body ?? {}) as Record<string, unknown>)[input.name] ?? null;
       }
     }
   } catch {

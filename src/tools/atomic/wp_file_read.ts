@@ -34,7 +34,11 @@ export async function wpFileReadHandler(
     path: input.path,
     content: sliced.content,
     bytes: result.bytes,
-    ...(sliced.sliced ? { returned_bytes: sliced.returnedBytes, truncated: sliced.truncated } : {}),
-    ...(sliced.matchedLines !== undefined ? { matched_lines: sliced.matchedLines } : {}),
+    ...(sliced.sliced
+      ? { returned_bytes: sliced.returnedBytes, truncated: sliced.truncated }
+      : {}),
+    ...(sliced.matchedLines !== undefined
+      ? { matched_lines: sliced.matchedLines }
+      : {}),
   });
 }

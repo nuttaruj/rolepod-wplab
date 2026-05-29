@@ -1,5 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { existsSync, readFileSync, rmSync, mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  readFileSync,
+  rmSync,
+  mkdtempSync,
+  mkdirSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { execSync } from "node:child_process";
@@ -81,7 +88,10 @@ describe("rolepodEvidence — Extension Protocol v1 (marker-file)", () => {
   });
 
   it("resolveEvidenceDir: standalone path under cwd-relative .rolepod-wplab/", () => {
-    const { dir, mode } = resolveEvidenceDir("wp-health-check", "20260528T120000Z");
+    const { dir, mode } = resolveEvidenceDir(
+      "wp-health-check",
+      "20260528T120000Z",
+    );
     expect(mode).toBe("standalone");
     expect(dir).toBe(join(".rolepod-wplab", "artifacts", "20260528T120000Z"));
     expect(existsSync(join(cwd, dir))).toBe(true);
@@ -93,7 +103,15 @@ describe("rolepodEvidence — Extension Protocol v1 (marker-file)", () => {
     const { dir, mode } = resolveEvidenceDir("wp-changes", "20260528T120000Z");
     expect(mode).toBe("with-parent");
     // dir is absolute, ends with the expected suffix
-    expect(dir.endsWith(join(".rolepod", "evidence", "20260528T120000Z-rolepod-wplab-wp-changes"))).toBe(true);
+    expect(
+      dir.endsWith(
+        join(
+          ".rolepod",
+          "evidence",
+          "20260528T120000Z-rolepod-wplab-wp-changes",
+        ),
+      ),
+    ).toBe(true);
     expect(existsSync(dir)).toBe(true);
   });
 
@@ -103,10 +121,19 @@ describe("rolepodEvidence — Extension Protocol v1 (marker-file)", () => {
     const sub = join(cwd, "deep", "nested");
     mkdirSync(sub, { recursive: true });
     process.chdir(sub);
-    const { dir, mode } = resolveEvidenceDir("wp-health-check", "20260528T120001Z");
+    const { dir, mode } = resolveEvidenceDir(
+      "wp-health-check",
+      "20260528T120001Z",
+    );
     expect(mode).toBe("with-parent");
     expect(dir.startsWith(cwd) || dir.startsWith("/private" + cwd)).toBe(true);
-    expect(dir).toContain(join(".rolepod", "evidence", "20260528T120001Z-rolepod-wplab-wp-health-check"));
+    expect(dir).toContain(
+      join(
+        ".rolepod",
+        "evidence",
+        "20260528T120001Z-rolepod-wplab-wp-health-check",
+      ),
+    );
   });
 
   it("writeManifest emits valid Protocol v1 JSON", () => {

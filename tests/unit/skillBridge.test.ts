@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { CompanionBridge } from "../../src/companion/Bridge.js";
-import { CompanionUnavailableError, WplabError } from "../../src/util/errors.js";
+import {
+  CompanionUnavailableError,
+  WplabError,
+} from "../../src/util/errors.js";
 import type { Target } from "../../src/runtime/Target.js";
 
 interface RestReq {
@@ -55,7 +58,9 @@ async function connectedBridge(
 describe("CompanionBridge — skills", () => {
   it("throws CompanionUnavailableError when the skills capability is absent", async () => {
     const bridge = await connectedBridge([], () => ({ status: 200, body: {} }));
-    await expect(bridge.skillCatalog()).rejects.toBeInstanceOf(CompanionUnavailableError);
+    await expect(bridge.skillCatalog()).rejects.toBeInstanceOf(
+      CompanionUnavailableError,
+    );
   });
 
   it("skillCatalog returns the compact entry list", async () => {
@@ -66,7 +71,13 @@ describe("CompanionBridge — skills", () => {
           body: {
             ok: true,
             skills: [
-              { slug: "build-pages", name: "build-pages", description: "How we build pages", enable_agentic: true, enable_prompt: false },
+              {
+                slug: "build-pages",
+                name: "build-pages",
+                description: "How we build pages",
+                enable_agentic: true,
+                enable_prompt: false,
+              },
             ],
           },
         };
@@ -118,7 +129,13 @@ describe("CompanionBridge — skills", () => {
         expect(req.body!["session_token"]).toBeDefined();
         return {
           status: 200,
-          body: { ok: true, slug: "my-skill", action: "created", warnings: ["Description is empty"], audit_id: "a1" },
+          body: {
+            ok: true,
+            slug: "my-skill",
+            action: "created",
+            warnings: ["Description is empty"],
+            audit_id: "a1",
+          },
         };
       }
       return { status: 404, body: {} };
@@ -134,7 +151,13 @@ describe("CompanionBridge — skills", () => {
       if (req.method === "POST" && req.path === "/wplab/v1/skills") {
         return {
           status: 409,
-          body: { ok: false, error_code: "SLUG_EXISTS", error_message: "exists", slug: "dup", suggested_slug: "dup-2" },
+          body: {
+            ok: false,
+            error_code: "SLUG_EXISTS",
+            error_message: "exists",
+            slug: "dup",
+            suggested_slug: "dup-2",
+          },
         };
       }
       return { status: 404, body: {} };
@@ -157,8 +180,20 @@ describe("CompanionBridge — skills", () => {
       if (req.method === "POST" && req.path === "/wplab/v1/skills") {
         posts++;
         return posts === 1
-          ? { status: 401, body: { ok: false, error_code: "INVALID_OR_EXPIRED_TOKEN" } }
-          : { status: 200, body: { ok: true, slug: "s", action: "created", warnings: [], audit_id: "a2" } };
+          ? {
+              status: 401,
+              body: { ok: false, error_code: "INVALID_OR_EXPIRED_TOKEN" },
+            }
+          : {
+              status: 200,
+              body: {
+                ok: true,
+                slug: "s",
+                action: "created",
+                warnings: [],
+                audit_id: "a2",
+              },
+            };
       }
       return { status: 404, body: {} };
     });
@@ -171,7 +206,16 @@ describe("CompanionBridge — skills", () => {
     const bridge = await connectedBridge(["skills"], (req) => {
       if (req.method === "DELETE" && req.path === "/wplab/v1/skills/foo") {
         expect(req.query!["session_token"]).toBeDefined();
-        return { status: 200, body: { ok: true, slug: "foo", action: "trashed", recoverable: true, audit_id: "a3" } };
+        return {
+          status: 200,
+          body: {
+            ok: true,
+            slug: "foo",
+            action: "trashed",
+            recoverable: true,
+            audit_id: "a3",
+          },
+        };
       }
       return { status: 404, body: {} };
     });

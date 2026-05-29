@@ -546,7 +546,14 @@ export interface TaskScaffoldInput {
   description: string;
   settings: Array<{
     key: string;
-    type: "text" | "email" | "url" | "number" | "textarea" | "checkbox" | "select";
+    type:
+      | "text"
+      | "email"
+      | "url"
+      | "number"
+      | "textarea"
+      | "checkbox"
+      | "select";
     label: string;
     default?: string | number | boolean | undefined;
     help?: string | undefined;

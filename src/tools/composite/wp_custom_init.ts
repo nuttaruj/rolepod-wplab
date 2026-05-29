@@ -49,12 +49,14 @@ export async function wpCustomInitHandler(
   });
 }
 
-async function isPluginAlreadyActive(target: import("../../runtime/Target.js").Target): Promise<boolean> {
+async function isPluginAlreadyActive(
+  target: import("../../runtime/Target.js").Target,
+): Promise<boolean> {
   try {
-    const r = await target.wpCli(
-      ["plugin", "is-active", "rolepod-custom"],
-      { allowDestructive: false, timeoutMs: 10_000 },
-    );
+    const r = await target.wpCli(["plugin", "is-active", "rolepod-custom"], {
+      allowDestructive: false,
+      timeoutMs: 10_000,
+    });
     return r.exitCode === 0;
   } catch {
     return false;

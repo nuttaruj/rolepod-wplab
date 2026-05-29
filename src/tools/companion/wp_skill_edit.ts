@@ -29,8 +29,10 @@ export async function wpSkillEditHandler(
   } = {};
   if (input.description !== undefined) patch.description = input.description;
   if (input.content !== undefined) patch.content = input.content;
-  if (input.enable_agentic !== undefined) patch.enable_agentic = input.enable_agentic;
-  if (input.enable_prompt !== undefined) patch.enable_prompt = input.enable_prompt;
+  if (input.enable_agentic !== undefined)
+    patch.enable_agentic = input.enable_agentic;
+  if (input.enable_prompt !== undefined)
+    patch.enable_prompt = input.enable_prompt;
 
   const result = await bridge.skillEdit(input.slug, patch);
   return SkillEditOutputSchema.parse(result);

@@ -175,10 +175,7 @@ export class RestTarget implements Target {
     return this.siteurl;
   }
 
-  async wpCli(
-    args: readonly string[],
-    opts?: WpCliOpts,
-  ): Promise<WpCliResult> {
+  async wpCli(args: readonly string[], opts?: WpCliOpts): Promise<WpCliResult> {
     const bridge = await this.getBridge();
     const timeoutSeconds =
       opts?.timeoutMs !== undefined ? Math.ceil(opts.timeoutMs / 1000) : 30;

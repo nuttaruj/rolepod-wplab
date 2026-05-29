@@ -1,10 +1,5 @@
-import {
-  AliasStore,
-} from "../../lib/targetAliases.js";
-import {
-  openAlias,
-  forgetAliasMapping,
-} from "../../lib/aliasResolver.js";
+import { AliasStore } from "../../lib/targetAliases.js";
+import { openAlias, forgetAliasMapping } from "../../lib/aliasResolver.js";
 import {
   TargetAliasInputSchema,
   TargetAliasOutputSchema,
@@ -18,7 +13,7 @@ import { canonicalizeSite } from "../../credentials/types.js";
 export const wpTargetAliasToolDef = {
   name: "rolepod_wp_target_alias",
   description:
-    "Manage persistent target aliases. Aliases let you reference a WordPress target by a friendly name (`@demo`) instead of the ephemeral `tgt_<hex>` id that expires after 10 min idle. Actions: set | list | rm | resolve. Once an alias is set, any other tool can accept `target_id: \"@<alias>\"` — the dispatcher resolves to a live session transparently and auto-reconnects on idle expiry.",
+    'Manage persistent target aliases. Aliases let you reference a WordPress target by a friendly name (`@demo`) instead of the ephemeral `tgt_<hex>` id that expires after 10 min idle. Actions: set | list | rm | resolve. Once an alias is set, any other tool can accept `target_id: "@<alias>"` — the dispatcher resolves to a live session transparently and auto-reconnects on idle expiry.',
   inputSchema: TargetAliasInputSchema,
 };
 

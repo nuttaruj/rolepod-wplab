@@ -60,12 +60,30 @@ export async function installPluginSkeleton(
   const bridge = await bridgeFor(target);
   const writes = [
     { path: ROLEPOD_CUSTOM_MAIN_FILE, content: TPL_MAIN_FILE },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/uninstall.php`, content: TPL_UNINSTALL },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/Plugin.php`, content: TPL_PLUGIN_CLASS },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/TaskRegistry.php`, content: TPL_TASK_REGISTRY },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/BaseTask.php`, content: TPL_BASE_TASK },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/AdminMenu.php`, content: TPL_ADMIN_MENU },
-    { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/assets/admin.css`, content: TPL_ADMIN_CSS },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/uninstall.php`,
+      content: TPL_UNINSTALL,
+    },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/Plugin.php`,
+      content: TPL_PLUGIN_CLASS,
+    },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/TaskRegistry.php`,
+      content: TPL_TASK_REGISTRY,
+    },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/BaseTask.php`,
+      content: TPL_BASE_TASK,
+    },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/inc/AdminMenu.php`,
+      content: TPL_ADMIN_MENU,
+    },
+    {
+      path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/assets/admin.css`,
+      content: TPL_ADMIN_CSS,
+    },
     { path: `${ROLEPOD_CUSTOM_PLUGIN_DIR}/readme.txt`, content: TPL_README },
   ];
   const result = await bridge.fileWriteBatch(writes, { skipPhpLint: false });
@@ -142,28 +160,39 @@ export async function listTasks(target: Target): Promise<{
 /**
  * Read the enabled flag stored under `rolepod_custom_<task>_enabled` option.
  */
-export async function readTaskEnabled(target: Target, taskId: string): Promise<boolean> {
+export async function readTaskEnabled(
+  target: Target,
+  taskId: string,
+): Promise<boolean> {
   const optionKey = `rolepod_custom_${taskId.replace(/-/g, "_")}_enabled`;
   try {
-    const r = await target.wpCli(["option", "get", optionKey, "--format=json"], {
-      allowDestructive: false,
-      timeoutMs: 10_000,
-    });
+    const r = await target.wpCli(
+      ["option", "get", optionKey, "--format=json"],
+      {
+        allowDestructive: false,
+        timeoutMs: 10_000,
+      },
+    );
     if (r.exitCode !== 0) return true; // missing option defaults to enabled
     const raw = r.stdout.trim();
-    if (raw === "" || raw === "false" || raw === "0" || raw === '"0"') return false;
+    if (raw === "" || raw === "false" || raw === "0" || raw === '"0"')
+      return false;
     return true;
   } catch {
     return true;
   }
 }
 
-export async function setTaskEnabled(target: Target, taskId: string, enabled: boolean): Promise<void> {
+export async function setTaskEnabled(
+  target: Target,
+  taskId: string,
+  enabled: boolean,
+): Promise<void> {
   const optionKey = `rolepod_custom_${taskId.replace(/-/g, "_")}_enabled`;
-  await target.wpCli(
-    ["option", "update", optionKey, enabled ? "1" : "0"],
-    { allowDestructive: true, timeoutMs: 10_000 },
-  );
+  await target.wpCli(["option", "update", optionKey, enabled ? "1" : "0"], {
+    allowDestructive: true,
+    timeoutMs: 10_000,
+  });
 }
 
 /**
@@ -171,10 +200,18 @@ export async function setTaskEnabled(target: Target, taskId: string, enabled: bo
  * return-statement bodies via regex. Robust enough for generated code; we
  * own the template so we know the shape is stable.
  */
-function parseTaskMetaFromSource(source: string): { taskId: string; title: string; description: string } | null {
-  const idMatch = source.match(/public function id\(\): string\s*\{\s*return '([^']+)'/);
-  const titleMatch = source.match(/public function title\(\): string\s*\{\s*return '([^']+)'/);
-  const descMatch = source.match(/public function description\(\): string\s*\{\s*return '([^']+)'/);
+function parseTaskMetaFromSource(
+  source: string,
+): { taskId: string; title: string; description: string } | null {
+  const idMatch = source.match(
+    /public function id\(\): string\s*\{\s*return '([^']+)'/,
+  );
+  const titleMatch = source.match(
+    /public function title\(\): string\s*\{\s*return '([^']+)'/,
+  );
+  const descMatch = source.match(
+    /public function description\(\): string\s*\{\s*return '([^']+)'/,
+  );
   if (!idMatch || !titleMatch || !descMatch) return null;
   return {
     taskId: idMatch[1]!.replace(/\\'/g, "'"),
@@ -186,7 +223,10 @@ function parseTaskMetaFromSource(source: string): { taskId: string; title: strin
 /**
  * Run the task's uninstall() via wp eval, returning true on clean run.
  */
-export async function runTaskUninstall(target: Target, taskId: string): Promise<boolean> {
+export async function runTaskUninstall(
+  target: Target,
+  taskId: string,
+): Promise<boolean> {
   const className = taskClassName(taskId);
   const code = `
     if ( ! class_exists('\\\\Rolepod\\\\Custom\\\\Modules\\\\${className}') ) {
@@ -200,8 +240,13 @@ export async function runTaskUninstall(target: Target, taskId: string): Promise<
     }
     \\$task->uninstall();
     echo wp_json_encode(['ok' => true]);
-  `.replace(/\s+/g, " ").trim();
-  const r = await target.wpCli(["eval", code], { allowDestructive: true, timeoutMs: 30_000 });
+  `
+    .replace(/\s+/g, " ")
+    .trim();
+  const r = await target.wpCli(["eval", code], {
+    allowDestructive: true,
+    timeoutMs: 30_000,
+  });
   if (r.exitCode !== 0) return false;
   try {
     const parsed = JSON.parse(r.stdout.trim()) as { ok: boolean };

@@ -21,7 +21,8 @@ export async function wpElementorWidgetAttributeHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpElementorWidgetAttributeOutput> {
-  const input: WpElementorWidgetAttributeInput = WpElementorWidgetAttributeInputSchema.parse(raw);
+  const input: WpElementorWidgetAttributeInput =
+    WpElementorWidgetAttributeInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
   if (target.kind !== "rest") {
@@ -32,7 +33,11 @@ export async function wpElementorWidgetAttributeHandler(
     );
   }
   const bridge = await bridgeFor(target);
-  const r = await bridge.elementorWidgetAttribute(input.post_id, input.widget_id, input.attrs);
+  const r = await bridge.elementorWidgetAttribute(
+    input.post_id,
+    input.widget_id,
+    input.attrs,
+  );
   return WpElementorWidgetAttributeOutputSchema.parse({
     post_id: r.postId,
     widget_id: r.widgetId,

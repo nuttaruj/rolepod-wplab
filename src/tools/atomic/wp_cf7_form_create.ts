@@ -44,8 +44,7 @@ export async function wpCf7FormCreateHandler(
   const mailBody =
     input.mail_body ??
     "From: [your-name] <[your-email]>\nSubject: [your-subject]\n\n[your-message]";
-  const mailFrom =
-    input.mail_from ?? "[your-name] <[your-email]>";
+  const mailFrom = input.mail_from ?? "[your-name] <[your-email]>";
 
   const mail = {
     subject: input.mail_subject,
@@ -111,7 +110,11 @@ return ['form_id' => (int) $form_id, 'shortcode' => '[contact-form-7 id="' . $fo
     subcategory: `cf7-form:${rv.form_id}`,
     targetDescriptor: `CF7 form "${input.title}" created`,
     beforeState: null,
-    afterState: { form_id: rv.form_id, title: input.title, recipient: input.mail_recipient },
+    afterState: {
+      form_id: rv.form_id,
+      title: input.title,
+      recipient: input.mail_recipient,
+    },
     reversible: true,
     sourceTool: "wp_cf7_form_create",
   });

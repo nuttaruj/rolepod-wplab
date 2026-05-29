@@ -286,7 +286,10 @@ async function brokenImagesProbe(target: Target): Promise<Finding[]> {
     try {
       const bridge = await bridgeFor(target);
       const result = await bridge.dbQuery(sql);
-      const samples = result.rows.map((r) => String(r["src"] ?? "")).filter(Boolean).slice(0, 5);
+      const samples = result.rows
+        .map((r) => String(r["src"] ?? ""))
+        .filter(Boolean)
+        .slice(0, 5);
       return [
         {
           scope: "broken_images",
@@ -307,12 +310,7 @@ async function brokenImagesProbe(target: Target): Promise<Finding[]> {
     }
   }
 
-  const r = await target.wpCli([
-    "db",
-    "query",
-    sql,
-    "--skip-column-names",
-  ]);
+  const r = await target.wpCli(["db", "query", sql, "--skip-column-names"]);
   if (r.exitCode !== 0) {
     return [
       {

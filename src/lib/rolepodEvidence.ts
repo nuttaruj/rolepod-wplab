@@ -79,7 +79,12 @@ export function resolveEvidenceDir(
 ): { dir: string; mode: "standalone" | "with-parent" } {
   const parent = detectRolepodParent();
   const dir = parent.active
-    ? join(parent.gitRoot, ".rolepod", "evidence", `${ts}-rolepod-wplab-${skill}`)
+    ? join(
+        parent.gitRoot,
+        ".rolepod",
+        "evidence",
+        `${ts}-rolepod-wplab-${skill}`,
+      )
     : join(".rolepod-wplab", "artifacts", ts);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });

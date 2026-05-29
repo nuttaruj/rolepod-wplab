@@ -32,36 +32,61 @@ export async function wpBuilderDetectHandler(
 
   const elementor = findPlugin(plugins, "elementor");
   if (elementor && elementor.status === "active") {
-    const pro = !!findPlugin(plugins, "elementor-pro") && findPlugin(plugins, "elementor-pro")!.status === "active";
+    const pro =
+      !!findPlugin(plugins, "elementor-pro") &&
+      findPlugin(plugins, "elementor-pro")!.status === "active";
     active.push({
       slug: "elementor",
       version: elementor.version,
-      capabilities: pro ? ["widgets", "templates", "theme-builder", "popups", "forms"] : ["widgets", "templates"],
+      capabilities: pro
+        ? ["widgets", "templates", "theme-builder", "popups", "forms"]
+        : ["widgets", "templates"],
       pro,
     });
   }
 
-  const bricks = findPlugin(plugins, "bricks") || findPlugin(plugins, "bricks-builder");
+  const bricks =
+    findPlugin(plugins, "bricks") || findPlugin(plugins, "bricks-builder");
   if (bricks && bricks.status === "active") {
-    active.push({ slug: "bricks", version: bricks.version, capabilities: ["elements", "templates", "theme"], pro: true });
+    active.push({
+      slug: "bricks",
+      version: bricks.version,
+      capabilities: ["elements", "templates", "theme"],
+      pro: true,
+    });
   }
 
   const divi = findPlugin(plugins, "divi-builder");
   // Divi is also a theme — check for active theme.
   const themeIsDivi = await isDiviTheme(target);
   if ((divi && divi.status === "active") || themeIsDivi) {
-    active.push({ slug: "divi", version: divi?.version ?? "theme", capabilities: ["modules", "theme-builder", "library"], pro: true });
+    active.push({
+      slug: "divi",
+      version: divi?.version ?? "theme",
+      capabilities: ["modules", "theme-builder", "library"],
+      pro: true,
+    });
   }
 
   const oxygen = findPlugin(plugins, "oxygen");
   if (oxygen && oxygen.status === "active") {
-    active.push({ slug: "oxygen", version: oxygen.version, capabilities: ["elements", "templates"], pro: true });
+    active.push({
+      slug: "oxygen",
+      version: oxygen.version,
+      capabilities: ["elements", "templates"],
+      pro: true,
+    });
   }
 
   // Gutenberg is core — always "active" but only counts when no other builder is.
   if (active.length === 0) {
     const wpVersion = await getWpVersion(target);
-    active.push({ slug: "gutenberg", version: wpVersion, capabilities: ["blocks", "patterns", "fse"], pro: false });
+    active.push({
+      slug: "gutenberg",
+      version: wpVersion,
+      capabilities: ["blocks", "patterns", "fse"],
+      pro: false,
+    });
   }
 
   const primary = active.length > 0 ? active[0]!.slug : null;
@@ -72,7 +97,9 @@ export async function wpBuilderDetectHandler(
   });
 }
 
-async function fetchPlugins(target: import("../../runtime/Target.js").Target): Promise<PluginRow[]> {
+async function fetchPlugins(
+  target: import("../../runtime/Target.js").Target,
+): Promise<PluginRow[]> {
   try {
     const r = await target.wpCli(["plugin", "list", "--format=json"], {
       allowDestructive: false,
@@ -90,12 +117,17 @@ function findPlugin(plugins: PluginRow[], name: string): PluginRow | null {
   return plugins.find((p) => p.name === name) ?? null;
 }
 
-async function isDiviTheme(target: import("../../runtime/Target.js").Target): Promise<boolean> {
+async function isDiviTheme(
+  target: import("../../runtime/Target.js").Target,
+): Promise<boolean> {
   try {
-    const r = await target.wpCli(["theme", "list", "--status=active", "--format=json"], {
-      allowDestructive: false,
-      timeoutMs: 10_000,
-    });
+    const r = await target.wpCli(
+      ["theme", "list", "--status=active", "--format=json"],
+      {
+        allowDestructive: false,
+        timeoutMs: 10_000,
+      },
+    );
     if (r.exitCode !== 0) return false;
     const themes = JSON.parse(r.stdout.trim()) as Array<{ name: string }>;
     return themes.some((t) => /^Divi/i.test(t.name) || /divi/i.test(t.name));
@@ -104,9 +136,14 @@ async function isDiviTheme(target: import("../../runtime/Target.js").Target): Pr
   }
 }
 
-async function getWpVersion(target: import("../../runtime/Target.js").Target): Promise<string> {
+async function getWpVersion(
+  target: import("../../runtime/Target.js").Target,
+): Promise<string> {
   try {
-    const r = await target.wpCli(["core", "version"], { allowDestructive: false, timeoutMs: 10_000 });
+    const r = await target.wpCli(["core", "version"], {
+      allowDestructive: false,
+      timeoutMs: 10_000,
+    });
     return r.exitCode === 0 ? r.stdout.trim() : "unknown";
   } catch {
     return "unknown";

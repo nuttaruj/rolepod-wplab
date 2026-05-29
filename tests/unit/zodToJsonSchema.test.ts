@@ -8,9 +8,11 @@ import {
 
 describe("zodToJsonSchema", () => {
   it("converts a plain object to type:object", () => {
-    const s = zodToJsonSchema(z.object({ a: z.string(), b: z.number().optional() }));
+    const s = zodToJsonSchema(
+      z.object({ a: z.string(), b: z.number().optional() }),
+    );
     expect(s["type"]).toBe("object");
-    expect((s["required"] as string[])).toEqual(["a"]);
+    expect(s["required"] as string[]).toEqual(["a"]);
   });
 
   it("unwraps refine()/ZodEffects to the inner object (not {})", () => {
@@ -36,8 +38,14 @@ describe("zodToJsonSchema", () => {
   });
 
   it("converts a literal to an enum", () => {
-    expect(zodToJsonSchema(z.literal("set"))).toEqual({ type: "string", enum: ["set"] });
-    expect(zodToJsonSchema(z.literal(5))).toEqual({ type: "number", enum: [5] });
+    expect(zodToJsonSchema(z.literal("set"))).toEqual({
+      type: "string",
+      enum: ["set"],
+    });
+    expect(zodToJsonSchema(z.literal(5))).toEqual({
+      type: "number",
+      enum: [5],
+    });
   });
 
   // Regression: these two real tool schemas previously collapsed to `{}`

@@ -39,8 +39,10 @@ export async function wpChangesQueryHandler(
   const filters: Parameters<typeof bridge.queryChanges>[0] = {};
   if (input.category !== undefined) filters.category = input.category;
   if (input.applied !== undefined) filters.applied = input.applied;
-  if (input.since_minutes !== undefined) filters.sinceMinutes = input.since_minutes;
-  if (input.source_session !== undefined) filters.sourceSession = input.source_session;
+  if (input.since_minutes !== undefined)
+    filters.sinceMinutes = input.since_minutes;
+  if (input.source_session !== undefined)
+    filters.sourceSession = input.source_session;
   filters.limit = input.limit;
   const result = await bridge.queryChanges(filters);
 
@@ -60,10 +62,7 @@ export async function wpChangesQueryHandler(
 
       const ts = makeRunTimestamp();
       const { dir } = resolveEvidenceDir("wp-changes", ts);
-      writeFileSync(
-        join(dir, "diff.json"),
-        JSON.stringify(result, null, 2),
-      );
+      writeFileSync(join(dir, "diff.json"), JSON.stringify(result, null, 2));
       writeManifest(dir, {
         skill: "wp-changes",
         phase: "review",

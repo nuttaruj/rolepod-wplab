@@ -31,7 +31,8 @@ describe("renderTaskModulePhp", () => {
       title: "Hello World",
       description: "A demo task.",
       settings: [],
-      hooksBody: "if ( ! $this->is_enabled() ) return;\nadd_action('init', [$this, 'do_thing']);",
+      hooksBody:
+        "if ( ! $this->is_enabled() ) return;\nadd_action('init', [$this, 'do_thing']);",
     });
     expect(php).toContain("namespace Rolepod\\Custom\\Modules");
     expect(php).toContain("final class HelloWorldTask extends BaseTask");
@@ -60,8 +61,18 @@ describe("renderTaskModulePhp", () => {
       title: "Contact",
       description: "Contact info shortcode.",
       settings: [
-        { key: "email", type: "email", label: "Email address", default: "hello@example.com" },
-        { key: "show", type: "checkbox", label: "Show contact?", default: true },
+        {
+          key: "email",
+          type: "email",
+          label: "Email address",
+          default: "hello@example.com",
+        },
+        {
+          key: "show",
+          type: "checkbox",
+          label: "Show contact?",
+          default: true,
+        },
         {
           key: "tone",
           type: "select",
@@ -81,7 +92,9 @@ describe("renderTaskModulePhp", () => {
     expect(php).toContain("'default' => true");
     expect(php).toContain("'tone' =>");
     expect(php).toContain("'type' => 'select'");
-    expect(php).toContain("'options' => ['casual' => 'Casual', 'formal' => 'Formal']");
+    expect(php).toContain(
+      "'options' => ['casual' => 'Casual', 'formal' => 'Formal']",
+    );
     expect(php).toContain("add_shortcode('rc_contact', [$this, 'render']);");
   });
 

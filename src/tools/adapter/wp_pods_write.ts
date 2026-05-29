@@ -62,5 +62,9 @@ export async function wpPodsWriteHandler(
     sourceTool: "wp_pods_write",
   });
 
-  return { ok: true, post_id: input.post_id, written: Object.keys(input.meta).length };
+  return {
+    ok: true,
+    post_id: input.post_id,
+    written: Object.keys(input.meta).length,
+  };
 }

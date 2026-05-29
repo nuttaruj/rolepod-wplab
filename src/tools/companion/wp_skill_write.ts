@@ -26,8 +26,12 @@ export async function wpSkillWriteHandler(
     description: input.description,
     content: input.content,
     on_conflict: input.on_conflict,
-    ...(input.enable_agentic !== undefined ? { enable_agentic: input.enable_agentic } : {}),
-    ...(input.enable_prompt !== undefined ? { enable_prompt: input.enable_prompt } : {}),
+    ...(input.enable_agentic !== undefined
+      ? { enable_agentic: input.enable_agentic }
+      : {}),
+    ...(input.enable_prompt !== undefined
+      ? { enable_prompt: input.enable_prompt }
+      : {}),
   });
   return SkillWriteOutputSchema.parse(result);
 }

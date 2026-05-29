@@ -26,7 +26,8 @@ export async function wpCustomTaskToggleHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpCustomTaskToggleOutput> {
-  const input: WpCustomTaskToggleInput = WpCustomTaskToggleInputSchema.parse(raw);
+  const input: WpCustomTaskToggleInput =
+    WpCustomTaskToggleInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
 

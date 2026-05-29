@@ -93,7 +93,9 @@ export async function wpRenderGetHandler(
     total_bytes: sliced.totalBytes,
     returned_bytes: sliced.returnedBytes,
     truncated: sliced.truncated,
-    ...(sliced.matchedLines !== undefined ? { matched_lines: sliced.matchedLines } : {}),
+    ...(sliced.matchedLines !== undefined
+      ? { matched_lines: sliced.matchedLines }
+      : {}),
     content: sliced.content,
   });
 }

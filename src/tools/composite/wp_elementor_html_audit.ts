@@ -20,7 +20,8 @@ export async function wpElementorHtmlAuditHandler(
   registry: TargetRegistry,
   raw: unknown,
 ): Promise<WpElementorHtmlAuditOutput> {
-  const input: WpElementorHtmlAuditInput = WpElementorHtmlAuditInputSchema.parse(raw);
+  const input: WpElementorHtmlAuditInput =
+    WpElementorHtmlAuditInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (target.kind !== "rest") {
     throw new WplabError(
@@ -32,7 +33,9 @@ export async function wpElementorHtmlAuditHandler(
 
   const bridge = await bridgeFor(target);
   const exportResult = await bridge.elementorTemplateExport(input.post_id);
-  const sections = (exportResult["sections"] ?? []) as ReadonlyArray<Record<string, unknown>>;
+  const sections = (exportResult["sections"] ?? []) as ReadonlyArray<
+    Record<string, unknown>
+  >;
 
   const audit = auditElementorTree(sections);
 
@@ -47,9 +50,15 @@ export async function wpElementorHtmlAuditHandler(
     suggestions: audit.suggestions.map((s) => ({
       widget_id: s.widgetId,
       reason: s.reason,
-      ...(s.suggestedWidget !== undefined ? { suggested_widget: s.suggestedWidget } : {}),
-      ...(s.suggestedPattern !== undefined ? { suggested_pattern: s.suggestedPattern } : {}),
-      ...(s.fidelityRisk !== undefined ? { fidelity_risk: s.fidelityRisk } : {}),
+      ...(s.suggestedWidget !== undefined
+        ? { suggested_widget: s.suggestedWidget }
+        : {}),
+      ...(s.suggestedPattern !== undefined
+        ? { suggested_pattern: s.suggestedPattern }
+        : {}),
+      ...(s.fidelityRisk !== undefined
+        ? { fidelity_risk: s.fidelityRisk }
+        : {}),
       ...(s.wouldLose !== undefined ? { would_lose: s.wouldLose } : {}),
     })),
     lossy_widgets: audit.lossyWidgets,

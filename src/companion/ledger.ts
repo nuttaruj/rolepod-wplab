@@ -20,7 +20,15 @@ import type { Target } from "../runtime/Target.js";
  *   ROLEPOD_WPLAB_LEDGER=on (default in v1.6+) → record.
  */
 export interface ChangeRecord {
-  category: "hook" | "option" | "post" | "layout" | "file" | "plugin" | "theme" | "execute_php";
+  category:
+    | "hook"
+    | "option"
+    | "post"
+    | "layout"
+    | "file"
+    | "plugin"
+    | "theme"
+    | "execute_php";
   subcategory: string;
   targetDescriptor: string;
   beforeState?: unknown;

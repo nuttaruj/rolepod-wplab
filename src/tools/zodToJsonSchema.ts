@@ -67,14 +67,19 @@ export function zodToJsonSchema(schema: ZodTypeAny): Record<string, unknown> {
   // values, and require only the discriminator. Per-variant strictness is still
   // enforced by the Zod schema at parse time in the handler.
   if (schema instanceof z.ZodDiscriminatedUnion) {
-    const discriminator = (schema._def as { discriminator: string }).discriminator;
+    const discriminator = (schema._def as { discriminator: string })
+      .discriminator;
     const properties: Record<string, unknown> = {};
     const discValues: unknown[] = [];
     for (const opt of schema.options as z.ZodObject<z.ZodRawShape>[]) {
       const converted = zodToJsonSchema(opt);
-      Object.assign(properties, (converted["properties"] as Record<string, unknown>) ?? {});
+      Object.assign(
+        properties,
+        (converted["properties"] as Record<string, unknown>) ?? {},
+      );
       const discField = opt.shape[discriminator];
-      const litVal = (discField?._def as { value?: unknown } | undefined)?.value;
+      const litVal = (discField?._def as { value?: unknown } | undefined)
+        ?.value;
       if (litVal !== undefined) discValues.push(litVal);
     }
     if (discValues.length > 0) {

@@ -33,7 +33,10 @@ export const ALIAS_NAME_RE = /^[a-z][a-z0-9_-]{0,30}$/;
 const AliasSchema = z.object({
   alias: z
     .string()
-    .regex(ALIAS_NAME_RE, "alias must be lowercase letters/digits/_/- starting with a letter"),
+    .regex(
+      ALIAS_NAME_RE,
+      "alias must be lowercase letters/digits/_/- starting with a letter",
+    ),
   siteurl: z.string().url(),
   credential_ref: z.string().min(1),
   added_at: z.string(),
@@ -51,8 +54,7 @@ type Store = z.infer<typeof StoreSchema>;
 export function defaultAliasFilePath(): string {
   const override = process.env["ROLEPOD_WPLAB_ALIASES_FILE"];
   if (override) return override;
-  const base =
-    process.env["XDG_CONFIG_HOME"] ?? join(homedir(), ".config");
+  const base = process.env["XDG_CONFIG_HOME"] ?? join(homedir(), ".config");
   return join(base, "rolepod-wplab", "aliases.json");
 }
 
@@ -73,7 +75,9 @@ export class AliasStore {
     return s.aliases.find((a) => a.alias === alias) ?? null;
   }
 
-  async set(entry: Omit<AliasEntry, "added_at" | "last_used_at">): Promise<AliasEntry> {
+  async set(
+    entry: Omit<AliasEntry, "added_at" | "last_used_at">,
+  ): Promise<AliasEntry> {
     const now = new Date().toISOString();
     const next: AliasEntry = AliasSchema.parse({
       alias: entry.alias,

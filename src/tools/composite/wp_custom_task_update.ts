@@ -35,7 +35,8 @@ export async function wpCustomTaskUpdateHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpCustomTaskUpdateOutput> {
-  const input: WpCustomTaskUpdateInput = WpCustomTaskUpdateInputSchema.parse(raw);
+  const input: WpCustomTaskUpdateInput =
+    WpCustomTaskUpdateInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
   if (target.kind !== "rest") {
@@ -65,8 +66,7 @@ export async function wpCustomTaskUpdateHandler(
   const parsed = parseExistingModule(current.content);
 
   // Compose updated PHP. For omitted fields we keep the parsed-out original.
-  const updatedSettings =
-    input.settings ?? null;
+  const updatedSettings = input.settings ?? null;
 
   let php: string;
   if (
@@ -82,7 +82,9 @@ export async function wpCustomTaskUpdateHandler(
       description: input.description ?? parsed.description,
       settings: updatedSettings ?? [],
       hooksBody: input.hooks_body ?? parsed.hooksBody,
-      ...(input.extra_methods !== undefined ? { extraMethods: input.extra_methods } : {}),
+      ...(input.extra_methods !== undefined
+        ? { extraMethods: input.extra_methods }
+        : {}),
     });
   } else {
     return WpCustomTaskUpdateOutputSchema.parse({
@@ -117,10 +119,18 @@ export async function wpCustomTaskUpdateHandler(
 }
 
 function parseExistingModule(source: string): ParsedModule {
-  const idMatch = source.match(/public function id\(\): string\s*\{\s*return '([^']*)'/);
-  const titleMatch = source.match(/public function title\(\): string\s*\{\s*return '([^']*)'/);
-  const descMatch = source.match(/public function description\(\): string\s*\{\s*return '([^']*)'/);
-  const hooksMatch = source.match(/public function register_hooks\(\): void\s*\{\n([\s\S]*?)\n\t\}/);
+  const idMatch = source.match(
+    /public function id\(\): string\s*\{\s*return '([^']*)'/,
+  );
+  const titleMatch = source.match(
+    /public function title\(\): string\s*\{\s*return '([^']*)'/,
+  );
+  const descMatch = source.match(
+    /public function description\(\): string\s*\{\s*return '([^']*)'/,
+  );
+  const hooksMatch = source.match(
+    /public function register_hooks\(\): void\s*\{\n([\s\S]*?)\n\t\}/,
+  );
   return {
     taskId: idMatch?.[1] ?? "",
     title: titleMatch?.[1] ?? "",

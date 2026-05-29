@@ -27,8 +27,7 @@ export async function wpJetengineReadHandler(
   });
   const detected = Array.isArray(plugins.body)
     ? (plugins.body as Array<{ plugin?: string; status?: string }>).some(
-        (p) =>
-          (p.plugin ?? "").includes("jet-engine") && p.status === "active",
+        (p) => (p.plugin ?? "").includes("jet-engine") && p.status === "active",
       )
     : false;
 

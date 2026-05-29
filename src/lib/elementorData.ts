@@ -99,10 +99,16 @@ export async function writeElementorData(
   opts: { flush?: boolean } = {},
 ): Promise<{ bytesWritten: number; backupPath: string | null }> {
   requireMetaCapable(target, "writeElementorData");
-  const res = await replacePostMeta(target, postId, "_elementor_data", sections, {
-    backupPrefix: "elementor",
-    serialization: "json-string",
-  });
+  const res = await replacePostMeta(
+    target,
+    postId,
+    "_elementor_data",
+    sections,
+    {
+      backupPrefix: "elementor",
+      serialization: "json-string",
+    },
+  );
   if (opts.flush !== false) {
     await flushElementorCss(target);
   }

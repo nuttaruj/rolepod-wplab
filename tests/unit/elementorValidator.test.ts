@@ -5,13 +5,20 @@ import {
 } from "../../src/lib/elementorValidator.js";
 import type { Target } from "../../src/runtime/Target.js";
 
-function targetWithSchema(perWidget: Record<string, Record<string, { type: string }>>): Target {
+function targetWithSchema(
+  perWidget: Record<string, Record<string, { type: string }>>,
+): Target {
   return {
     id: "tgt_test1234",
     kind: "rest",
     siteurl: "https://example.com",
     wpVersion: "7.0",
-    companion: { installed: true, enabled: true, version: "2.11.0", capabilities: [] },
+    companion: {
+      installed: true,
+      enabled: true,
+      version: "2.11.0",
+      capabilities: [],
+    },
     rest: async (req) => {
       // Mock the handshake / session-token issue CompanionBridge runs
       // before every endpoint call.
@@ -30,9 +37,15 @@ function targetWithSchema(perWidget: Record<string, Record<string, { type: strin
       if (req.path !== "/wplab/v1/elementor/widget-schema") {
         return { status: 404, body: { code: "rest_no_route" }, headers: {} };
       }
-      const widget = (req.query as Record<string, unknown> | undefined)?.["widget"];
+      const widget = (req.query as Record<string, unknown> | undefined)?.[
+        "widget"
+      ];
       if (typeof widget !== "string" || !perWidget[widget]) {
-        return { status: 404, body: { ok: false, error_code: "WIDGET_NOT_FOUND" }, headers: {} };
+        return {
+          status: 404,
+          body: { ok: false, error_code: "WIDGET_NOT_FOUND" },
+          headers: {},
+        };
       }
       const controls: Record<string, { type: string }> = perWidget[widget]!;
       return {
@@ -49,7 +62,11 @@ function targetWithSchema(perWidget: Record<string, Record<string, { type: strin
     rootPath: () => "https://example.com",
     wpCli: async () => ({ exitCode: 0, stdout: "", stderr: "", durationMs: 0 }),
     fileRead: async () => ({ content: "", bytes: 0, absolutePath: "" }),
-    fileWrite: async () => ({ bytesWritten: 0, backupPath: null, absolutePath: "" }),
+    fileWrite: async () => ({
+      bytesWritten: 0,
+      backupPath: null,
+      absolutePath: "",
+    }),
     fileExists: async () => false,
     close: async () => {},
   } as unknown as Target;
@@ -160,7 +177,9 @@ describe("validateElementorData", () => {
     expect(lenient.warnings).toHaveLength(1);
     expect(lenient.warnings[0]!.setting_key).toBe("nonexistent_key");
 
-    const strict = await validateElementorData(target, sections, { strict: true });
+    const strict = await validateElementorData(target, sections, {
+      strict: true,
+    });
     expect(strict.ok).toBe(false);
     expect(strict.errors).toHaveLength(1);
     expect(strict.errors[0]!.setting_key).toBe("nonexistent_key");
@@ -203,7 +222,12 @@ describe("validateElementorData", () => {
           {
             elType: "column",
             elements: [
-              { elType: "widget", widgetType: "heading", id: "a", settings: { title: "x" } },
+              {
+                elType: "widget",
+                widgetType: "heading",
+                id: "a",
+                settings: { title: "x" },
+              },
               {
                 elType: "section",
                 isInner: true,
@@ -211,8 +235,18 @@ describe("validateElementorData", () => {
                   {
                     elType: "column",
                     elements: [
-                      { elType: "widget", widgetType: "counter", id: "b", settings: { ending_number: 7 } },
-                      { elType: "widget", widgetType: "button", id: "c", settings: { text: "Go" } },
+                      {
+                        elType: "widget",
+                        widgetType: "counter",
+                        id: "b",
+                        settings: { ending_number: 7 },
+                      },
+                      {
+                        elType: "widget",
+                        widgetType: "button",
+                        id: "c",
+                        settings: { text: "Go" },
+                      },
                     ],
                   },
                 ],
@@ -237,8 +271,18 @@ describe("validateElementorData", () => {
 describe("collectStructuralWarnings", () => {
   it("warns once about section-level _css_classes (aggregated)", () => {
     const sections = [
-      { id: "s1", elType: "section", settings: { _css_classes: "wnz-hero" }, elements: [] },
-      { id: "s2", elType: "section", settings: { _css_classes: "wnz-services" }, elements: [] },
+      {
+        id: "s1",
+        elType: "section",
+        settings: { _css_classes: "wnz-hero" },
+        elements: [],
+      },
+      {
+        id: "s2",
+        elType: "section",
+        settings: { _css_classes: "wnz-services" },
+        elements: [],
+      },
       { id: "s3", elType: "section", settings: {}, elements: [] },
     ];
     const w = collectStructuralWarnings(sections);
@@ -249,7 +293,9 @@ describe("collectStructuralWarnings", () => {
   });
 
   it("does not warn when no section sets _css_classes", () => {
-    const sections = [{ id: "s1", elType: "section", settings: {}, elements: [] }];
+    const sections = [
+      { id: "s1", elType: "section", settings: {}, elements: [] },
+    ];
     expect(collectStructuralWarnings(sections)).toHaveLength(0);
   });
 
@@ -263,7 +309,9 @@ describe("collectStructuralWarnings", () => {
             id: "w1",
             elType: "widget",
             widgetType: "icon-box",
-            settings: { description_text: "<span>ok</span><ul><li>x</li></ul>" },
+            settings: {
+              description_text: "<span>ok</span><ul><li>x</li></ul>",
+            },
           },
         ],
       },
@@ -303,7 +351,12 @@ describe("collectStructuralWarnings", () => {
             id: "col",
             elType: "column",
             elements: [
-              { id: "inner", elType: "section", settings: { _css_classes: "wnz-svc-grid" }, elements: [] },
+              {
+                id: "inner",
+                elType: "section",
+                settings: { _css_classes: "wnz-svc-grid" },
+                elements: [],
+              },
             ],
           },
         ],

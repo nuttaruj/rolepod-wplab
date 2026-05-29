@@ -72,10 +72,13 @@ export const rankmathAdapter: Adapter<RankMathReadAPI> = {
           map[String(row["meta_key"] ?? "")] = String(row["meta_value"] ?? "");
         }
         const out: RankMathPostMeta = { post_id: postId };
-        if (map["rank_math_focus_keyword"]) out.focus_keyword = map["rank_math_focus_keyword"];
-        if (map["rank_math_description"]) out.meta_description = map["rank_math_description"];
+        if (map["rank_math_focus_keyword"])
+          out.focus_keyword = map["rank_math_focus_keyword"];
+        if (map["rank_math_description"])
+          out.meta_description = map["rank_math_description"];
         if (map["rank_math_title"]) out.title = map["rank_math_title"];
-        if (map["rank_math_canonical_url"]) out.canonical = map["rank_math_canonical_url"];
+        if (map["rank_math_canonical_url"])
+          out.canonical = map["rank_math_canonical_url"];
         return out;
       }
       if (

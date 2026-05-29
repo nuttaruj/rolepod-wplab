@@ -29,7 +29,8 @@ export async function wpElementorRestoreHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpElementorRestoreOutput> {
-  const input: WpElementorRestoreInput = WpElementorRestoreInputSchema.parse(raw);
+  const input: WpElementorRestoreInput =
+    WpElementorRestoreInputSchema.parse(raw);
   const target = registry.get(input.target_id);
 
   if (input.action === "list") {

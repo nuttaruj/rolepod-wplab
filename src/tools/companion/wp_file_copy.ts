@@ -33,7 +33,9 @@ export async function wpFileCopyHandler(
     );
   }
   const bridge = await bridgeFor(target);
-  const r = await bridge.fileCopy(input.from, input.to, { overwrite: input.overwrite });
+  const r = await bridge.fileCopy(input.from, input.to, {
+    overwrite: input.overwrite,
+  });
   await recordChange(target, {
     category: "file",
     subcategory: input.to,
@@ -43,5 +45,9 @@ export async function wpFileCopyHandler(
     reversible: false,
     sourceTool: "wp_file_copy",
   });
-  return WpFileCopyOutputSchema.parse({ from: r.from, to: r.to, bytes: r.bytes });
+  return WpFileCopyOutputSchema.parse({
+    from: r.from,
+    to: r.to,
+    bytes: r.bytes,
+  });
 }

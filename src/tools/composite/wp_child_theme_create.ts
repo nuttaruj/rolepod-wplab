@@ -54,7 +54,8 @@ export async function wpChildThemeCreateHandler(
 
   const childName = input.name ?? `${parentName} — Rolepod child`;
   const childDescription =
-    input.description ?? `Child theme of ${parentName}, scaffolded by rolepod-wplab.`;
+    input.description ??
+    `Child theme of ${parentName}, scaffolded by rolepod-wplab.`;
 
   // 2. Refuse if child already exists.
   const childRootStyle = `wp-content/themes/${input.child_slug}/style.css`;

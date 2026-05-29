@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { sliceContent } from "../../src/lib/contentSlice.js";
 
-const SAMPLE = ["alpha", "beta", "GAMMA", "delta", "beta-two", "omega"].join("\n");
+const SAMPLE = ["alpha", "beta", "GAMMA", "delta", "beta-two", "omega"].join(
+  "\n",
+);
 
 describe("sliceContent", () => {
   it("returns full content unsliced when no opts", () => {

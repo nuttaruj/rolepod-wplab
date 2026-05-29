@@ -49,7 +49,8 @@ export async function wpElementorSectionHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpElementorSectionOutput> {
-  const input: WpElementorSectionInput = WpElementorSectionInputSchema.parse(raw);
+  const input: WpElementorSectionInput =
+    WpElementorSectionInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   const isMutation = input.action !== "get";
 
@@ -79,7 +80,11 @@ export async function wpElementorSectionHandler(
   }
 
   const sections = await readElementorData(target, input.post_id);
-  const idxs = matchSectionIndices(sections, input.section_id, input.match_class);
+  const idxs = matchSectionIndices(
+    sections,
+    input.section_id,
+    input.match_class,
+  );
   const matchedIds = idxs.map((i) => sections[i]!.id ?? "<no-id>");
 
   // ---- get: read-only ----
@@ -97,10 +102,14 @@ export async function wpElementorSectionHandler(
   // ---- delete ----
   if (input.action === "delete") {
     if (idxs.length === 0) {
-      throw new WplabError("ELEMENTOR_SECTION_NOT_FOUND", "no section matched", {
-        section_id: input.section_id,
-        match_class: input.match_class,
-      });
+      throw new WplabError(
+        "ELEMENTOR_SECTION_NOT_FOUND",
+        "no section matched",
+        {
+          section_id: input.section_id,
+          match_class: input.match_class,
+        },
+      );
     }
     const next = sections.filter((_, i) => !idxs.includes(i));
     const res = await writeElementorData(target, input.post_id, next);
@@ -165,7 +174,11 @@ export async function wpElementorSectionHandler(
       );
     }
     const anchor = idxs[0]!;
-    next.splice(input.position === "before" ? anchor : anchor + 1, 0, newSection);
+    next.splice(
+      input.position === "before" ? anchor : anchor + 1,
+      0,
+      newSection,
+    );
   }
   const res = await writeElementorData(target, input.post_id, next);
   return WpElementorSectionOutputSchema.parse({

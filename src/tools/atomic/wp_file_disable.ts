@@ -48,5 +48,10 @@ export async function wpFileDisableHandler(
     sourceTool: "wp_file_disable",
   });
 
-  return { ok: true, src: result.src, dest: result.dest, audit_id: result.auditId };
+  return {
+    ok: true,
+    src: result.src,
+    dest: result.dest,
+    audit_id: result.auditId,
+  };
 }

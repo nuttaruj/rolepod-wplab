@@ -28,7 +28,9 @@ export async function wpFileEnableHandler(
 
   // Accept either the .disabled path OR the live path (we'll resolve to the
   // .disabled form). Reject paths that look like neither.
-  const src = input.path.endsWith(".disabled") ? input.path : input.path + ".disabled";
+  const src = input.path.endsWith(".disabled")
+    ? input.path
+    : input.path + ".disabled";
   const dest = src.replace(/\.disabled$/, "");
 
   if (src === dest) {
@@ -52,5 +54,10 @@ export async function wpFileEnableHandler(
     sourceTool: "wp_file_enable",
   });
 
-  return { ok: true, src: result.src, dest: result.dest, audit_id: result.auditId };
+  return {
+    ok: true,
+    src: result.src,
+    dest: result.dest,
+    audit_id: result.auditId,
+  };
 }

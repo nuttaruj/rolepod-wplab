@@ -114,9 +114,7 @@ return ['action' => 'created', 'post_id' => (int) $new_id, 'theme' => $styleshee
     category: "theme",
     subcategory: `global-styles:${rv.theme}`,
     targetDescriptor: `global styles ${rv.action} for theme ${rv.theme}`,
-    beforeState: rv.previous_content
-      ? { content: rv.previous_content }
-      : null,
+    beforeState: rv.previous_content ? { content: rv.previous_content } : null,
     afterState: { content_preview: stylesEncoded.slice(0, 200) },
     reversible: rv.action === "updated", // can re-set previous content
     sourceTool: "wp_global_styles_set",

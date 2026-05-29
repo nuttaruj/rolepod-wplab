@@ -23,22 +23,28 @@ describe("isBootstrapPath", () => {
 
   it("does not match arbitrary inc / assets / templates", () => {
     expect(isBootstrapPath("wp-content/themes/x/inc/setup.php")).toBe(false);
-    expect(isBootstrapPath("wp-content/themes/x/assets/walnut.css")).toBe(false);
-    expect(isBootstrapPath("wp-content/themes/x/template-parts/header/site-header.php")).toBe(false);
+    expect(isBootstrapPath("wp-content/themes/x/assets/walnut.css")).toBe(
+      false,
+    );
+    expect(
+      isBootstrapPath(
+        "wp-content/themes/x/template-parts/header/site-header.php",
+      ),
+    ).toBe(false);
   });
 });
 
 describe("resolveRequirePath", () => {
   it("resolves quoted-only relative require", () => {
-    expect(
-      resolveRequirePath("wp-content/themes/x", "inc/setup.php"),
-    ).toBe("wp-content/themes/x/inc/setup.php");
+    expect(resolveRequirePath("wp-content/themes/x", "inc/setup.php")).toBe(
+      "wp-content/themes/x/inc/setup.php",
+    );
   });
 
   it("resolves __DIR__ . '/inc/setup.php' style (leading slash literal)", () => {
-    expect(
-      resolveRequirePath("wp-content/themes/x", "/inc/setup.php"),
-    ).toBe("wp-content/themes/x/inc/setup.php");
+    expect(resolveRequirePath("wp-content/themes/x", "/inc/setup.php")).toBe(
+      "wp-content/themes/x/inc/setup.php",
+    );
   });
 
   it("collapses ../ segments", () => {

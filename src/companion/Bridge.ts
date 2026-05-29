@@ -267,7 +267,10 @@ export class CompanionBridge {
         body: {
           session_token: fresh.session_token,
           args: [...args],
-          timeout_seconds: Math.min(120, Math.max(1, opts.timeoutSeconds ?? 30)),
+          timeout_seconds: Math.min(
+            120,
+            Math.max(1, opts.timeoutSeconds ?? 30),
+          ),
         },
       });
       return this.coerceWpCliResponse(
@@ -327,7 +330,13 @@ export class CompanionBridge {
     status: number,
     body: unknown,
     durationMs: number,
-  ): { exitCode: number; stdout: string; stderr: string; durationMs: number; auditId: string } {
+  ): {
+    exitCode: number;
+    stdout: string;
+    stderr: string;
+    durationMs: number;
+    auditId: string;
+  } {
     const b = (body ?? {}) as {
       ok?: boolean;
       exit_code?: number;
@@ -469,7 +478,11 @@ export class CompanionBridge {
       backup?: boolean;
       confirmUnsafePath?: boolean;
     } = {},
-  ): Promise<{ bytesWritten: number; backupPath: string | null; absolutePath: string }> {
+  ): Promise<{
+    bytesWritten: number;
+    backupPath: string | null;
+    absolutePath: string;
+  }> {
     const token = await this.ensureFreshToken();
     const body = {
       session_token: token,
@@ -565,21 +578,28 @@ export class CompanionBridge {
         { status: res.status },
       );
     }
-    return { auditId: ((res.body ?? {}) as { audit_id?: string }).audit_id ?? "" };
+    return {
+      auditId: ((res.body ?? {}) as { audit_id?: string }).audit_id ?? "",
+    };
   }
 
-  async queryChanges(filters: {
-    category?: string;
-    applied?: boolean;
-    sinceMinutes?: number;
-    sourceSession?: string;
-    limit?: number;
-  } = {}): Promise<{ count: number; rows: Array<Record<string, unknown>> }> {
+  async queryChanges(
+    filters: {
+      category?: string;
+      applied?: boolean;
+      sinceMinutes?: number;
+      sourceSession?: string;
+      limit?: number;
+    } = {},
+  ): Promise<{ count: number; rows: Array<Record<string, unknown>> }> {
     const token = await this.ensureFreshToken();
-    const query: Record<string, string | number | boolean> = { session_token: token };
+    const query: Record<string, string | number | boolean> = {
+      session_token: token,
+    };
     if (filters.category) query["category"] = filters.category;
     if (filters.applied !== undefined) query["applied"] = filters.applied;
-    if (filters.sinceMinutes !== undefined) query["since_minutes"] = filters.sinceMinutes;
+    if (filters.sinceMinutes !== undefined)
+      query["since_minutes"] = filters.sinceMinutes;
     if (filters.sourceSession) query["source_session"] = filters.sourceSession;
     if (filters.limit !== undefined) query["limit"] = filters.limit;
 
@@ -595,7 +615,10 @@ export class CompanionBridge {
         { status: res.status },
       );
     }
-    const b = (res.body ?? {}) as { count?: number; rows?: Array<Record<string, unknown>> };
+    const b = (res.body ?? {}) as {
+      count?: number;
+      rows?: Array<Record<string, unknown>>;
+    };
     return { count: b.count ?? 0, rows: b.rows ?? [] };
   }
 
@@ -616,7 +639,10 @@ export class CompanionBridge {
     return res.body;
   }
 
-  async toggleChangesBulk(ids: readonly number[], applied: boolean): Promise<unknown> {
+  async toggleChangesBulk(
+    ids: readonly number[],
+    applied: boolean,
+  ): Promise<unknown> {
     const token = await this.ensureFreshToken();
     const res = await this.target.rest({
       method: "POST",
@@ -715,7 +741,10 @@ export class CompanionBridge {
       body: { session_token: token, stylesheet },
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `THEME_SNAPSHOT_HTTP_${res.status}`,
         b.error_message ?? `theme snapshot returned HTTP ${res.status}`,
@@ -760,7 +789,10 @@ export class CompanionBridge {
       body,
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `ONE_TIME_LOGIN_HTTP_${res.status}`,
         b.error_message ?? `one-time login mint returned HTTP ${res.status}`,
@@ -785,7 +817,10 @@ export class CompanionBridge {
    * Rename a file via companion `/fs-rename`. Used by wp_file_disable +
    * wp_file_enable to toggle a file by suffixing `.disabled`.
    */
-  async fsRename(src: string, dest: string): Promise<{ src: string; dest: string; auditId: string }> {
+  async fsRename(
+    src: string,
+    dest: string,
+  ): Promise<{ src: string; dest: string; auditId: string }> {
     const token = await this.ensureFreshToken();
     const res = await this.target.rest({
       method: "POST",
@@ -793,14 +828,21 @@ export class CompanionBridge {
       body: { session_token: token, src, dest },
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `FS_RENAME_HTTP_${res.status}`,
         b.error_message ?? `fs-rename returned HTTP ${res.status}`,
         { status: res.status, src, dest },
       );
     }
-    const b = (res.body ?? {}) as { src?: string; dest?: string; audit_id?: string };
+    const b = (res.body ?? {}) as {
+      src?: string;
+      dest?: string;
+      audit_id?: string;
+    };
     return {
       src: b.src ?? src,
       dest: b.dest ?? dest,
@@ -822,7 +864,11 @@ export class CompanionBridge {
   async dbQuery(
     sql: string,
     params?: ReadonlyArray<string | number>,
-  ): Promise<{ rows: Array<Record<string, unknown>>; count: number; auditId: string }> {
+  ): Promise<{
+    rows: Array<Record<string, unknown>>;
+    count: number;
+    auditId: string;
+  }> {
     const token = await this.ensureFreshToken();
     const body: Record<string, unknown> = { session_token: token, sql };
     if (params !== undefined) body["params"] = params;
@@ -832,7 +878,10 @@ export class CompanionBridge {
       body,
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `DB_QUERY_HTTP_${res.status}`,
         b.error_message ?? `db-query returned HTTP ${res.status}`,
@@ -885,7 +934,10 @@ export class CompanionBridge {
       body,
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `OPTION_SET_HTTP_${res.status}`,
         b.error_message ?? `option-set returned HTTP ${res.status}`,
@@ -921,14 +973,21 @@ export class CompanionBridge {
       body,
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `OPTION_GET_HTTP_${res.status}`,
         b.error_message ?? `option-get returned HTTP ${res.status}`,
         { status: res.status, name },
       );
     }
-    const b = (res.body ?? {}) as { name?: string; value?: unknown; exists?: boolean };
+    const b = (res.body ?? {}) as {
+      name?: string;
+      value?: unknown;
+      exists?: boolean;
+    };
     return {
       name: b.name ?? name,
       value: b.value ?? null,
@@ -1030,7 +1089,9 @@ export class CompanionBridge {
     };
   }
 
-  async recoveryDisableFile(path: string): Promise<{ src: string; dest: string }> {
+  async recoveryDisableFile(
+    path: string,
+  ): Promise<{ src: string; dest: string }> {
     const res = await this.target.rest({
       method: "POST",
       path: "/wplab-recovery/v1/disable-file",
@@ -1048,7 +1109,9 @@ export class CompanionBridge {
     return { src: b.src ?? path, dest: b.dest ?? `${path}.disabled` };
   }
 
-  async recoveryRestoreFile(path: string): Promise<{ src: string; dest: string }> {
+  async recoveryRestoreFile(
+    path: string,
+  ): Promise<{ src: string; dest: string }> {
     const res = await this.target.rest({
       method: "POST",
       path: "/wplab-recovery/v1/restore-file",
@@ -1077,10 +1140,14 @@ export class CompanionBridge {
       body: { snapshot_path: snapshotPath },
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `RECOVERY_RESTORE_SNAPSHOT_HTTP_${res.status}`,
-        b.error_message ?? `recovery restore-snapshot returned HTTP ${res.status}`,
+        b.error_message ??
+          `recovery restore-snapshot returned HTTP ${res.status}`,
         { status: res.status, snapshotPath },
       );
     }
@@ -1150,7 +1217,10 @@ export class CompanionBridge {
       body: { session_token: token, snapshot_path: snapshotPath },
     });
     if (res.status < 200 || res.status >= 300) {
-      const b = (res.body ?? {}) as { error_code?: string; error_message?: string };
+      const b = (res.body ?? {}) as {
+        error_code?: string;
+        error_message?: string;
+      };
       throw new WplabError(
         b.error_code ?? `THEME_RESTORE_HTTP_${res.status}`,
         b.error_message ?? `theme restore returned HTTP ${res.status}`,
@@ -1181,8 +1251,17 @@ export class CompanionBridge {
     opts: { skipPhpLint?: boolean } = {},
   ): Promise<{
     batchId: string;
-    written: Array<{ path: string; absolutePath: string; bytesWritten: number; backupPath: string | null }>;
-    preflight: { phpLintRan: boolean; requireChainRan: boolean; entriesScanned: number };
+    written: Array<{
+      path: string;
+      absolutePath: string;
+      bytesWritten: number;
+      backupPath: string | null;
+    }>;
+    preflight: {
+      phpLintRan: boolean;
+      requireChainRan: boolean;
+      entriesScanned: number;
+    };
   }> {
     const token = await this.ensureFreshToken();
     const body = {
@@ -1212,32 +1291,61 @@ export class CompanionBridge {
     return this.coerceBatchResponse(res.status, res.body);
   }
 
-  private coerceBatchResponse(status: number, body: unknown): {
+  private coerceBatchResponse(
+    status: number,
+    body: unknown,
+  ): {
     batchId: string;
-    written: Array<{ path: string; absolutePath: string; bytesWritten: number; backupPath: string | null }>;
-    preflight: { phpLintRan: boolean; requireChainRan: boolean; entriesScanned: number };
+    written: Array<{
+      path: string;
+      absolutePath: string;
+      bytesWritten: number;
+      backupPath: string | null;
+    }>;
+    preflight: {
+      phpLintRan: boolean;
+      requireChainRan: boolean;
+      entriesScanned: number;
+    };
   } {
     const b = (body ?? {}) as Record<string, unknown>;
     if (status >= 200 && status < 300 && b["ok"] === true) {
-      const writtenRaw = Array.isArray(b["written"]) ? (b["written"] as Array<Record<string, unknown>>) : [];
+      const writtenRaw = Array.isArray(b["written"])
+        ? (b["written"] as Array<Record<string, unknown>>)
+        : [];
       const pre = (b["preflight"] as Record<string, unknown> | undefined) ?? {};
       return {
-        batchId: typeof b["batch_id"] === "string" ? (b["batch_id"] as string) : "",
+        batchId:
+          typeof b["batch_id"] === "string" ? (b["batch_id"] as string) : "",
         written: writtenRaw.map((w) => ({
           path: typeof w["path"] === "string" ? (w["path"] as string) : "",
-          absolutePath: typeof w["absolute_path"] === "string" ? (w["absolute_path"] as string) : "",
-          bytesWritten: typeof w["bytes_written"] === "number" ? (w["bytes_written"] as number) : 0,
-          backupPath: typeof w["backup_path"] === "string" ? (w["backup_path"] as string) : null,
+          absolutePath:
+            typeof w["absolute_path"] === "string"
+              ? (w["absolute_path"] as string)
+              : "",
+          bytesWritten:
+            typeof w["bytes_written"] === "number"
+              ? (w["bytes_written"] as number)
+              : 0,
+          backupPath:
+            typeof w["backup_path"] === "string"
+              ? (w["backup_path"] as string)
+              : null,
         })),
         preflight: {
           phpLintRan: !!pre["php_lint_ran"],
           requireChainRan: !!pre["require_chain_ran"],
-          entriesScanned: typeof pre["entries_scanned"] === "number" ? (pre["entries_scanned"] as number) : 0,
+          entriesScanned:
+            typeof pre["entries_scanned"] === "number"
+              ? (pre["entries_scanned"] as number)
+              : 0,
         },
       };
     }
     throw new WplabError(
-      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_WRITE_BATCH_HTTP_${status}`,
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `FS_WRITE_BATCH_HTTP_${status}`,
       typeof b["error_message"] === "string"
         ? (b["error_message"] as string)
         : `fs-write-batch via companion returned HTTP ${status}`,
@@ -1251,7 +1359,9 @@ export class CompanionBridge {
     );
   }
 
-  async dirEnsure(path: string): Promise<{ path: string; absolutePath: string; created: boolean }> {
+  async dirEnsure(
+    path: string,
+  ): Promise<{ path: string; absolutePath: string; created: boolean }> {
     const token = await this.ensureFreshToken();
     const res = await this.target.rest({
       method: "POST",
@@ -1262,13 +1372,20 @@ export class CompanionBridge {
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
       return {
         path: typeof b["path"] === "string" ? (b["path"] as string) : path,
-        absolutePath: typeof b["absolute_path"] === "string" ? (b["absolute_path"] as string) : "",
+        absolutePath:
+          typeof b["absolute_path"] === "string"
+            ? (b["absolute_path"] as string)
+            : "",
         created: !!b["created"],
       };
     }
     throw new WplabError(
-      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `DIR_ENSURE_HTTP_${res.status}`,
-      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `dir-ensure HTTP ${res.status}`,
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `DIR_ENSURE_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `dir-ensure HTTP ${res.status}`,
       { status: res.status },
     );
   }
@@ -1282,7 +1399,12 @@ export class CompanionBridge {
     const res = await this.target.rest({
       method: "POST",
       path: "/wplab/v1/fs-copy",
-      body: { session_token: token, from, to, overwrite: opts.overwrite ?? false },
+      body: {
+        session_token: token,
+        from,
+        to,
+        overwrite: opts.overwrite ?? false,
+      },
     });
     const b = (res.body ?? {}) as Record<string, unknown>;
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
@@ -1293,8 +1415,12 @@ export class CompanionBridge {
       };
     }
     throw new WplabError(
-      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_COPY_HTTP_${res.status}`,
-      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `fs-copy HTTP ${res.status}`,
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `FS_COPY_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `fs-copy HTTP ${res.status}`,
       { status: res.status },
     );
   }
@@ -1304,7 +1430,13 @@ export class CompanionBridge {
     opts: { depth?: number; includeHidden?: boolean } = {},
   ): Promise<{
     root: string;
-    entries: Array<{ path: string; type: "file" | "dir"; bytes: number; mtime: number; depth: number }>;
+    entries: Array<{
+      path: string;
+      type: "file" | "dir";
+      bytes: number;
+      mtime: number;
+      depth: number;
+    }>;
     truncated: boolean;
   }> {
     const token = await this.ensureFreshToken();
@@ -1320,7 +1452,9 @@ export class CompanionBridge {
     });
     const b = (res.body ?? {}) as Record<string, unknown>;
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
-      const rawEntries = Array.isArray(b["entries"]) ? (b["entries"] as Array<Record<string, unknown>>) : [];
+      const rawEntries = Array.isArray(b["entries"])
+        ? (b["entries"] as Array<Record<string, unknown>>)
+        : [];
       return {
         root: typeof b["root"] === "string" ? (b["root"] as string) : path,
         entries: rawEntries.map((e) => ({
@@ -1334,15 +1468,23 @@ export class CompanionBridge {
       };
     }
     throw new WplabError(
-      typeof b["error_code"] === "string" ? (b["error_code"] as string) : `FS_LIST_HTTP_${res.status}`,
-      typeof b["error_message"] === "string" ? (b["error_message"] as string) : `fs-list HTTP ${res.status}`,
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `FS_LIST_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `fs-list HTTP ${res.status}`,
       { status: res.status },
     );
   }
 
-  async elementorWidgetSchema(widget?: string): Promise<Record<string, unknown>> {
+  async elementorWidgetSchema(
+    widget?: string,
+  ): Promise<Record<string, unknown>> {
     const token = await this.ensureFreshToken();
-    const query: Record<string, string | number | boolean> = { session_token: token };
+    const query: Record<string, string | number | boolean> = {
+      session_token: token,
+    };
     if (widget !== undefined && widget !== "") query["widget"] = widget;
     const res = await this.target.rest({
       method: "GET",
@@ -1364,7 +1506,9 @@ export class CompanionBridge {
     );
   }
 
-  async elementorTemplateExport(postId: number): Promise<Record<string, unknown>> {
+  async elementorTemplateExport(
+    postId: number,
+  ): Promise<Record<string, unknown>> {
     const token = await this.ensureFreshToken();
     const res = await this.target.rest({
       method: "GET",
@@ -1392,20 +1536,37 @@ export class CompanionBridge {
     postId: number,
     widgetId: string,
     attrs: Record<string, string>,
-  ): Promise<{ postId: number; widgetId: string; attrsNow: Record<string, string>; widgetsTotal: number }> {
+  ): Promise<{
+    postId: number;
+    widgetId: string;
+    attrsNow: Record<string, string>;
+    widgetsTotal: number;
+  }> {
     const token = await this.ensureFreshToken();
     const res = await this.target.rest({
       method: "POST",
       path: "/wplab/v1/elementor/widget-attribute",
-      body: { session_token: token, post_id: postId, widget_id: widgetId, attrs },
+      body: {
+        session_token: token,
+        post_id: postId,
+        widget_id: widgetId,
+        attrs,
+      },
     });
     const b = (res.body ?? {}) as Record<string, unknown>;
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
       return {
-        postId: typeof b["post_id"] === "number" ? (b["post_id"] as number) : postId,
-        widgetId: typeof b["widget_id"] === "string" ? (b["widget_id"] as string) : widgetId,
+        postId:
+          typeof b["post_id"] === "number" ? (b["post_id"] as number) : postId,
+        widgetId:
+          typeof b["widget_id"] === "string"
+            ? (b["widget_id"] as string)
+            : widgetId,
         attrsNow: (b["attrs_now"] ?? {}) as Record<string, string>,
-        widgetsTotal: typeof b["widgets_total"] === "number" ? (b["widgets_total"] as number) : 0,
+        widgetsTotal:
+          typeof b["widgets_total"] === "number"
+            ? (b["widgets_total"] as number)
+            : 0,
       };
     }
     throw new WplabError(
@@ -1424,7 +1585,11 @@ export class CompanionBridge {
     sections: ReadonlyArray<Record<string, unknown>>;
     replaceStrings?: Record<string, string>;
     overwrite?: boolean;
-  }): Promise<{ targetPostId: number; sectionCount: number; replacementsApplied: number }> {
+  }): Promise<{
+    targetPostId: number;
+    sectionCount: number;
+    replacementsApplied: number;
+  }> {
     const token = await this.ensureFreshToken();
     const body: Record<string, unknown> = {
       session_token: token,
@@ -1443,9 +1608,18 @@ export class CompanionBridge {
     const b = (res.body ?? {}) as Record<string, unknown>;
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
       return {
-        targetPostId: typeof b["target_post_id"] === "number" ? (b["target_post_id"] as number) : input.targetPostId,
-        sectionCount: typeof b["section_count"] === "number" ? (b["section_count"] as number) : 0,
-        replacementsApplied: typeof b["replacements_applied"] === "number" ? (b["replacements_applied"] as number) : 0,
+        targetPostId:
+          typeof b["target_post_id"] === "number"
+            ? (b["target_post_id"] as number)
+            : input.targetPostId,
+        sectionCount:
+          typeof b["section_count"] === "number"
+            ? (b["section_count"] as number)
+            : 0,
+        replacementsApplied:
+          typeof b["replacements_applied"] === "number"
+            ? (b["replacements_applied"] as number)
+            : 0,
       };
     }
     throw new WplabError(
@@ -1488,11 +1662,17 @@ export class CompanionBridge {
         jobId: typeof b["job_id"] === "string" ? (b["job_id"] as string) : "",
         pid: typeof b["pid"] === "number" ? (b["pid"] as number) : 0,
         log: {
-          stdout: typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
-          stderr: typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
+          stdout:
+            typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
+          stderr:
+            typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
         },
-        startedAt: typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
-        ttlSeconds: typeof b["ttl_seconds"] === "number" ? (b["ttl_seconds"] as number) : 3600,
+        startedAt:
+          typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
+        ttlSeconds:
+          typeof b["ttl_seconds"] === "number"
+            ? (b["ttl_seconds"] as number)
+            : 3600,
       };
     }
     throw new WplabError(
@@ -1530,7 +1710,8 @@ export class CompanionBridge {
     const b = (res.body ?? {}) as Record<string, unknown>;
     if (res.status >= 200 && res.status < 300 && b["ok"] === true) {
       const log = (b["log"] ?? {}) as Record<string, unknown>;
-      const state = typeof b["state"] === "string" ? (b["state"] as string) : "unknown";
+      const state =
+        typeof b["state"] === "string" ? (b["state"] as string) : "unknown";
       const out: {
         jobId: string;
         pid: number;
@@ -1543,24 +1724,36 @@ export class CompanionBridge {
         log: { stdout: string; stderr: string };
         exitCode?: number;
       } = {
-        jobId: typeof b["job_id"] === "string" ? (b["job_id"] as string) : jobId,
+        jobId:
+          typeof b["job_id"] === "string" ? (b["job_id"] as string) : jobId,
         pid: typeof b["pid"] === "number" ? (b["pid"] as number) : 0,
         args: Array.isArray(b["args"]) ? (b["args"] as string[]) : [],
-        startedAt: typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
-        state: (["running", "completed", "failed", "unknown"].includes(state) ? state : "unknown") as
-          | "running"
-          | "completed"
-          | "failed"
-          | "unknown",
-        elapsedSeconds: typeof b["elapsed_seconds"] === "number" ? (b["elapsed_seconds"] as number) : 0,
-        stdoutTail: typeof b["stdout_tail"] === "string" ? (b["stdout_tail"] as string) : "",
-        stderrTail: typeof b["stderr_tail"] === "string" ? (b["stderr_tail"] as string) : "",
+        startedAt:
+          typeof b["started_at"] === "number" ? (b["started_at"] as number) : 0,
+        state: (["running", "completed", "failed", "unknown"].includes(state)
+          ? state
+          : "unknown") as "running" | "completed" | "failed" | "unknown",
+        elapsedSeconds:
+          typeof b["elapsed_seconds"] === "number"
+            ? (b["elapsed_seconds"] as number)
+            : 0,
+        stdoutTail:
+          typeof b["stdout_tail"] === "string"
+            ? (b["stdout_tail"] as string)
+            : "",
+        stderrTail:
+          typeof b["stderr_tail"] === "string"
+            ? (b["stderr_tail"] as string)
+            : "",
         log: {
-          stdout: typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
-          stderr: typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
+          stdout:
+            typeof log["stdout"] === "string" ? (log["stdout"] as string) : "",
+          stderr:
+            typeof log["stderr"] === "string" ? (log["stderr"] as string) : "",
         },
       };
-      if (typeof b["exit_code"] === "number") out.exitCode = b["exit_code"] as number;
+      if (typeof b["exit_code"] === "number")
+        out.exitCode = b["exit_code"] as number;
       return out;
     }
     throw new WplabError(
@@ -1590,7 +1783,11 @@ export class CompanionBridge {
    * (suggested_slug, warnings, …) through to the agent so it can self-correct
    * without a second probe round-trip.
    */
-  private skillError(status: number, body: unknown, prefix: string): WplabError {
+  private skillError(
+    status: number,
+    body: unknown,
+    prefix: string,
+  ): WplabError {
     const b = (body ?? {}) as Record<string, unknown>;
     const { ok: _ok, error_code, error_message, ...rest } = b;
     return new WplabError(
@@ -1605,8 +1802,14 @@ export class CompanionBridge {
   /** Discovery view — slug + description + flags, no bodies. */
   async skillCatalog(): Promise<SkillCatalogEntry[]> {
     this.requireSkills();
-    const res = await this.target.rest({ method: "GET", path: "/wplab/v1/skills" });
-    const b = (res.body ?? {}) as { ok?: boolean; skills?: SkillCatalogEntry[] };
+    const res = await this.target.rest({
+      method: "GET",
+      path: "/wplab/v1/skills",
+    });
+    const b = (res.body ?? {}) as {
+      ok?: boolean;
+      skills?: SkillCatalogEntry[];
+    };
     if (res.status >= 200 && res.status < 300 && Array.isArray(b.skills)) {
       return b.skills;
     }
@@ -1646,7 +1849,11 @@ export class CompanionBridge {
     const send = (tok: string) =>
       method === "DELETE"
         ? this.target.rest({ method, path, query: { session_token: tok } })
-        : this.target.rest({ method, path, body: { ...body, session_token: tok } });
+        : this.target.rest({
+            method,
+            path,
+            body: { ...body, session_token: tok },
+          });
 
     let res = await send(token);
     if (res.status === 401) {
@@ -1674,8 +1881,10 @@ export class CompanionBridge {
       description: input.description ?? "",
       content: input.content,
     };
-    if (input.enable_agentic !== undefined) body["enable_agentic"] = input.enable_agentic;
-    if (input.enable_prompt !== undefined) body["enable_prompt"] = input.enable_prompt;
+    if (input.enable_agentic !== undefined)
+      body["enable_agentic"] = input.enable_agentic;
+    if (input.enable_prompt !== undefined)
+      body["enable_prompt"] = input.enable_prompt;
     if (input.on_conflict) body["on_conflict"] = input.on_conflict;
 
     const b = await this.skillMutate("POST", "/wplab/v1/skills", body);
@@ -1695,13 +1904,21 @@ export class CompanionBridge {
       enable_agentic?: boolean;
       enable_prompt?: boolean;
     },
-  ): Promise<{ slug: string; action: string; skill: SkillRecord | null; audit_id: string }> {
+  ): Promise<{
+    slug: string;
+    action: string;
+    skill: SkillRecord | null;
+    audit_id: string;
+  }> {
     this.requireSkills();
     const body: Record<string, unknown> = {};
-    if (patch.description !== undefined) body["description"] = patch.description;
+    if (patch.description !== undefined)
+      body["description"] = patch.description;
     if (patch.content !== undefined) body["content"] = patch.content;
-    if (patch.enable_agentic !== undefined) body["enable_agentic"] = patch.enable_agentic;
-    if (patch.enable_prompt !== undefined) body["enable_prompt"] = patch.enable_prompt;
+    if (patch.enable_agentic !== undefined)
+      body["enable_agentic"] = patch.enable_agentic;
+    if (patch.enable_prompt !== undefined)
+      body["enable_prompt"] = patch.enable_prompt;
 
     const b = await this.skillMutate(
       "POST",
@@ -1716,9 +1933,12 @@ export class CompanionBridge {
     };
   }
 
-  async skillDelete(
-    slug: string,
-  ): Promise<{ slug: string; action: string; recoverable: boolean; audit_id: string }> {
+  async skillDelete(slug: string): Promise<{
+    slug: string;
+    action: string;
+    recoverable: boolean;
+    audit_id: string;
+  }> {
     this.requireSkills();
     const b = await this.skillMutate(
       "DELETE",
@@ -1770,7 +1990,9 @@ export async function bridgeFor(target: Target): Promise<CompanionBridge> {
  *
  * Use this in any tool that exclusively hits `/wplab-recovery/v1/*` paths.
  */
-export async function bridgeForRecovery(target: Target): Promise<CompanionBridge> {
+export async function bridgeForRecovery(
+  target: Target,
+): Promise<CompanionBridge> {
   try {
     await target.rest({ method: "GET", path: "/" });
   } catch (err) {

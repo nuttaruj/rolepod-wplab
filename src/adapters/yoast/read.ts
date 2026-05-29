@@ -69,11 +69,15 @@ export const yoastAdapter: Adapter<YoastReadAPI> = {
         for (const row of result.rows) {
           const key = String(row["meta_key"] ?? "");
           const value = String(row["meta_value"] ?? "");
-          if (key === "_yoast_wpseo_focuskw" && value) out.focus_keyword = value;
-          else if (key === "_yoast_wpseo_metadesc" && value) out.meta_description = value;
+          if (key === "_yoast_wpseo_focuskw" && value)
+            out.focus_keyword = value;
+          else if (key === "_yoast_wpseo_metadesc" && value)
+            out.meta_description = value;
           else if (key === "_yoast_wpseo_title" && value) out.title = value;
-          else if (key === "_yoast_wpseo_canonical" && value) out.canonical = value;
-          else if (key === "_yoast_wpseo_meta-robots-noindex" && value === "1") out.noindex = true;
+          else if (key === "_yoast_wpseo_canonical" && value)
+            out.canonical = value;
+          else if (key === "_yoast_wpseo_meta-robots-noindex" && value === "1")
+            out.noindex = true;
         }
         return out;
       }

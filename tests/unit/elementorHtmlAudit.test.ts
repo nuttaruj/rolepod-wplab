@@ -1,7 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { auditElementorTree } from "../../src/lib/elementorHtmlAudit.js";
 
-function makeSection(children: Array<Record<string, unknown>>): Record<string, unknown> {
+function makeSection(
+  children: Array<Record<string, unknown>>,
+): Record<string, unknown> {
   return {
     id: "sec1",
     elType: "section",
@@ -15,7 +17,11 @@ function makeSection(children: Array<Record<string, unknown>>): Record<string, u
   };
 }
 
-function widget(id: string, widgetType: string, settings: Record<string, unknown> = {}): Record<string, unknown> {
+function widget(
+  id: string,
+  widgetType: string,
+  settings: Record<string, unknown> = {},
+): Record<string, unknown> {
   return { id, elType: "widget", widgetType, settings };
 }
 
@@ -58,9 +64,7 @@ describe("auditElementorTree", () => {
 
   it("flags a single-paragraph HTML widget", () => {
     const sections = [
-      makeSection([
-        widget("wid1", "html", { html: "<p>Body text only.</p>" }),
-      ]),
+      makeSection([widget("wid1", "html", { html: "<p>Body text only.</p>" })]),
     ];
     const r = auditElementorTree(sections);
     expect(r.suggestions[0]!.suggestedWidget).toBe("text-editor");
@@ -69,7 +73,7 @@ describe("auditElementorTree", () => {
   it("does NOT flag a paragraph containing a button anchor", () => {
     const sections = [
       makeSection([
-        widget("wid1", "html", { html: "<p>Read <a href=\"#\">more</a></p>" }),
+        widget("wid1", "html", { html: '<p>Read <a href="#">more</a></p>' }),
       ]),
     ];
     const r = auditElementorTree(sections);
@@ -80,7 +84,9 @@ describe("auditElementorTree", () => {
   it("flags a single-button anchor HTML widget", () => {
     const sections = [
       makeSection([
-        widget("wid1", "html", { html: '<a href="#" class="btn">Click me</a>' }),
+        widget("wid1", "html", {
+          html: '<a href="#" class="btn">Click me</a>',
+        }),
       ]),
     ];
     const r = auditElementorTree(sections);
@@ -159,7 +165,9 @@ describe("auditElementorTree", () => {
 
   it("plain markup conversions carry no fidelity risk", () => {
     const sections = [
-      makeSection([widget("wid1", "html", { html: "<h1>We build websites</h1>" })]),
+      makeSection([
+        widget("wid1", "html", { html: "<h1>We build websites</h1>" }),
+      ]),
     ];
     const r = auditElementorTree(sections);
     expect(r.lossyWidgets).toBe(0);
@@ -172,14 +180,16 @@ describe("auditElementorTree", () => {
     const sections = [
       makeSection([
         widget("wid1", "html", {
-          html: '<h1 style="font-family:\'JetBrains Mono\';background:linear-gradient(90deg,#fff,#000)">Headline</h1>',
+          html: "<h1 style=\"font-family:'JetBrains Mono';background:linear-gradient(90deg,#fff,#000)\">Headline</h1>",
         }),
       ]),
     ];
     const r = auditElementorTree(sections);
     expect(r.suggestions[0]!.suggestedWidget).toBe("heading");
     expect(r.suggestions[0]!.fidelityRisk).toBe("low");
-    expect(r.suggestions[0]!.wouldLose).toContain("custom font-family (typography identity)");
+    expect(r.suggestions[0]!.wouldLose).toContain(
+      "custom font-family (typography identity)",
+    );
     expect(r.suggestions[0]!.wouldLose).toContain("CSS gradients");
     expect(r.lossyWidgets).toBe(1);
     expect(r.guidance).toBeTruthy();
@@ -196,7 +206,9 @@ describe("auditElementorTree", () => {
     const r = auditElementorTree(sections);
     expect(r.suggestions[0]!.suggestedWidget).toBe("counter");
     expect(r.suggestions[0]!.fidelityRisk).toBe("high");
-    expect(r.suggestions[0]!.wouldLose).toContain("CSS animations / transitions");
+    expect(r.suggestions[0]!.wouldLose).toContain(
+      "CSS animations / transitions",
+    );
   });
 
   it("counts lossy widgets even when no conversion is suggested", () => {
@@ -237,10 +249,7 @@ describe("auditElementorTree", () => {
                   {
                     id: "col2",
                     elType: "column",
-                    elements: [
-                      widget("b", "counter"),
-                      widget("c", "counter"),
-                    ],
+                    elements: [widget("b", "counter"), widget("c", "counter")],
                   },
                 ],
               },

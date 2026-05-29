@@ -22,7 +22,8 @@ export async function wpElementorTemplateApplyHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpElementorTemplateApplyOutput> {
-  const input: WpElementorTemplateApplyInput = WpElementorTemplateApplyInputSchema.parse(raw);
+  const input: WpElementorTemplateApplyInput =
+    WpElementorTemplateApplyInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
   if (target.kind !== "rest") {

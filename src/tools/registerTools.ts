@@ -310,10 +310,7 @@ import {
   wpCf7FormCreateHandler,
   wpCf7FormCreateToolDef,
 } from "./atomic/wp_cf7_form_create.js";
-import {
-  wpSeoSetHandler,
-  wpSeoSetToolDef,
-} from "./atomic/wp_seo_set.js";
+import { wpSeoSetHandler, wpSeoSetToolDef } from "./atomic/wp_seo_set.js";
 import {
   wpSiteScaffoldHandler,
   wpSiteScaffoldToolDef,
@@ -572,11 +569,13 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpElementorWidgetAttributeToolDef,
-    handler: (d, raw) => wpElementorWidgetAttributeHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpElementorWidgetAttributeHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpElementorTemplateApplyToolDef,
-    handler: (d, raw) => wpElementorTemplateApplyHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpElementorTemplateApplyHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpJobCreateToolDef,
@@ -592,7 +591,8 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpCustomTaskScaffoldToolDef,
-    handler: (d, raw) => wpCustomTaskScaffoldHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpCustomTaskScaffoldHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpCustomTaskListToolDef,
@@ -600,15 +600,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpCustomTaskToggleToolDef,
-    handler: (d, raw) => wpCustomTaskToggleHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpCustomTaskToggleHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpCustomTaskUpdateToolDef,
-    handler: (d, raw) => wpCustomTaskUpdateHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpCustomTaskUpdateHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpCustomTaskRemoveToolDef,
-    handler: (d, raw) => wpCustomTaskRemoveHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpCustomTaskRemoveHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpBuilderDetectToolDef,
@@ -620,11 +623,13 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpElementorSectionToolDef,
-    handler: (d, raw) => wpElementorSectionHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpElementorSectionHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpElementorRestoreToolDef,
-    handler: (d, raw) => wpElementorRestoreHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpElementorRestoreHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpRenderGetToolDef,
@@ -748,7 +753,8 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpChildThemeCreateToolDef,
-    handler: (d, raw) => wpChildThemeCreateHandler(d.registry, d.prodGuard, raw),
+    handler: (d, raw) =>
+      wpChildThemeCreateHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpThemeSwitchSafeToolDef,

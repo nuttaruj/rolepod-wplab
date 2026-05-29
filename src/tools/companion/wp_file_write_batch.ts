@@ -52,7 +52,10 @@ export async function wpFileWriteBatchHandler(
       subcategory: w.path,
       targetDescriptor: `batch-write ${w.path} (${w.bytesWritten} bytes, batch ${result.batchId})`,
       beforeState: { absolute_path: w.absolutePath, backup_path: w.backupPath },
-      afterState: { absolute_path: w.absolutePath, bytes_written: w.bytesWritten },
+      afterState: {
+        absolute_path: w.absolutePath,
+        bytes_written: w.bytesWritten,
+      },
       reversible: w.backupPath !== null,
       sourceTool: "wp_file_write_batch",
     });

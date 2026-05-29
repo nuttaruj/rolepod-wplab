@@ -38,7 +38,10 @@ const byteLen = (s: string): number =>
     ? Buffer.byteLength(s, "utf8")
     : new TextEncoder().encode(s).length;
 
-function capBytes(s: string, maxBytes: number): { text: string; truncated: boolean } {
+function capBytes(
+  s: string,
+  maxBytes: number,
+): { text: string; truncated: boolean } {
   if (byteLen(s) <= maxBytes) return { text: s, truncated: false };
   // Trim by characters until under the byte cap (UTF-8 chars are <=4 bytes).
   let lo = 0;
@@ -68,13 +71,20 @@ export function sliceContent(full: string, opts: SliceOpts = {}): SliceResult {
     for (let i = 0; i < lines.length; i++) {
       if (re.test(lines[i]!)) {
         hits++;
-        for (let j = Math.max(0, i - ctx); j <= Math.min(lines.length - 1, i + ctx); j++) {
+        for (
+          let j = Math.max(0, i - ctx);
+          j <= Math.min(lines.length - 1, i + ctx);
+          j++
+        ) {
           keep.add(j);
         }
       }
     }
     matchedLines = hits;
-    body = [...keep].sort((a, b) => a - b).map((i) => lines[i]!).join("\n");
+    body = [...keep]
+      .sort((a, b) => a - b)
+      .map((i) => lines[i]!)
+      .join("\n");
   } else if (opts.offset !== undefined || opts.limit !== undefined) {
     sliced = true;
     const lines = full.split("\n");

@@ -15,11 +15,15 @@ describe("matchSectionIndices", () => {
 
   it("matches by exact class token (not substring)", () => {
     // 'wnz-services' must NOT match 'wnz-services-grid' (token-exact)
-    expect(matchSectionIndices(sections, undefined, "wnz-services")).toEqual([1]);
+    expect(matchSectionIndices(sections, undefined, "wnz-services")).toEqual([
+      1,
+    ]);
   });
 
   it("matches multiple sections sharing a class", () => {
-    expect(matchSectionIndices(sections, undefined, "wnz-sec")).toEqual([0, 1, 2]);
+    expect(matchSectionIndices(sections, undefined, "wnz-sec")).toEqual([
+      0, 1, 2,
+    ]);
   });
 
   it("returns empty when nothing matches", () => {
@@ -29,6 +33,8 @@ describe("matchSectionIndices", () => {
 
   it("handles sections with no _css_classes", () => {
     expect(matchSectionIndices(sections, "dd", undefined)).toEqual([3]);
-    expect(matchSectionIndices(sections, undefined, "anything")).not.toContain(3);
+    expect(matchSectionIndices(sections, undefined, "anything")).not.toContain(
+      3,
+    );
   });
 });

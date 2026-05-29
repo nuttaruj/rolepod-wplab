@@ -47,7 +47,12 @@ export async function wpThemeSwitchSafeHandler(
   }
 
   // 1. Resolve current active stylesheet via wp-cli.
-  const current = await target.wpCli(["theme", "list", "--status=active", "--field=name"]);
+  const current = await target.wpCli([
+    "theme",
+    "list",
+    "--status=active",
+    "--field=name",
+  ]);
   if (current.exitCode !== 0) {
     throw new WplabError(
       "THEME_SWITCH_PROBE_FAILED",

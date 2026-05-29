@@ -78,7 +78,14 @@ export const wpConventionsSetToolDef = {
 
 function conventionsPath(siteurl: string): string {
   const host = new URL(siteurl).host;
-  return join(homedir(), ".config", "rolepod-wplab", "memory", host, "conventions.json");
+  return join(
+    homedir(),
+    ".config",
+    "rolepod-wplab",
+    "memory",
+    host,
+    "conventions.json",
+  );
 }
 
 export async function wpConventionsGetHandler(

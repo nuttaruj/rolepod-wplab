@@ -50,7 +50,9 @@ return ['location' => ${locJson}, 'menu_id' => ${input.menu_id}, 'previous_menu_
       { result },
     );
   }
-  const rv = (result.return_value ?? {}) as { previous_menu_id?: number | null };
+  const rv = (result.return_value ?? {}) as {
+    previous_menu_id?: number | null;
+  };
   await recordChange(target, {
     category: "layout",
     subcategory: `nav-menu-location:${input.location}`,

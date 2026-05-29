@@ -48,7 +48,11 @@ export async function wpMenuAddItemHandler(
     );
   }
   if (input.type === "post_type" && !input.object_id) {
-    throw new WplabError("OBJECT_ID_REQUIRED", "object_id required when type=post_type", {});
+    throw new WplabError(
+      "OBJECT_ID_REQUIRED",
+      "object_id required when type=post_type",
+      {},
+    );
   }
   if (input.type === "custom" && !input.url) {
     throw new WplabError("URL_REQUIRED", "url required when type=custom", {});
@@ -78,7 +82,11 @@ return ['item_id' => (int) $item_id, 'menu_id' => ${input.menu_id}];`;
       { result },
     );
   }
-  const rv = (result.return_value ?? {}) as { item_id?: number; error?: string; detail?: string };
+  const rv = (result.return_value ?? {}) as {
+    item_id?: number;
+    error?: string;
+    detail?: string;
+  };
   if (rv.error) {
     throw new WplabError(rv.error, rv.detail ?? rv.error, { input });
   }
@@ -87,7 +95,11 @@ return ['item_id' => (int) $item_id, 'menu_id' => ${input.menu_id}];`;
     subcategory: `nav-menu-item:${input.menu_id}:${input.title}`,
     targetDescriptor: `menu item "${input.title}" added to menu ${input.menu_id}`,
     beforeState: null,
-    afterState: { item_id: rv.item_id, menu_id: input.menu_id, title: input.title },
+    afterState: {
+      item_id: rv.item_id,
+      menu_id: input.menu_id,
+      title: input.title,
+    },
     reversible: true,
     sourceTool: "wp_menu_add_item",
   });

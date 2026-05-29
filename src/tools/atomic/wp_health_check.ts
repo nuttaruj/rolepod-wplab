@@ -62,9 +62,19 @@ export async function wpHealthCheckHandler(
   // available. RestTarget always has rest(); LocalTarget/SshTarget/DockerTarget
   // don't (their reachability is wp-cli-based, captured above).
   let restOk = false;
-  if ("rest" in target && typeof (target as { rest?: unknown }).rest === "function") {
+  if (
+    "rest" in target &&
+    typeof (target as { rest?: unknown }).rest === "function"
+  ) {
     try {
-      const res = await (target as { rest: (req: { method: string; path: string }) => Promise<{ status: number }> }).rest({
+      const res = await (
+        target as {
+          rest: (req: {
+            method: string;
+            path: string;
+          }) => Promise<{ status: number }>;
+        }
+      ).rest({
         method: "GET",
         path: "/wp/v2/types/post",
       });
@@ -106,10 +116,7 @@ export async function wpHealthCheckHandler(
           : output.warnings.length > 0
             ? "warn"
             : "pass";
-      writeFileSync(
-        join(dir, "health.json"),
-        JSON.stringify(output, null, 2),
-      );
+      writeFileSync(join(dir, "health.json"), JSON.stringify(output, null, 2));
       writeManifest(dir, {
         skill: "wp-health-check",
         phase: "verify",

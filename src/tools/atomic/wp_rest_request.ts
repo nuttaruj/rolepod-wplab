@@ -28,7 +28,9 @@ export async function wpRestRequestHandler(
   // restore the prior `styles` / `settings` payload on toggle.
   const isGlobalStylesWrite =
     /^\/wp\/v2\/global-styles\/\d+(\/|$)/.test(input.path) &&
-    (input.method === "POST" || input.method === "PUT" || input.method === "PATCH");
+    (input.method === "POST" ||
+      input.method === "PUT" ||
+      input.method === "PATCH");
 
   let beforeState: Record<string, unknown> | null = null;
   if (isGlobalStylesWrite) {

@@ -16,7 +16,11 @@
  * targets after 10 min; we don't want to write that closure back to disk.
  * The map is the cheap cache; the disk is the source of truth.
  */
-import { AliasStore, looksLikeAlias, aliasNameFromValue } from "./targetAliases.js";
+import {
+  AliasStore,
+  looksLikeAlias,
+  aliasNameFromValue,
+} from "./targetAliases.js";
 import { WplabError, TargetNotFoundError } from "../util/errors.js";
 import { log } from "../util/log.js";
 import { openTarget } from "../runtime/factory.js";
@@ -87,8 +91,7 @@ export async function openAlias(
 
   // Fresh connect.
   const vault = await makeVault();
-  const credLookup =
-    entry.credential_ref || canonicalizeSite(entry.siteurl);
+  const credLookup = entry.credential_ref || canonicalizeSite(entry.siteurl);
   const cred = await vault.get(credLookup);
   if (!cred) {
     throw new WplabError(

@@ -28,7 +28,8 @@ export async function wpCustomTaskScaffoldHandler(
   prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpCustomTaskScaffoldOutput> {
-  const input: WpCustomTaskScaffoldInput = WpCustomTaskScaffoldInputSchema.parse(raw);
+  const input: WpCustomTaskScaffoldInput =
+    WpCustomTaskScaffoldInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   prodGuard.enforce(target.siteurl);
   if (target.kind !== "rest") {
@@ -71,7 +72,9 @@ export async function wpCustomTaskScaffoldHandler(
     description: input.description,
     settings: input.settings,
     hooksBody: input.hooks_body,
-    ...(input.extra_methods !== undefined ? { extraMethods: input.extra_methods } : {}),
+    ...(input.extra_methods !== undefined
+      ? { extraMethods: input.extra_methods }
+      : {}),
   });
 
   const bridge = await bridgeFor(target);
@@ -85,7 +88,11 @@ export async function wpCustomTaskScaffoldHandler(
     category: "file",
     subcategory: input.task_id,
     targetDescriptor: `scaffold task ${input.task_id} (${w.bytesWritten} bytes)`,
-    afterState: { task_id: input.task_id, title: input.title, module_path: modulePath },
+    afterState: {
+      task_id: input.task_id,
+      title: input.title,
+      module_path: modulePath,
+    },
     reversible: true,
     sourceTool: "wp_custom_task_scaffold",
   });

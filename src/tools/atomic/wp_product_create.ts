@@ -7,7 +7,9 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const ProductCreateInputSchema = z.object({
   target_id: z.string(),
   name: z.string().min(1),
-  regular_price: z.string().describe("Price as a decimal string, e.g. '650.00'."),
+  regular_price: z
+    .string()
+    .describe("Price as a decimal string, e.g. '650.00'."),
   short_description: z.string().optional(),
   description: z.string().optional(),
   sku: z.string().optional(),
@@ -92,7 +94,11 @@ return ['product_id' => (int) $post_id, 'name' => ${JSON.stringify(input.name)},
     subcategory: `product:${rv.product_id}`,
     targetDescriptor: `WC product "${input.name}" created`,
     beforeState: null,
-    afterState: { product_id: rv.product_id, name: input.name, price: input.regular_price },
+    afterState: {
+      product_id: rv.product_id,
+      name: input.name,
+      price: input.regular_price,
+    },
     reversible: true,
     sourceTool: "wp_product_create",
   });

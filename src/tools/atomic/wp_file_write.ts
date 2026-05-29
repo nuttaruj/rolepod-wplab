@@ -75,7 +75,10 @@ export async function wpFileWriteHandler(
   // Site Editor cache flush after theme.json writes — block themes cache the
   // resolved theme.json into the object cache; without flush the editor sees
   // stale data on next reload.
-  if (input.path.toLowerCase().endsWith("/theme.json") || input.path.toLowerCase().endsWith("theme.json")) {
+  if (
+    input.path.toLowerCase().endsWith("/theme.json") ||
+    input.path.toLowerCase().endsWith("theme.json")
+  ) {
     await flushObjectCache(target);
   }
 
@@ -144,15 +147,21 @@ async function preWriteValidate(
         );
       }
       if (result.ok === null) {
-        log.debug("file_write: companion syntax check unavailable, proceeding", {
-          path,
-          reason: result.errorCode,
-        });
+        log.debug(
+          "file_write: companion syntax check unavailable, proceeding",
+          {
+            path,
+            reason: result.errorCode,
+          },
+        );
       }
     } catch (err) {
       // Re-throw our own validation errors. Swallow infra errors so the user
       // isn't blocked by a transient companion problem.
-      if (err instanceof WplabError && err.code === "FS_WRITE_PHP_SYNTAX_ERROR") {
+      if (
+        err instanceof WplabError &&
+        err.code === "FS_WRITE_PHP_SYNTAX_ERROR"
+      ) {
         throw err;
       }
       log.debug("file_write: pre-write PHP validation skipped on infra error", {

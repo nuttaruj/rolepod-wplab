@@ -95,7 +95,10 @@ async function blockThemeBodyOpen(
     if (!active) return null;
     const isBlock = !!active["is_block_theme"];
     if (!isBlock) return null;
-    const slug = typeof active["stylesheet"] === "string" ? (active["stylesheet"] as string) : "the active theme";
+    const slug =
+      typeof active["stylesheet"] === "string"
+        ? (active["stylesheet"] as string)
+        : "the active theme";
     return {
       code: "block_theme_body_open_risk",
       message: `Active theme "${slug}" is a block (FSE) theme. wp_body_open() may not fire from FSE templates — anything injected via the wp_body_open hook (ambient layers, pixels, overlays) can silently fail to render.`,
@@ -103,7 +106,9 @@ async function blockThemeBodyOpen(
         "Either (a) switch to a classic parent theme (Hello Elementor is the standard for Elementor builds), or (b) ensure the theme's root template renders a {{wp:body-open}} block / calls wp_body_open() explicitly, or (c) inject via the_content / wp_footer instead.",
     };
   } catch (err) {
-    log.debug("blockThemeBodyOpen detector skipped", { err: (err as Error).message });
+    log.debug("blockThemeBodyOpen detector skipped", {
+      err: (err as Error).message,
+    });
     return null;
   }
 }

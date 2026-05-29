@@ -69,7 +69,8 @@ export function collectStructuralWarnings(
 
   function walk(node: Record<string, unknown>): void {
     const elType = typeof node["elType"] === "string" ? node["elType"] : "";
-    const id = typeof node["id"] === "string" ? (node["id"] as string) : "<no-id>";
+    const id =
+      typeof node["id"] === "string" ? (node["id"] as string) : "<no-id>";
     const settings =
       node["settings"] && typeof node["settings"] === "object"
         ? (node["settings"] as Record<string, unknown>)
@@ -83,7 +84,9 @@ export function collectStructuralWarnings(
     }
 
     const widgetType =
-      typeof node["widgetType"] === "string" ? (node["widgetType"] as string) : "";
+      typeof node["widgetType"] === "string"
+        ? (node["widgetType"] as string)
+        : "";
     if (widgetType === "icon-box" && settings) {
       const desc = settings["description_text"];
       if (typeof desc === "string" && BLOCK_TAG_RE.test(desc)) {
@@ -119,8 +122,7 @@ export function collectStructuralWarnings(
       widget_id: ids.length > 120 ? `${sectionClassHits.length} sections` : ids,
       widget_type: "section",
       setting_key: "_css_classes",
-      reason:
-        `${sectionClassHits.length} section(s) set _css_classes. Free Elementor does NOT emit section-level CSS classes to the rendered DOM (only Elementor Pro or a server-side render filter does). If your CSS targets those classes, confirm with render_get — or scope it to the stable '.elementor-element-{id}' class instead, which always renders.`,
+      reason: `${sectionClassHits.length} section(s) set _css_classes. Free Elementor does NOT emit section-level CSS classes to the rendered DOM (only Elementor Pro or a server-side render filter does). If your CSS targets those classes, confirm with render_get — or scope it to the stable '.elementor-element-{id}' class instead, which always renders.`,
     });
   }
 
@@ -160,7 +162,10 @@ export async function validateElementorData(
     try {
       const raw = await bridge.elementorWidgetSchema(widgetType);
       const controls =
-        raw && typeof raw === "object" && raw["controls"] && typeof raw["controls"] === "object"
+        raw &&
+        typeof raw === "object" &&
+        raw["controls"] &&
+        typeof raw["controls"] === "object"
           ? (raw["controls"] as Record<string, ControlSchema>)
           : {};
       const schema: WidgetSchema = { controls };
@@ -177,7 +182,10 @@ export async function validateElementorData(
   }
 
   async function walk(node: Record<string, unknown>): Promise<void> {
-    const widgetType = typeof node["widgetType"] === "string" ? (node["widgetType"] as string) : "";
+    const widgetType =
+      typeof node["widgetType"] === "string"
+        ? (node["widgetType"] as string)
+        : "";
     if (widgetType !== "") {
       typesSeen.add(widgetType);
       scanned++;
@@ -198,7 +206,8 @@ export async function validateElementorData(
                 widget_id: widgetId,
                 widget_type: widgetType,
                 setting_key: key,
-                reason: "setting key not declared in widget's controls registry",
+                reason:
+                  "setting key not declared in widget's controls registry",
               };
               if (opts.strict) {
                 errors.push({ ...w, actual_type: actualType(value) });
@@ -269,7 +278,10 @@ function validateValueAgainstControl(
     case "url":
     case "hidden": {
       if (typeof value !== "string" && value !== null && value !== undefined) {
-        return { reason: `expected a string, got ${actualType(value)}`, expected: "string" };
+        return {
+          reason: `expected a string, got ${actualType(value)}`,
+          expected: "string",
+        };
       }
       return null;
     }
@@ -286,19 +298,33 @@ function validateValueAgainstControl(
     case "switcher": {
       const ok = value === "yes" || value === "" || typeof value === "boolean";
       if (!ok) {
-        return { reason: `switcher expects 'yes' | '' | boolean, got ${actualType(value)}`, expected: "'yes' | '' | boolean" };
+        return {
+          reason: `switcher expects 'yes' | '' | boolean, got ${actualType(value)}`,
+          expected: "'yes' | '' | boolean",
+        };
       }
       return null;
     }
     case "number": {
-      if (value !== null && value !== undefined && typeof value !== "number" && typeof value !== "string") {
-        return { reason: `number control expects number or numeric string, got ${actualType(value)}`, expected: "number" };
+      if (
+        value !== null &&
+        value !== undefined &&
+        typeof value !== "number" &&
+        typeof value !== "string"
+      ) {
+        return {
+          reason: `number control expects number or numeric string, got ${actualType(value)}`,
+          expected: "number",
+        };
       }
       return null;
     }
     case "repeater": {
       if (!Array.isArray(value)) {
-        return { reason: `repeater control expects an array of items, got ${actualType(value)}`, expected: "array" };
+        return {
+          reason: `repeater control expects an array of items, got ${actualType(value)}`,
+          expected: "array",
+        };
       }
       return null;
     }
