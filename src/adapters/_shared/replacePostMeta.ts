@@ -46,8 +46,8 @@ function requireShellOrCompanion(target: Target, label: string): void {
  *
  *   1. Verify target supports shell (local/ssh/docker) OR is rest+companion.
  *   2. Read current value via `wp post meta get --format=json` for backup.
- *   3. If non-empty → write backup file under wp-content/uploads/wplab-backups/.
- *   4. Serialize the new value (JSON or raw string) → wp-content/uploads/wplab-tmp/.
+ *   3. If non-empty → write backup file under wp-content/uploads/rolepod-wp/backups/.
+ *   4. Serialize the new value (JSON or raw string) → wp-content/uploads/rolepod-wp/tmp/.
  *   5. Replace via `wp eval update_post_meta(id, key, ...)` — `--from-file`
  *      is NOT a valid flag on `post meta update`, eval is the only path
  *      that handles arbitrary payload sizes without stdin pumping.
@@ -76,7 +76,7 @@ export async function replacePostMeta(
   if (before.exitCode === 0 && before.stdout.trim().length > 0) {
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const ext = serialization === "raw" ? "txt" : "json";
-    const backupRel = `wp-content/uploads/wplab-backups/${opts.backupPrefix}-${postId}-${stamp}.${ext}`;
+    const backupRel = `wp-content/uploads/rolepod-wp/backups/${opts.backupPrefix}-${postId}-${stamp}.${ext}`;
     const w = await target.fileWrite(backupRel, before.stdout, {
       backup: false,
     });
@@ -91,7 +91,7 @@ export async function replacePostMeta(
       : JSON.stringify(value);
 
   const tmpExt = serialization === "raw" ? "txt" : "json";
-  const tmpRel = `wp-content/uploads/wplab-tmp/${opts.backupPrefix}-${postId}-payload.${tmpExt}`;
+  const tmpRel = `wp-content/uploads/rolepod-wp/tmp/${opts.backupPrefix}-${postId}-payload.${tmpExt}`;
   const tmpWrite = await target.fileWrite(tmpRel, payload, { backup: false });
   const filePath = tmpWrite.absolutePath || tmpRel;
 

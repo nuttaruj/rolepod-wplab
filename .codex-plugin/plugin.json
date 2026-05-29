@@ -1,6 +1,6 @@
 {
   "name": "rolepod-wplab",
-  "version": "1.21.2",
+  "version": "1.21.3",
   "description": "WordPress operations toolkit for AI coding agents — 82 MCP tools + 13 lean Rolepod-pattern skills (/wp-pair-setup, /wp-connect, /wp-health-check, /wp-content, /wp-edit-design, /wp-edit-theme, /wp-edit-plugin, /wp-scaffold, /wp-introspect, /wp-diagnose, /wp-migrate, /wp-changes, /wp-execute-php) + /wp-full alias. 4 connection kinds (local / REST + App Password / SSH / Docker). Default-safe wp-cli + REST + scoped fs out of the box; the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair setup.",
   "author": {
     "name": "nuttaruj",

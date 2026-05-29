@@ -2,6 +2,20 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.21.3] — 2026-05-29 — Consolidated data namespace (backups + tmp)
+
+### Changed
+
+- `replacePostMeta` (the shared write helper behind Elementor + every builder
+  adapter) now writes backups and tmp payloads under a single namespace:
+  `wp-content/uploads/rolepod-wp/{backups,tmp}/` (was `wplab-backups/` +
+  `wplab-tmp/`). One place for all runtime artifacts, kept in `uploads/` so
+  they survive plugin updates. Pairs with companion 2.13.1 which auto-installs
+  a deny-all `.htaccess` on that dir. Old `wplab-backups/` files are left in
+  place (not migrated) — harmless, just not consolidated.
+- Follow-up (separate paths, not yet moved): `wplab-bin/` (wp-cli phar),
+  `wplab-clone/`, `rolepod-wp-audit/`, `rolepod-wp-theme-snapshots/`.
+
 ## [1.21.2] — 2026-05-29 — Fix: Elementor read/write on RestTarget
 
 Two bugs made Elementor page editing unusable (and silently destructive) on
