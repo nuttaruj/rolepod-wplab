@@ -13,7 +13,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpElementorWriteToolDef = {
   name: "rolepod_wp_elementor_write",
   description:
-    "Replace an Elementor page widget tree (`_elementor_data` post meta). Requires allow_destructive=true. Production guard fires unless confirm=true. Backup written under wp-content/uploads/wplab-backups/ before overwrite.",
+    "Replace an Elementor page widget tree (`_elementor_data` post meta). Requires allow_destructive=true. Production guard fires unless confirm=true. A timestamped backup is written under wp-content/uploads/rolepod-wp/backups/ before overwrite, and the Elementor CSS cache is auto-flushed after the write so the front-end reflects the change immediately. For surgical edits to a single section (instead of replacing the whole tree) use rolepod_wp_elementor_section.",
   inputSchema: ElementorWriteInputSchema,
 };
 

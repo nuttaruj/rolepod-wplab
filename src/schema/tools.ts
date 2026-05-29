@@ -1497,13 +1497,45 @@ export type DiagnoseOutput = z.infer<typeof DiagnoseOutputSchema>;
 export const WpFileReadInputSchema = z.object({
   target_id: TargetIdSchema,
   path: z.string().min(1).describe("Path relative to WP install root"),
+  offset: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("1-based start line. With limit, returns a line range — use for large files instead of reading the whole thing."),
+  limit: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("Max lines from offset (default: to end of file)."),
+  grep: z
+    .string()
+    .optional()
+    .describe("Regex — return only matching lines (plus `context` lines around each). Cheaper than reading a 30 KB+ file to find a few lines."),
+  context: z
+    .number()
+    .int()
+    .nonnegative()
+    .default(0)
+    .describe("Lines of context around each grep match."),
+  ignore_case: z.boolean().default(false).describe("Case-insensitive grep."),
+  max_bytes: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe("Cap returned bytes (truncates the sliced result). Prevents blowing the response token budget on huge files."),
 });
 export type WpFileReadInput = z.infer<typeof WpFileReadInputSchema>;
 
 export const WpFileReadOutputSchema = z.object({
   path: z.string(),
   content: z.string(),
-  bytes: z.number().int().nonnegative(),
+  bytes: z.number().int().nonnegative().describe("Byte length of the FULL file."),
+  returned_bytes: z.number().int().nonnegative().optional(),
+  truncated: z.boolean().optional().describe("True when max_bytes cut the result."),
+  matched_lines: z.number().int().nonnegative().optional().describe("grep mode: lines matched."),
 });
 export type WpFileReadOutput = z.infer<typeof WpFileReadOutputSchema>;
 
@@ -2110,3 +2142,115 @@ export const WpElementorHtmlAuditOutputSchema = z.object({
     .describe("Directive to extract styling/behaviour before converting. Present when lossy_widgets > 0."),
 });
 export type WpElementorHtmlAuditOutput = z.infer<typeof WpElementorHtmlAuditOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_section — surgical single-section edit
+// ---------------------------------------------------------------------------
+
+export const WpElementorSectionInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  action: z
+    .enum(["get", "replace", "insert", "delete"])
+    .describe("get = return matched section(s); replace/delete need a match; insert places `section` at `position`."),
+  section_id: z
+    .string()
+    .optional()
+    .describe("Match a top-level section by its Elementor element id (the `id` field)."),
+  match_class: z
+    .string()
+    .optional()
+    .describe("Match top-level section(s) whose `_css_classes` contains this token. Use this OR section_id."),
+  section: z
+    .record(z.string(), z.unknown())
+    .optional()
+    .describe("The section object (elType:'section') to write — required for replace/insert."),
+  position: z
+    .enum(["before", "after", "start", "end"])
+    .default("end")
+    .describe("insert: before/after the matched section, or start/end of the page."),
+  confirm: z
+    .boolean()
+    .default(false)
+    .describe("Required on a production target for mutating actions."),
+});
+export type WpElementorSectionInput = z.infer<typeof WpElementorSectionInputSchema>;
+
+export const WpElementorSectionOutputSchema = z.object({
+  post_id: z.number().int(),
+  action: z.string(),
+  matched: z.number().int().nonnegative(),
+  matched_ids: z.array(z.string()),
+  total_sections: z.number().int().nonnegative(),
+  bytes_written: z.number().int().nonnegative().optional(),
+  backup_path: z.string().nullable().optional(),
+  flushed: z.boolean().optional(),
+  sections: z.array(z.unknown()).optional().describe("get: the matched section objects."),
+});
+export type WpElementorSectionOutput = z.infer<typeof WpElementorSectionOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_elementor_restore — list / restore _elementor_data backups
+// ---------------------------------------------------------------------------
+
+export const WpElementorRestoreInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive(),
+  action: z.enum(["list", "restore"]).default("list"),
+  backup_path: z
+    .string()
+    .optional()
+    .describe("Path (from action:list) of the backup to restore — required for restore."),
+  confirm: z.boolean().default(false).describe("Required on a production target for restore."),
+});
+export type WpElementorRestoreInput = z.infer<typeof WpElementorRestoreInputSchema>;
+
+export const WpElementorRestoreOutputSchema = z.object({
+  post_id: z.number().int(),
+  action: z.string(),
+  backups: z
+    .array(
+      z.object({
+        path: z.string(),
+        bytes: z.number().int().nonnegative(),
+        mtime: z.number().int().nonnegative(),
+      }),
+    )
+    .optional(),
+  restored_from: z.string().optional(),
+  bytes_written: z.number().int().nonnegative().optional(),
+  pre_restore_backup: z.string().nullable().optional(),
+  flushed: z.boolean().optional(),
+});
+export type WpElementorRestoreOutput = z.infer<typeof WpElementorRestoreOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// rolepod_wp_render_get — fetch rendered front-end HTML of a post
+// ---------------------------------------------------------------------------
+
+export const WpRenderGetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  post_id: z.number().int().positive().optional().describe("Post/page id — its permalink is fetched."),
+  url: z.string().url().optional().describe("Explicit URL on the target host (overrides post_id)."),
+  grep: z.string().optional().describe("Regex — return only matching lines (+/- context)."),
+  context: z.number().int().nonnegative().default(0),
+  ignore_case: z.boolean().default(false),
+  max_bytes: z
+    .number()
+    .int()
+    .positive()
+    .default(60000)
+    .describe("Cap returned bytes. Rendered HTML is large — default keeps the response bounded."),
+});
+export type WpRenderGetInput = z.infer<typeof WpRenderGetInputSchema>;
+
+export const WpRenderGetOutputSchema = z.object({
+  url: z.string(),
+  status: z.number().int(),
+  total_bytes: z.number().int().nonnegative(),
+  returned_bytes: z.number().int().nonnegative(),
+  truncated: z.boolean(),
+  matched_lines: z.number().int().nonnegative().optional(),
+  content: z.string(),
+});
+export type WpRenderGetOutput = z.infer<typeof WpRenderGetOutputSchema>;

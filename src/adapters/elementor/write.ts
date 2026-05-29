@@ -1,5 +1,5 @@
 import type { Target } from "../../runtime/Target.js";
-import { replacePostMeta } from "../_shared/replacePostMeta.js";
+import { writeElementorData } from "../../lib/elementorData.js";
 
 export interface ElementorWriteAPI {
   /** Replace the full _elementor_data widget tree on a post. */
@@ -12,12 +12,10 @@ export interface ElementorWriteAPI {
 
 export const elementorWrite: ElementorWriteAPI = {
   async updatePageData(target, postId, widgetTree) {
-    // Elementor reads _elementor_data as a JSON STRING, not a PHP array — use
-    // json-string so we store wp_slash'd JSON (storing a decoded array makes
-    // Elementor render the page empty).
-    return replacePostMeta(target, postId, "_elementor_data", widgetTree, {
-      backupPrefix: "elementor",
-      serialization: "json-string",
-    });
+    // writeElementorData handles the json-string serialization (a decoded PHP
+    // array makes Elementor render empty) AND flushes the Elementor CSS cache
+    // afterwards — a direct meta write leaves the cached per-post CSS stale, so
+    // without the flush the front-end keeps rendering the OLD layout.
+    return writeElementorData(target, postId, widgetTree);
   },
 };

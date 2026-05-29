@@ -144,6 +144,18 @@ import {
   wpElementorHtmlAuditToolDef,
 } from "./composite/wp_elementor_html_audit.js";
 import {
+  wpElementorSectionHandler,
+  wpElementorSectionToolDef,
+} from "./composite/wp_elementor_section.js";
+import {
+  wpElementorRestoreHandler,
+  wpElementorRestoreToolDef,
+} from "./composite/wp_elementor_restore.js";
+import {
+  wpRenderGetHandler,
+  wpRenderGetToolDef,
+} from "./composite/wp_render_get.js";
+import {
   resolveAliasInArgs,
   withAliasReconnect,
 } from "../lib/aliasResolver.js";
@@ -605,6 +617,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpElementorHtmlAuditToolDef,
     handler: (d, raw) => wpElementorHtmlAuditHandler(d.registry, raw),
+  },
+  {
+    def: wpElementorSectionToolDef,
+    handler: (d, raw) => wpElementorSectionHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpElementorRestoreToolDef,
+    handler: (d, raw) => wpElementorRestoreHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpRenderGetToolDef,
+    handler: (d, raw) => wpRenderGetHandler(d.registry, raw),
   },
   {
     def: wpPostGetToolDef,

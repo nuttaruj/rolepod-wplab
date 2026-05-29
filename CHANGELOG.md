@@ -2,6 +2,49 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] — 2026-05-29 — Elementor surgical edits, restore, render-get, ranged reads
+
+Batch of ergonomics fixes + new tools, all driven by friction hit while
+rebuilding a live Elementor site by hand (every section swap was a hand-rolled
+`wp eval`; stale CSS cache made verification lie; a 36 KB theme file blew the
+read token budget).
+
+### Added
+
+- **`rolepod_wp_elementor_section`** — surgically `get | replace | insert |
+  delete` ONE top-level section, matched by element id or a `_css_classes`
+  token, instead of rewriting the whole `_elementor_data` tree. Auto-backups +
+  auto-flushes the Elementor CSS cache. `src/tools/composite/wp_elementor_section.ts`.
+- **`rolepod_wp_elementor_restore`** — `list` the timestamped `_elementor_data`
+  backups for a post (newest-first) and `restore` one. Unwraps the
+  `wp post meta get --format=json` double-encoding internally and backs up the
+  current state before restoring. `src/tools/composite/wp_elementor_restore.ts`.
+- **`rolepod_wp_render_get`** — fetch the RENDERED front-end HTML of a post (its
+  permalink) so you can confirm markup/classes actually emitted to the DOM.
+  Same-host-guarded; `grep`/`max_bytes` keep the response bounded.
+  `src/tools/composite/wp_render_get.ts`.
+- **`rolepod_wp_file_read`** gains `offset`/`limit` (line range), `grep`
+  (+`context`, `ignore_case`), and `max_bytes` — read just what you need from
+  large files without blowing the response token budget. `bytes` still reports
+  the full file size. Shared slicer: `src/lib/contentSlice.ts`.
+
+### Fixed
+
+- **`rolepod_wp_elementor_write` now auto-flushes the Elementor CSS cache** after
+  writing `_elementor_data`. A direct meta write leaves Elementor's cached
+  per-post CSS stale, so the front-end kept rendering the OLD layout until a
+  manual `wp elementor flush-css` — the exact trap that let stale pages read as
+  "fine" during verification. Shared helper `flushElementorCss` +
+  `src/lib/elementorData.ts` (read/decode/write-with-flush).
+- Stale doc on `elementor_write`: backups land under
+  `wp-content/uploads/rolepod-wp/backups/` (not `wplab-backups/`), and the write
+  auto-flushes — description updated.
+
+### Companion
+
+- Pairs with **rolepod-wp 2.13.2**, which fixes `/fs-write` reporting the wrong
+  `bytes_written` on `mode=append`.
+
 ## [1.21.4] — 2026-05-29 — Fidelity-aware Elementor HTML audit
 
 `elementor_html_audit` used to push "convert HTML widget → native widget"
