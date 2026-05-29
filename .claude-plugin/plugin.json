@@ -1,6 +1,6 @@
 {
   "name": "rolepod-wplab",
-  "version": "1.22.1",
+  "version": "1.22.2",
   "description": "WordPress operations toolkit for Claude Code / Cursor / Codex / Gemini — wp-cli + REST + scoped fs + 89+ MCP tools, opt-in the rolepod-wp WordPress plugin unlocks execute-php + runtime introspection + one-click pair setup. Extension Protocol v1 — runs as a child of the rolepod parent (v2.7+) when its `<git-root>/.rolepod/parent-active` marker is present, standalone otherwise.",
   "author": {
     "name": "nuttaruj",

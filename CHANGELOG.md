@@ -2,6 +2,26 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.2] — 2026-05-29 — Fix: Docker build (externalize ssh2 native addon)
+
+### Fixed
+
+- The Docker image build (`docker build`, run in CI) failed at `npm run build`
+  with `Cannot find module './crypto/build/Release/sshcrypto.node'`. `ssh2`
+  (pulled in by `node-ssh` for SSH targets) ships an OPTIONAL native addon;
+  bundling it made esbuild try to resolve that `.node` at build time — fine on
+  a host where node-gyp built it, but fatal in the alpine build stage with no
+  native toolchain. Marked `ssh2` + `cpu-features` **external** in
+  `tsup.config.ts` so they resolve from `node_modules` at runtime (ssh2 falls
+  back to pure JS when the addon is absent), and promoted `ssh2` to a declared
+  dependency so it's always installed. Verified locally: `docker build`
+  succeeds and the resulting image serves a clean MCP handshake.
+
+### Notes
+
+- Pure build/packaging fix — no tool behavior change. The bundle now `import`s
+  `ssh2` instead of inlining it; SSH-target functionality is unchanged.
+
 ## [1.22.1] — 2026-05-29 — validate_data structural warnings
 
 ### Added
