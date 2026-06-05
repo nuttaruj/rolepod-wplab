@@ -92,6 +92,18 @@ import {
   wpJobStatusToolDef,
 } from "./companion/wp_job_status.js";
 import {
+  wpMediaOptimizeHandler,
+  wpMediaOptimizeToolDef,
+} from "./companion/wp_media_optimize.js";
+import {
+  wpSiteBackupHandler,
+  wpSiteBackupToolDef,
+} from "./companion/wp_site_backup.js";
+import {
+  wpSiteRestoreHandler,
+  wpSiteRestoreToolDef,
+} from "./companion/wp_site_restore.js";
+import {
   wpSkillCatalogHandler,
   wpSkillCatalogToolDef,
 } from "./companion/wp_skill_catalog.js";
@@ -584,6 +596,18 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpJobStatusToolDef,
     handler: (d, raw) => wpJobStatusHandler(d.registry, raw),
+  },
+  {
+    def: wpMediaOptimizeToolDef,
+    handler: (d, raw) => wpMediaOptimizeHandler(d.registry, raw),
+  },
+  {
+    def: wpSiteBackupToolDef,
+    handler: (d, raw) => wpSiteBackupHandler(d.registry, raw),
+  },
+  {
+    def: wpSiteRestoreToolDef,
+    handler: (d, raw) => wpSiteRestoreHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpCustomInitToolDef,

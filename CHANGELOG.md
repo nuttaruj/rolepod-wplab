@@ -2,6 +2,28 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] — 2026-06-05 — MCP tools for companion media-optimize + site backup/restore
+
+### Added
+
+- **`rolepod_wp_media_optimize`** — drive the companion's bulk image optimizer:
+  `mode=immediate apply=false` (dry run), `apply=true` (optimize up to `limit`),
+  or `mode=enqueue` (throttled background queue). Requires companion v2.16+.
+- **`rolepod_wp_site_backup`** — throttled server-side site backup with action
+  dispatch: `start` (components + compress + exclude), `status`, `list`,
+  `inspect` (read the backup zip's index or a single member — e.g.
+  `manifest.json` / `database.sql` — WITHOUT extracting), `cancel`, `delete`.
+  Requires companion v2.17+.
+- **`rolepod_wp_site_restore`** — restore a backup (DESTRUCTIVE): `start`
+  (id + confirm + components + optional serialized-safe `search_replace` URL
+  rewrite + `path_prefix`) and `status`. Production targets need `confirm=true`.
+  Requires companion v2.18+.
+
+All three wrap the rolepod-wp companion's throttled endpoints (work runs in WP
+on a cron loop) and require a `rest` target with the companion enabled.
+`src/companion/Bridge.ts`, `src/schema/tools.ts`,
+`src/tools/companion/wp_{media_optimize,site_backup,site_restore}.ts`.
+
 ## [1.22.2] — 2026-05-29 — Fix: Docker build (externalize ssh2 native addon)
 
 ### Fixed

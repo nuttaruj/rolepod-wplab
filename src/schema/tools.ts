@@ -1995,6 +1995,65 @@ export const WpJobStatusOutputSchema = z.object({
 export type WpJobStatusOutput = z.infer<typeof WpJobStatusOutputSchema>;
 
 // ---------------------------------------------------------------------------
+// rolepod_wp_media_optimize + rolepod_wp_site_backup / _restore
+// (v1.23 — server-side companion engines, throttled in WP via cron)
+// ---------------------------------------------------------------------------
+
+export const WpMediaOptimizeInputSchema = z.object({
+  target_id: TargetIdSchema,
+  mode: z.enum(["immediate", "enqueue"]).default("immediate"),
+  apply: z.boolean().default(false),
+  min_bytes: z.number().int().min(1).default(200_000),
+  max_dimension: z.number().int().min(0).default(0),
+  quality: z.number().int().min(1).max(100).default(82),
+  limit: z.number().int().min(1).max(100).default(20),
+});
+export type WpMediaOptimizeInput = z.infer<typeof WpMediaOptimizeInputSchema>;
+export const WpMediaOptimizeOutputSchema = z.record(z.unknown());
+export type WpMediaOptimizeOutput = z.infer<typeof WpMediaOptimizeOutputSchema>;
+
+const BackupComponentsSchema = z
+  .object({
+    db: z.boolean().optional(),
+    uploads: z.boolean().optional(),
+    themes: z.boolean().optional(),
+    plugins: z.boolean().optional(),
+    muplugins: z.boolean().optional(),
+  })
+  .optional();
+
+export const WpSiteBackupInputSchema = z.object({
+  target_id: TargetIdSchema,
+  action: z
+    .enum(["start", "status", "list", "inspect", "cancel", "delete"])
+    .default("status"),
+  components: BackupComponentsSchema,
+  compress: z.boolean().optional(),
+  exclude: z.array(z.string()).optional(),
+  id: z.string().optional(),
+  entry: z.string().optional(),
+  max_bytes: z.number().int().min(1).max(5_000_000).optional(),
+});
+export type WpSiteBackupInput = z.infer<typeof WpSiteBackupInputSchema>;
+export const WpSiteBackupOutputSchema = z.record(z.unknown());
+export type WpSiteBackupOutput = z.infer<typeof WpSiteBackupOutputSchema>;
+
+export const WpSiteRestoreInputSchema = z.object({
+  target_id: TargetIdSchema,
+  action: z.enum(["start", "status"]).default("status"),
+  id: z.string().optional(),
+  confirm: z.boolean().default(false),
+  components: z
+    .object({ db: z.boolean().optional(), files: z.boolean().optional() })
+    .optional(),
+  search_replace: z.record(z.string()).optional(),
+  path_prefix: z.string().optional(),
+});
+export type WpSiteRestoreInput = z.infer<typeof WpSiteRestoreInputSchema>;
+export const WpSiteRestoreOutputSchema = z.record(z.unknown());
+export type WpSiteRestoreOutput = z.infer<typeof WpSiteRestoreOutputSchema>;
+
+// ---------------------------------------------------------------------------
 // rolepod_wp_custom_* (v1.18 — Rolepod Custom plugin scaffolding)
 // ---------------------------------------------------------------------------
 

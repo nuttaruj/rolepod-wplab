@@ -1839,6 +1839,99 @@ export class CompanionBridge {
     throw this.skillError(res.status, res.body, "SKILL_GET");
   }
 
+  // ---------------------------------------------------------------------------
+  // v1.23 — server-side companion engines: media-optimize + site backup/restore.
+  // These wrap the rolepod-wp companion's throttled endpoints (the work runs in
+  // WP on a cron loop; the MCP just starts/polls/inspects).
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Thin JSON call to a companion endpoint. Injects a fresh session token when
+   * `withToken` is true (writes), sends GET params as query, POST as body, and
+   * throws a typed WplabError on a non-2xx companion response.
+   */
+  private async companionCall(
+    method: "GET" | "POST",
+    path: string,
+    payload: Record<string, unknown> = {},
+    withToken = true,
+  ): Promise<Record<string, unknown>> {
+    const merged = withToken
+      ? { session_token: await this.ensureFreshToken(), ...payload }
+      : payload;
+    const res = await this.target.rest(
+      method === "GET"
+        ? {
+            method,
+            path,
+            query: merged as Record<string, string | number | boolean>,
+          }
+        : { method, path, body: merged },
+    );
+    const b = (res.body ?? {}) as Record<string, unknown>;
+    if (res.status >= 200 && res.status < 300) {
+      return b;
+    }
+    throw new WplabError(
+      typeof b["error_code"] === "string"
+        ? (b["error_code"] as string)
+        : `COMPANION_HTTP_${res.status}`,
+      typeof b["error_message"] === "string"
+        ? (b["error_message"] as string)
+        : `${path} returned HTTP ${res.status}`,
+      { status: res.status, path },
+    );
+  }
+
+  async mediaOptimize(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/media-optimize", input);
+  }
+
+  async backupStart(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-start", input);
+  }
+
+  async backupStatus(): Promise<Record<string, unknown>> {
+    return this.companionCall("GET", "/wplab/v1/backup-status", {}, false);
+  }
+
+  async backupList(): Promise<Record<string, unknown>> {
+    return this.companionCall("GET", "/wplab/v1/backup-list", {}, false);
+  }
+
+  async backupInspect(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-inspect", input, false);
+  }
+
+  async backupCancel(): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-cancel", {});
+  }
+
+  async backupDelete(id: string): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-delete", { id });
+  }
+
+  async restoreStart(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-restore", input);
+  }
+
+  async restoreStatus(): Promise<Record<string, unknown>> {
+    return this.companionCall(
+      "GET",
+      "/wplab/v1/backup-restore-status",
+      {},
+      false,
+    );
+  }
+
   /** Token + 401-retry envelope shared by the three skill mutations. */
   private async skillMutate(
     method: "POST" | "DELETE",
