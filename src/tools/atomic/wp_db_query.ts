@@ -12,7 +12,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpDbQueryToolDef = {
   name: "rolepod_wp_db_query",
   description:
-    "Run a SQL query via wp-cli `db query`. Default: SELECT/SHOW/DESCRIBE/EXPLAIN only. Set allow_write=true (+ confirm=true on prod) to unlock INSERT/UPDATE/DELETE. RestTarget without companion v0.2 throws (no remote wp-cli access).",
+    "Run a SQL query via wp-cli `db query`, on every target kind. Default: a single SELECT/SHOW/DESCRIBE/EXPLAIN statement — stacked statements (`SELECT 1; DELETE …`) are rejected, since wp-cli runs every one of them. Set allow_write=true (+ confirm=true when the production guard is armed) to unlock INSERT/UPDATE/DELETE. RestTarget without companion v0.2 throws (no remote wp-cli access).",
   inputSchema: DbQueryInputSchema,
 };
 

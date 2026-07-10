@@ -537,7 +537,7 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpHealthCheckToolDef,
-    handler: (d, raw) => wpHealthCheckHandler(d.registry, raw),
+    handler: (d, raw) => wpHealthCheckHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpFileReadToolDef,

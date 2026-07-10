@@ -7,6 +7,8 @@ import {
   type WpHealthCheckOutput,
 } from "../../schema/tools.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import type { ProdGuard } from "../../safety/ProdGuard.js";
+import { armProdGuard } from "../../safety/detectProduction.js";
 import {
   detectRolepodParent,
   resolveEvidenceDir,
@@ -17,12 +19,13 @@ import {
 export const wpHealthCheckToolDef = {
   name: "rolepod_wp_health_check",
   description:
-    "Lightweight diagnostic of a connected WP target — versions, wp-cli reachability, REST reachability, companion presence, warnings.",
+    "Lightweight diagnostic of a connected WP target — versions, wp-cli reachability, REST reachability, companion presence, production-guard state, warnings.",
   inputSchema: WpHealthCheckInputSchema,
 };
 
 export async function wpHealthCheckHandler(
   registry: TargetRegistry,
+  prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<WpHealthCheckOutput> {
   const startedAt = new Date();
@@ -89,6 +92,16 @@ export async function wpHealthCheckHandler(
 
   const companionOk = target.companion?.enabled === true;
 
+  // Re-probe rather than cache the connect-time answer: WP_ENVIRONMENT_TYPE
+  // can change under us, and a stale "armed" reading is the kind of false
+  // guarantee this tool exists to catch.
+  const prodGuardStatus = await armProdGuard(target, prodGuard);
+  if (!prodGuardStatus.armed) {
+    warnings.push(
+      `production guard is DISARMED for this target (${prodGuardStatus.reason}) — destructive tools will not require confirm. Set WP_ENVIRONMENT_TYPE=production on the site, or add the host to ROLEPOD_WPLAB_PROD_HOSTS.`,
+    );
+  }
+
   const output = WpHealthCheckOutputSchema.parse({
     wp_version: target.wpVersion,
     ...(target.phpVersion !== undefined
@@ -99,6 +112,7 @@ export async function wpHealthCheckHandler(
     rest_ok: restOk,
     companion_ok: companionOk,
     site_url: target.siteurl,
+    prod_guard: prodGuardStatus,
     warnings,
   });
 

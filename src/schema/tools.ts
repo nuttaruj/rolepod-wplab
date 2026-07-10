@@ -263,6 +263,7 @@ export const WpHealthCheckOutputSchema = z.object({
   rest_ok: z.boolean(),
   companion_ok: z.boolean(),
   site_url: z.string().url(),
+  prod_guard: ProdGuardStatusSchema.optional(),
   warnings: z.array(z.string()),
 });
 export type WpHealthCheckOutput = z.infer<typeof WpHealthCheckOutputSchema>;
