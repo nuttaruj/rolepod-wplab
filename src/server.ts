@@ -3,6 +3,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { loadProfile } from "./profile/load.js";
 import { ProdGuard } from "./safety/ProdGuard.js";
 import { TargetRegistry } from "./target/TargetRegistry.js";
+import { SERVER_INSTRUCTIONS } from "./serverInstructions.js";
 import { registerTools } from "./tools/registerTools.js";
 import { log } from "./util/log.js";
 
@@ -29,7 +30,7 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<{
 
   const server = new Server(
     { name: "rolepod-wplab", version: "0.0.0" },
-    { capabilities: { tools: {} } },
+    { capabilities: { tools: {} }, instructions: SERVER_INSTRUCTIONS },
   );
 
   registerTools(server, { registry, prodGuard });
