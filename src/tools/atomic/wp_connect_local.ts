@@ -20,9 +20,10 @@ export async function wpConnectLocalHandler(
 ): Promise<ConnectLocalOutput> {
   const input: ConnectLocalInput = ConnectLocalInputSchema.parse(raw);
   const target = await openTarget({ kind: "local", path: input.path });
-  registry.register(target);
+  const prodGuard = await registry.register(target);
   return ConnectLocalOutputSchema.parse({
     target_id: target.id,
+    ...(prodGuard ? { prod_guard: prodGuard } : {}),
     siteurl: target.siteurl,
     wp_version: target.wpVersion,
     ...(target.phpVersion !== undefined

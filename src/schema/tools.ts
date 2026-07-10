@@ -19,6 +19,33 @@ export const TargetIdSchema = z
 
 export const RunIdSchema = z.string().regex(/^wplab_\d{8}T\d{6}_[a-z0-9]{8}$/);
 
+/**
+ * Production-guard state, resolved once at connect time. `armed: true` means
+ * write tools on this target require `confirm=true`.
+ */
+export const ProdGuardStatusSchema = z
+  .object({
+    armed: z.boolean(),
+    env_type: z
+      .string()
+      .nullable()
+      .describe(
+        "Raw WP_ENVIRONMENT_TYPE. Empty string = unset (guard stays disarmed; WordPress' own default of 'production' is deliberately not trusted). null = the probe could not run.",
+      ),
+    reason: z.enum([
+      "env_type",
+      "host_pattern",
+      "companion",
+      "not_production",
+      "unset",
+      "probe_failed",
+    ]),
+  })
+  .nullable()
+  .describe(
+    "Whether the production guard is armed for this target, and why. Disarmed on an unset or unprobeable environment type — an unguarded target is reported, never silently assumed safe.",
+  );
+
 // `confirm` / `allow_destructive` accept boolean true OR the literal string
 // "true". Some MCP clients JSON-stringify booleans through transports without
 // strict type preservation; we coerce both forms and enforce the semantic
@@ -65,6 +92,7 @@ export const ConnectLocalOutputSchema = z.object({
       capabilities: z.array(z.string()),
     })
     .nullable(),
+  prod_guard: ProdGuardStatusSchema.optional(),
 });
 export type ConnectLocalOutput = z.infer<typeof ConnectLocalOutputSchema>;
 
@@ -136,6 +164,7 @@ export const ConnectRestOutputSchema = z.object({
     .describe(
       "Non-fatal issues detected at connect time (e.g. siteurl/home stored as http on an https-only site). Each entry has a machine-readable code and a human-readable suggested fix.",
     ),
+  prod_guard: ProdGuardStatusSchema.optional(),
 });
 export type ConnectRestOutput = z.infer<typeof ConnectRestOutputSchema>;
 
@@ -157,6 +186,7 @@ export const ConnectSshOutputSchema = z.object({
   target_id: TargetIdSchema,
   siteurl: z.string(),
   wp_version: z.string(),
+  prod_guard: ProdGuardStatusSchema.optional(),
 });
 export type ConnectSshOutput = z.infer<typeof ConnectSshOutputSchema>;
 
@@ -176,6 +206,7 @@ export const ConnectDockerOutputSchema = z.object({
   target_id: TargetIdSchema,
   siteurl: z.string(),
   wp_version: z.string(),
+  prod_guard: ProdGuardStatusSchema.optional(),
 });
 export type ConnectDockerOutput = z.infer<typeof ConnectDockerOutputSchema>;
 
@@ -1041,6 +1072,7 @@ export const PairOutputSchema = z.object({
   capabilities: z.array(z.string()),
   companion_version: z.string(),
   is_production: z.boolean(),
+  prod_guard: ProdGuardStatusSchema.optional(),
   app_password_name: z
     .string()
     .describe(

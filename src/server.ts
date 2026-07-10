@@ -18,7 +18,7 @@ export async function createServer(opts: CreateServerOptions = {}): Promise<{
 }> {
   const profile = loadProfile();
   const prodGuard = new ProdGuard(profile.production_hosts);
-  const registry = new TargetRegistry();
+  const registry = new TargetRegistry(undefined, prodGuard);
 
   log.info("rolepod-wplab boot", {
     version: "0.0.0",

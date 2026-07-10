@@ -30,10 +30,10 @@ describe("TargetRegistry", () => {
     vi.useRealTimers();
   });
 
-  it("register + get round-trips the target, guarded", () => {
+  it("register + get round-trips the target, guarded", async () => {
     const reg = new TargetRegistry(60_000);
     const t = fakeTarget("tgt_aaaaaaaa");
-    reg.register(t);
+    await reg.register(t);
     const got = reg.get("tgt_aaaaaaaa");
     expect(got.id).toBe(t.id);
     expect(isGuardedTarget(got)).toBe(true);
@@ -42,7 +42,7 @@ describe("TargetRegistry", () => {
 
   it("guards every target it hands out", async () => {
     const reg = new TargetRegistry(60_000);
-    reg.register(fakeTarget("tgt_guarded0"));
+    await reg.register(fakeTarget("tgt_guarded0"));
     await expect(
       reg
         .get("tgt_guarded0")
@@ -56,17 +56,17 @@ describe("TargetRegistry", () => {
     expect(() => reg.get("tgt_missing0")).toThrow(TargetNotFoundError);
   });
 
-  it("rejects double-register of same id", () => {
+  it("rejects double-register of same id", async () => {
     const reg = new TargetRegistry(60_000);
     const t = fakeTarget("tgt_dupedupe");
-    reg.register(t);
-    expect(() => reg.register(t)).toThrow(/collision/);
+    await reg.register(t);
+    await expect(reg.register(t)).rejects.toThrow(/collision/);
   });
 
   it("disconnect removes target + invokes close()", async () => {
     const reg = new TargetRegistry(60_000);
     const t = fakeTarget("tgt_closeit0");
-    reg.register(t);
+    await reg.register(t);
     await reg.disconnect("tgt_closeit0");
     expect(reg.list()).toHaveLength(0);
     expect(t.close).toHaveBeenCalledOnce();
@@ -84,8 +84,8 @@ describe("TargetRegistry", () => {
     const reg = new TargetRegistry(60_000);
     const a = fakeTarget("tgt_aaaaaaaa");
     const b = fakeTarget("tgt_bbbbbbbb");
-    reg.register(a);
-    reg.register(b);
+    await reg.register(a);
+    await reg.register(b);
     await reg.closeAll();
     expect(reg.list()).toHaveLength(0);
     expect(a.close).toHaveBeenCalledOnce();
@@ -96,7 +96,7 @@ describe("TargetRegistry", () => {
     vi.useFakeTimers();
     const reg = new TargetRegistry(10_000);
     const t = fakeTarget("tgt_idleidle");
-    reg.register(t);
+    await reg.register(t);
     expect(reg.list()).toHaveLength(1);
     await vi.advanceTimersByTimeAsync(10_001);
     expect(reg.list()).toHaveLength(0);
@@ -107,7 +107,7 @@ describe("TargetRegistry", () => {
     vi.useFakeTimers();
     const reg = new TargetRegistry(10_000);
     const t = fakeTarget("tgt_keepalive");
-    reg.register(t);
+    await reg.register(t);
     await vi.advanceTimersByTimeAsync(8_000);
     reg.get("tgt_keepalive"); // bump
     await vi.advanceTimersByTimeAsync(8_000);

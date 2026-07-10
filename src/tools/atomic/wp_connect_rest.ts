@@ -84,7 +84,7 @@ export async function wpConnectRestHandler(
     );
   }
 
-  registry.register(target);
+  const prodGuard = await registry.register(target);
   await vault.touch(lookupKey);
 
   // Surface the active MCP-server profile (default | power) so AI clients
@@ -98,6 +98,7 @@ export async function wpConnectRestHandler(
 
   return ConnectRestOutputSchema.parse({
     target_id: target.id,
+    ...(prodGuard ? { prod_guard: prodGuard } : {}),
     siteurl: target.siteurl,
     wp_version: target.wpVersion,
     ...(target.phpVersion !== undefined

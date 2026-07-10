@@ -29,11 +29,12 @@ export async function wpConnectDockerHandler(
     opts.dockerSocketPath = input.docker_socket_path;
 
   const target = await openTarget({ kind: "docker", options: opts });
-  registry.register(target);
+  const prodGuard = await registry.register(target);
 
   return ConnectDockerOutputSchema.parse({
     target_id: target.id,
     siteurl: target.siteurl,
     wp_version: target.wpVersion,
+    ...(prodGuard ? { prod_guard: prodGuard } : {}),
   });
 }

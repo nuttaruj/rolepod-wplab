@@ -132,10 +132,15 @@ export async function wpPairHandler(
     url: `${url.protocol}//${url.host}`,
     credential,
   });
-  registry.register(target);
+  // The companion already told us whether this is production. Honour it even
+  // when the raw WP_ENVIRONMENT_TYPE probe cannot run over REST.
+  const prodGuard = await registry.register(target, {
+    assumeProduction: body.is_production === true,
+  });
 
   return PairOutputSchema.parse({
     target_id: target.id,
+    ...(prodGuard ? { prod_guard: prodGuard } : {}),
     siteurl: body.siteurl ?? `${url.protocol}//${url.host}`,
     username: body.username,
     capabilities: body.capabilities ?? [],

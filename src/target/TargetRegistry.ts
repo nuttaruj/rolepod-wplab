@@ -1,6 +1,9 @@
 import { TargetNotFoundError } from "../util/errors.js";
 import { log } from "../util/log.js";
 import { guardTarget } from "../runtime/wpCliGuard.js";
+import { armProdGuard } from "../safety/detectProduction.js";
+import type { ProdGuardStatus } from "../safety/detectProduction.js";
+import type { ProdGuard } from "../safety/ProdGuard.js";
 import type { Target } from "../runtime/Target.js";
 
 const DEFAULT_IDLE_MS = 10 * 60 * 1000;
@@ -14,28 +17,53 @@ interface RegistryEntry {
 export class TargetRegistry {
   private readonly entries = new Map<string, RegistryEntry>();
   private readonly idleMs: number;
+  private readonly prodGuard: ProdGuard | undefined;
 
-  constructor(idleMs?: number) {
+  constructor(idleMs?: number, prodGuard?: ProdGuard) {
     const envIdle = process.env["ROLEPOD_WPLAB_IDLE_TIMEOUT_MS"];
     const parsed = envIdle ? Number.parseInt(envIdle, 10) : NaN;
     this.idleMs =
       idleMs ??
       (Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_IDLE_MS);
+    this.prodGuard = prodGuard;
   }
 
-  register(target: Target): void {
+  /**
+   * Every Target reaches the tool layer through get()/list(), so this is where
+   * the catastrophic-command guard is applied and where the production guard
+   * is armed. Doing both here means no connect path — including pairing and
+   * alias reconnect — can forget to.
+   *
+   * `assumeProduction` arms the guard without probing — used when the site
+   * already told us (the companion returns `is_production` at pair time).
+   *
+   * Returns null when the registry was built without a ProdGuard (tests).
+   */
+  async register(
+    target: Target,
+    opts: { assumeProduction?: boolean } = {},
+  ): Promise<ProdGuardStatus | null> {
     if (this.entries.has(target.id)) {
       throw new Error(`target_id collision: ${target.id}`);
     }
-    // Every Target reaches the tool layer through get()/list(), so guarding it
-    // here covers every caller and every target kind.
+    const guarded = guardTarget(target);
     const entry: RegistryEntry = {
-      target: guardTarget(target),
+      target: guarded,
       lastTouch: Date.now(),
       timer: this.armTimer(target.id),
     };
     this.entries.set(target.id, entry);
     log.debug("target registered", { id: target.id, idleMs: this.idleMs });
+
+    if (!this.prodGuard) return null;
+    if (opts.assumeProduction) this.prodGuard.markProduction(target.siteurl);
+    const probed = await armProdGuard(guarded, this.prodGuard);
+    const status: ProdGuardStatus =
+      opts.assumeProduction && probed.reason !== "env_type"
+        ? { ...probed, reason: "companion" }
+        : probed;
+    log.info("prod guard", { id: target.id, ...status });
+    return status;
   }
 
   get(id: string): Target {

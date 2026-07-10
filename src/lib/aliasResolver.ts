@@ -105,7 +105,7 @@ export async function openAlias(
     url: entry.siteurl,
     credential: cred,
   });
-  deps.registry.register(target);
+  await deps.registry.register(target);
   await vault.touch(credLookup);
   await store.touch(alias);
   rememberAliasMapping(alias, target.id);

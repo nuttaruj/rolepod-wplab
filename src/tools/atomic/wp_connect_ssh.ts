@@ -39,11 +39,12 @@ export async function wpConnectSshHandler(
   if (input.password !== undefined) opts.password = input.password;
 
   const target = await openTarget({ kind: "ssh", options: opts });
-  registry.register(target);
+  const prodGuard = await registry.register(target);
 
   return ConnectSshOutputSchema.parse({
     target_id: target.id,
     siteurl: target.siteurl,
     wp_version: target.wpVersion,
+    ...(prodGuard ? { prod_guard: prodGuard } : {}),
   });
 }
