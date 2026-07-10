@@ -46,6 +46,8 @@ export const rankmathWrite: RankMathWriteAPI = {
         await replacePostMeta(target, postId, "rank_math_robots", robots, {
           backupPrefix: "rankmath-robots",
           serialization: "json",
+          sourceTool: "rolepod_wp_rankmath_write",
+          category: "post",
         });
         updated.push(field);
         continue;

@@ -29,15 +29,18 @@ export const bricksWrite: BricksWriteAPI = {
     replacePostMeta(t, id, "_bricks_page_content_2", els, {
       backupPrefix: "bricks-page",
       serialization: "json",
+      sourceTool: "rolepod_wp_bricks_write",
     }),
   updateHeaderContent: (t, id, els) =>
     replacePostMeta(t, id, "_bricks_header_content", els, {
       backupPrefix: "bricks-header",
       serialization: "json",
+      sourceTool: "rolepod_wp_bricks_write",
     }),
   updateFooterContent: (t, id, els) =>
     replacePostMeta(t, id, "_bricks_footer_content", els, {
       backupPrefix: "bricks-footer",
       serialization: "json",
+      sourceTool: "rolepod_wp_bricks_write",
     }),
 };

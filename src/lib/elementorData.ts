@@ -96,7 +96,7 @@ export async function writeElementorData(
   target: Target,
   postId: number,
   sections: unknown[],
-  opts: { flush?: boolean } = {},
+  opts: { flush?: boolean; sourceTool?: string } = {},
 ): Promise<{ bytesWritten: number; backupPath: string | null }> {
   requireMetaCapable(target, "writeElementorData");
   const res = await replacePostMeta(
@@ -107,6 +107,7 @@ export async function writeElementorData(
     {
       backupPrefix: "elementor",
       serialization: "json-string",
+      sourceTool: opts.sourceTool ?? "rolepod_wp_elementor_write",
     },
   );
   if (opts.flush !== false) {

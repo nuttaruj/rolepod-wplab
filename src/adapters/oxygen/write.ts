@@ -18,5 +18,6 @@ export const oxygenWrite: OxygenWriteAPI = {
     replacePostMeta(target, postId, "ct_builder_shortcodes", shortcodes, {
       backupPrefix: "oxygen",
       serialization: "raw",
+      sourceTool: "rolepod_wp_oxygen_write",
     }),
 };
