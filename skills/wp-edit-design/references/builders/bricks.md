@@ -14,10 +14,23 @@ Reference for native-first Bricks page builds. **Raw HTML element = last resort.
 
 ## Detection
 
-- Active plugin: `bricks/bricks.php` or `bricks-builder/bricks-builder.php`
-- Per-page meta: `_bricks_page_content_2` (JSON array of element objects)
+- Active THEME: `bricks` (or `bricks-child`). Bricks ships as a theme, not a
+  plugin — `rolepod_wp_builder_detect` checks the theme list for it.
+- Per-post meta: `_bricks_page_content_2` (JSON array of element objects). A
+  page, a header template, and a footer template ALL store their tree in this
+  one key — the difference is the post, not the key.
 - Data shape: flat array, each item is one element with `id`, `name`, `parent`, `children: []`, `settings: {}`
 - See `../builder-formats.md` for the flat-array detail.
+
+## Header/footer templates — do not clobber the page body
+
+A header or footer is a separate post of type `bricks_template`, and its tree
+lives in `_bricks_page_content_2` — the same key a page uses for its body.
+`rolepod_wp_bricks_write` with `scope: header|footer` therefore refuses any post
+that is not a `bricks_template` (`BRICKS_WRONG_POST_TYPE`): writing there would
+overwrite that post's page content. Pass the template's own post id, which you
+can find with `rolepod_wp_bricks_read(target_id, page_id)` after listing
+`bricks_template` posts. `scope: page` writes the page body directly.
 
 ## Iron rules
 

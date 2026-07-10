@@ -1,5 +1,8 @@
 import { bricksAdapter } from "../../adapters/bricks/read.js";
-import { bricksWrite } from "../../adapters/bricks/write.js";
+import {
+  bricksWrite,
+  assertTemplatePost,
+} from "../../adapters/bricks/write.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import {
   BricksWriteInputSchema,
@@ -13,7 +16,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpBricksWriteToolDef = {
   name: "rolepod_wp_bricks_write",
   description:
-    "Replace Bricks page/header/footer element tree (_bricks_page_content_2 / _bricks_header_content / _bricks_footer_content). Requires allow_destructive=true; production guard fires unless confirm=true.",
+    "Replace a Bricks element tree in `_bricks_page_content_2`. scope=page targets a page/post body; scope=header|footer targets a header/footer TEMPLATE, whose post must be a `bricks_template` — a header/footer write to a normal page is refused (BRICKS_WRONG_POST_TYPE), because it shares the page-body meta key and would overwrite it. Requires allow_destructive=true; production guard fires unless confirm=true.",
   inputSchema: BricksWriteInputSchema,
 };
 
@@ -42,6 +45,10 @@ export async function wpBricksWriteHandler(
       { targetId: input.target_id },
     );
   }
+  // header/footer trees share `_bricks_page_content_2` with a page body, so a
+  // wrong-post-type write would overwrite page content. Guard before writing.
+  await assertTemplatePost(target, input.post_id, input.scope);
+
   const op =
     input.scope === "header"
       ? bricksWrite.updateHeaderContent
