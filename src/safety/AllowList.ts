@@ -1,5 +1,12 @@
 // wp-cli subcommand allow-list. Hard-coded per W-005 (no config).
 // See brief/04-runtime-layer.md "Allow-list of wp-cli subcommands".
+//
+// Enforced in the `rolepod_wp_cli_run` handler, so it applies to every target
+// kind. Every subcommand name below is verified against wp-cli 2.12.0 help
+// output — an entry for a subcommand that does not exist is worse than no
+// entry, because it reads as coverage the tool does not have.
+
+import { isReadOnlySql } from "./DbGuard.js";
 
 const READ_ONLY = new Set<string>([
   "cli",
@@ -7,18 +14,24 @@ const READ_ONLY = new Set<string>([
   "cli version",
   "core version",
   "core check-update",
+  "core is-installed", // `--network` makes it the multisite probe
+  "core verify-checksums",
   "db check",
   "db size",
   "option get",
   "option list",
   "plugin status",
   "plugin list",
+  "plugin get",
+  "plugin verify-checksums",
   "theme status",
   "theme list",
+  "theme get",
   "post list",
   "post get",
   "user list",
   "user get",
+  "user list-caps",
   "site list",
   "rewrite list",
   "config get",
@@ -30,12 +43,52 @@ const READ_ONLY = new Set<string>([
   "transient list",
   "cache type",
   "user session list",
+  "maintenance-mode status",
+  "role list",
+  "role get",
+  "role exists",
+  "cap list",
+  "term list",
+  "term get",
+  "comment list",
+  "comment get",
 ]);
 
 const DESTRUCTIVE = new Set<string>([
   "core download",
   "core update",
+  "core update-db",
   "core install",
+  "config set",
+  "config delete",
+  "maintenance-mode activate",
+  "maintenance-mode deactivate",
+  // `rewrite flush` and `media regenerate` are benign but they do write. They
+  // belong behind allow_destructive, not in READ_ONLY.
+  "rewrite flush",
+  "media import",
+  "media regenerate",
+  "role create",
+  "role delete",
+  "cap add",
+  "cap remove",
+  "term create",
+  "term update",
+  "term delete",
+  "comment update",
+  "comment approve",
+  "comment unapprove",
+  "comment spam",
+  "comment unspam",
+  "comment trash",
+  "comment untrash",
+  "comment delete",
+  "user add-role",
+  "user remove-role",
+  "user set-role",
+  "user add-cap",
+  "user remove-cap",
+  "theme delete",
   "plugin install",
   "plugin activate",
   "plugin deactivate",
@@ -71,7 +124,9 @@ const DESTRUCTIVE = new Set<string>([
 const NEVER_ALLOWED = new Set<string>([
   "db reset",
   "db drop",
+  "db clean", // removes every table with the site's prefix
   "core multisite-convert",
+  "role reset", // wipes every capability on every default role, site-wide
   "eval", // raw eval is the companion's job, never wp-cli passthrough
 ]);
 
@@ -101,6 +156,11 @@ export function checkWpCli(
     return { allowed: false, kind: "never_allowed" };
   if (NEVER_ALLOWED.has(head)) return { allowed: false, kind: "never_allowed" };
 
+  if (twoToken === "db query") return checkDbQuery(args, allowDestructive);
+  if (twoToken === "user delete" && !hasReassign(args)) {
+    return { allowed: false, kind: "not_in_allowlist" };
+  }
+
   if (threeToken && READ_ONLY.has(threeToken))
     return { allowed: true, kind: "read_only" };
   if (threeToken && DESTRUCTIVE.has(threeToken)) {
@@ -125,6 +185,33 @@ export function checkWpCli(
   }
 
   return { allowed: false, kind: "not_in_allowlist" };
+}
+
+/**
+ * `db query` runs whatever SQL it is handed. Classify by the SQL, not by the
+ * subcommand: a single read statement is read-only, anything else needs
+ * allow_destructive. Stacked statements never classify as read-only.
+ */
+function checkDbQuery(
+  args: readonly string[],
+  allowDestructive: boolean,
+): AllowListVerdict {
+  const sql = args.slice(2).find((a) => !a.startsWith("-"));
+  if (sql !== undefined && isReadOnlySql(sql)) {
+    return { allowed: true, kind: "read_only" };
+  }
+  return allowDestructive
+    ? { allowed: true, kind: "destructive" }
+    : { allowed: false, kind: "not_in_allowlist" };
+}
+
+/**
+ * `wp user delete` reassigns nothing by default — every post the user authored
+ * is deleted with them. Refuse the command unless the caller said where the
+ * content goes.
+ */
+function hasReassign(args: readonly string[]): boolean {
+  return args.some((a) => a === "--reassign" || a.startsWith("--reassign="));
 }
 
 export const _exposed_for_tests = { READ_ONLY, DESTRUCTIVE, NEVER_ALLOWED };

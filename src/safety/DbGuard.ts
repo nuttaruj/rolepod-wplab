@@ -17,23 +17,44 @@ export function assertReadOnlyOrAllowed(
   allowWrite: boolean,
 ): void {
   if (allowWrite) return;
+  if (!isReadOnlySql(sql)) throw new DbWriteBlockedError(sql);
+}
 
-  const head = stripLeadingComments(sql).trim().toLowerCase();
-  if (!head) throw new DbWriteBlockedError(sql);
+/**
+ * True when `sql` is a single read statement.
+ *
+ * Stacked statements are rejected outright: `wp db query` and mysql both run
+ * every `;`-separated statement, so inspecting only the head would wave
+ * `SELECT 1; DELETE FROM wp_posts` through as read-only.
+ */
+export function isReadOnlySql(sql: string): boolean {
+  const stripped = stripLeadingComments(sql).trim();
+  if (!stripped) return false;
+  if (hasStackedStatements(stripped)) return false;
 
+  const head = stripped.toLowerCase();
   // Allow WITH foo AS (...) SELECT ...
   const afterWith = head.startsWith("with ") ? stripWithBlock(head) : head;
 
-  for (const p of READ_ONLY_PREFIXES) {
-    if (
+  return READ_ONLY_PREFIXES.some(
+    (p) =>
       afterWith === p ||
       afterWith.startsWith(p + " ") ||
-      afterWith.startsWith(p + "\n")
-    ) {
-      return;
-    }
-  }
-  throw new DbWriteBlockedError(sql);
+      afterWith.startsWith(p + "\n"),
+  );
+}
+
+/**
+ * True when a `;` separates two statements. String literals and backtick-quoted
+ * identifiers are removed first so a semicolon inside `WHERE name = 'a;b'`
+ * doesn't count. A single trailing `;` is fine.
+ */
+function hasStackedStatements(sql: string): boolean {
+  const withoutLiterals = sql
+    .replace(/'(?:[^'\\]|\\.|'')*'/g, "''")
+    .replace(/"(?:[^"\\]|\\.|"")*"/g, '""')
+    .replace(/`(?:[^`]|``)*`/g, "``");
+  return /;\s*\S/.test(withoutLiterals);
 }
 
 /** Drop leading SQL line/block comments. */

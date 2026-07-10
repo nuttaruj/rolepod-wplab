@@ -96,6 +96,141 @@ describe("AllowList — v1.1 additions", () => {
   });
 });
 
+describe("AllowList — v1.2 consolidated additions", () => {
+  it.each([
+    ["core is-installed", ["core", "is-installed", "--network"]],
+    ["core verify-checksums", ["core", "verify-checksums"]],
+    ["plugin verify-checksums", ["plugin", "verify-checksums", "akismet"]],
+    ["plugin get", ["plugin", "get", "akismet"]],
+    ["theme get", ["theme", "get", "twentytwentyfour"]],
+    ["maintenance-mode status", ["maintenance-mode", "status"]],
+    ["role list", ["role", "list"]],
+    ["cap list", ["cap", "list", "editor"]],
+    ["term list", ["term", "list", "category"]],
+    ["comment get", ["comment", "get", "3"]],
+    ["user list-caps", ["user", "list-caps", "2"]],
+  ])("classifies `%s` as read-only", (_label, args) => {
+    expect(checkWpCli(args, false)).toEqual({
+      allowed: true,
+      kind: "read_only",
+    });
+  });
+
+  it.each([
+    ["config set", ["config", "set", "WP_DEBUG", "false", "--raw"]],
+    ["config delete", ["config", "delete", "WP_DEBUG"]],
+    ["core update-db", ["core", "update-db"]],
+    ["theme delete", ["theme", "delete", "twentyten"]],
+    ["maintenance-mode activate", ["maintenance-mode", "activate"]],
+    ["maintenance-mode deactivate", ["maintenance-mode", "deactivate"]],
+    ["rewrite flush", ["rewrite", "flush"]],
+    ["media import", ["media", "import", "https://x.test/a.png"]],
+    ["media regenerate", ["media", "regenerate"]],
+    ["role create", ["role", "create", "editor2", "Editor 2"]],
+    ["cap add", ["cap", "add", "editor", "manage_options"]],
+    ["term create", ["term", "create", "category", "News"]],
+    ["comment spam", ["comment", "spam", "3"]],
+    ["user set-role", ["user", "set-role", "2", "author"]],
+  ])("classifies `%s` as destructive", (_label, args) => {
+    expect(checkWpCli(args, true)).toEqual({
+      allowed: true,
+      kind: "destructive",
+    });
+    expect(checkWpCli(args, false)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+  });
+
+  it("hard-blocks `role reset` — wipes every default role's caps", () => {
+    expect(checkWpCli(["role", "reset", "--all"], true)).toEqual({
+      allowed: false,
+      kind: "never_allowed",
+    });
+  });
+
+  it("hard-blocks `db clean` — drops every prefixed table", () => {
+    expect(checkWpCli(["db", "clean"], true)).toEqual({
+      allowed: false,
+      kind: "never_allowed",
+    });
+  });
+});
+
+describe("AllowList — `db query` is classified by its SQL", () => {
+  it("treats a single read statement as read-only", () => {
+    expect(
+      checkWpCli(["db", "query", "SELECT * FROM wp_posts"], false),
+    ).toEqual({ allowed: true, kind: "read_only" });
+  });
+
+  it("requires allow_destructive for a write statement", () => {
+    const args = ["db", "query", "DELETE FROM wp_posts"];
+    expect(checkWpCli(args, false)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+    expect(checkWpCli(args, true)).toEqual({
+      allowed: true,
+      kind: "destructive",
+    });
+  });
+
+  it("never treats a stacked statement as read-only", () => {
+    const args = ["db", "query", "SELECT 1; DELETE FROM wp_posts"];
+    expect(checkWpCli(args, false)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+    expect(checkWpCli(args, true)).toEqual({
+      allowed: true,
+      kind: "destructive",
+    });
+  });
+
+  it("allows a semicolon inside a string literal", () => {
+    expect(
+      checkWpCli(
+        ["db", "query", "SELECT * FROM wp_posts WHERE x = 'a;b'"],
+        false,
+      ),
+    ).toEqual({ allowed: true, kind: "read_only" });
+  });
+
+  it("blocks `db query` with no SQL unless destructive", () => {
+    expect(checkWpCli(["db", "query"], false)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+  });
+});
+
+describe("AllowList — `user delete` requires --reassign", () => {
+  it("blocks a bare `user delete` even with allow_destructive", () => {
+    expect(checkWpCli(["user", "delete", "5"], true)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+  });
+
+  it.each([["--reassign=1"], ["--reassign"]])(
+    "allows `user delete` with %s",
+    (flag) => {
+      expect(checkWpCli(["user", "delete", "5", flag, "1"], true)).toEqual({
+        allowed: true,
+        kind: "destructive",
+      });
+    },
+  );
+
+  it("still requires allow_destructive when reassigning", () => {
+    expect(checkWpCli(["user", "delete", "5", "--reassign=1"], false)).toEqual({
+      allowed: false,
+      kind: "not_in_allowlist",
+    });
+  });
+});
+
 describe("AllowList — internal sets exposed for tests", () => {
   it("READ_ONLY contains expected v1.1 entries", () => {
     expect(_exposed_for_tests.READ_ONLY.has("transient list")).toBe(true);
