@@ -2287,34 +2287,34 @@ export const WpBuilderDetectInputSchema = z.object({
 });
 export type WpBuilderDetectInput = z.infer<typeof WpBuilderDetectInputSchema>;
 
+const BuilderSlugSchema = z.enum([
+  "elementor",
+  "bricks",
+  "divi",
+  "oxygen",
+  "gutenberg",
+  "beaver-builder",
+  "visual-composer",
+  "breakdance",
+  "brizy",
+]);
+
 export const WpBuilderDetectOutputSchema = z.object({
   active_builders: z.array(
     z.object({
-      slug: z.enum([
-        "elementor",
-        "bricks",
-        "divi",
-        "oxygen",
-        "gutenberg",
-        "beaver-builder",
-        "visual-composer",
-      ]),
+      slug: BuilderSlugSchema,
       version: z.string(),
       capabilities: z.array(z.string()),
       pro: z.boolean(),
+      // This MCP server has a read/write adapter for the builder.
+      supported: z.boolean(),
+      // Whether the adapter can WRITE this builder, not just read it. `false`
+      // for a detected-but-unsupported builder so the caller does not promise
+      // an edit it cannot make.
+      write_support: z.boolean(),
     }),
   ),
-  primary: z
-    .enum([
-      "elementor",
-      "bricks",
-      "divi",
-      "oxygen",
-      "gutenberg",
-      "beaver-builder",
-      "visual-composer",
-    ])
-    .nullable(),
+  primary: BuilderSlugSchema.nullable(),
 });
 export type WpBuilderDetectOutput = z.infer<typeof WpBuilderDetectOutputSchema>;
 
