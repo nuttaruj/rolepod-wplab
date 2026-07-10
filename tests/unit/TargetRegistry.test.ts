@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { TargetRegistry } from "../../src/target/TargetRegistry.js";
+import { isGuardedTarget } from "../../src/runtime/wpCliGuard.js";
 import { TargetNotFoundError } from "../../src/util/errors.js";
 import type { Target } from "../../src/runtime/Target.js";
 
@@ -29,12 +30,25 @@ describe("TargetRegistry", () => {
     vi.useRealTimers();
   });
 
-  it("register + get round-trips the target", () => {
+  it("register + get round-trips the target, guarded", () => {
     const reg = new TargetRegistry(60_000);
     const t = fakeTarget("tgt_aaaaaaaa");
     reg.register(t);
-    expect(reg.get("tgt_aaaaaaaa")).toBe(t);
+    const got = reg.get("tgt_aaaaaaaa");
+    expect(got.id).toBe(t.id);
+    expect(isGuardedTarget(got)).toBe(true);
     expect(reg.list()).toHaveLength(1);
+  });
+
+  it("guards every target it hands out", async () => {
+    const reg = new TargetRegistry(60_000);
+    reg.register(fakeTarget("tgt_guarded0"));
+    await expect(
+      reg
+        .get("tgt_guarded0")
+        .wpCli(["db", "reset"], { allowDestructive: true }),
+    ).rejects.toMatchObject({ code: "WPCLI_BLOCKED" });
+    expect(reg.list().every(isGuardedTarget)).toBe(true);
   });
 
   it("get throws TargetNotFoundError for unknown id", () => {

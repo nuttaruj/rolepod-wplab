@@ -1,5 +1,6 @@
 import { TargetNotFoundError } from "../util/errors.js";
 import { log } from "../util/log.js";
+import { guardTarget } from "../runtime/wpCliGuard.js";
 import type { Target } from "../runtime/Target.js";
 
 const DEFAULT_IDLE_MS = 10 * 60 * 1000;
@@ -26,8 +27,10 @@ export class TargetRegistry {
     if (this.entries.has(target.id)) {
       throw new Error(`target_id collision: ${target.id}`);
     }
+    // Every Target reaches the tool layer through get()/list(), so guarding it
+    // here covers every caller and every target kind.
     const entry: RegistryEntry = {
-      target,
+      target: guardTarget(target),
       lastTouch: Date.now(),
       timer: this.armTimer(target.id),
     };

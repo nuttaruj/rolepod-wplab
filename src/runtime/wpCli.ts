@@ -1,6 +1,5 @@
 import { execa } from "execa";
-import { checkWpCli } from "../safety/AllowList.js";
-import { WpCliBlockedError, WpCliNotFoundError } from "../util/errors.js";
+import { WpCliNotFoundError } from "../util/errors.js";
 import { log } from "../util/log.js";
 import type { WpCliOpts, WpCliResult } from "./Target.js";
 
@@ -9,20 +8,17 @@ const DEFAULT_TIMEOUT = 30_000;
 /**
  * Run a wp-cli subcommand against a local WP install root.
  *
- * The allow-list runs BEFORE execa. Network and filesystem operations only
- * happen if the subcommand is permitted under the current allow_destructive
- * setting.
+ * No allow-list here. The user-facing allow-list lives in the
+ * `rolepod_wp_cli_run` handler so it covers every target kind, and the
+ * catastrophic-command floor lives in `guardTarget()` so it covers every
+ * caller. Enforcing it a third time in this function would only reach
+ * LocalTarget, and would break internal callers that need `eval`.
  */
 export async function runWpCli(
   wpPath: string,
   args: readonly string[],
   opts: WpCliOpts = {},
 ): Promise<WpCliResult> {
-  const verdict = checkWpCli(args, opts.allowDestructive ?? false);
-  if (!verdict.allowed) {
-    throw new WpCliBlockedError([...args], verdict.kind);
-  }
-
   const finalArgs = ["--path=" + wpPath, "--no-color", ...args];
   const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT;
   const started = Date.now();
