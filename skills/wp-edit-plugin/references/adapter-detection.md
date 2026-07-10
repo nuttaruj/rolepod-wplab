@@ -61,9 +61,7 @@ How each adapter detects its plugin, where the writes go, and the per-plugin qui
 - Plugin file: `woocommerce/woocommerce.php` active.
 
 **Scopes (read):** products / orders / settings_groups / settings_in_group / shipping_zones / payment_gateways.
-**Scopes (write):** products + variations + coupons + orders + tax_rates + shipping_zone_methods + bulk price updates.
-
-**Writes:** `wc/v3/<resource>` per Woo REST docs.
+**Ops (write):** `update_product` and `bulk_update_prices` — those two, nothing else. `rolepod_wp_woo_write` cannot create products (use `rolepod_wp_product_create`), and cannot touch variations, coupons, orders, tax rates, or shipping zones. Do those in wp-admin.
 
 **Quirks:**
 - Bulk price updates: prefer `wc/v3/products/batch` (atomic across a batch) over loop of singles.
@@ -82,9 +80,7 @@ How each adapter detects its plugin, where the writes go, and the per-plugin qui
 - `fields_in_group` (requires `group_key`) → fields inside a group.
 - `post_meta` (requires `post_id`) → ACF values on a post.
 
-**Writes:**
-- Pro: `acf/v3/<post_type>/<post_id>` direct.
-- Free: write via `postmeta` direct on `wp_postmeta` (no REST). Adapter handles the shim.
+**Writes:** `rolepod_wp_acf_write` sets ONE field VALUE on ONE post (`post_id`, `field_name`, `value`). It cannot create, edit, or delete field groups or field definitions — those stay a wp-admin job. Works on free and Pro alike.
 
 **Quirks:**
 - Detection on the CURRENT companion v2.1+ uses post_type probe — works on free + Pro. Earlier MCP builds (v1.3) failed on free version.
@@ -102,7 +98,7 @@ How each adapter detects its plugin, where the writes go, and the per-plugin qui
 - `form_detail` (requires `form_id`) → fields + settings.
 - `list_entries` → Gravity only in v1.1 (CF7 has no entries by design, WPForms entries deferred to v1.2).
 
-**Writes (v1.1):** Gravity + WPForms only. CF7 form definitions live in `wp_posts` (`type=wpcf7_contact_form`) — write via `wp-content` (core REST) instead.
+**Ops (write):** `rolepod_wp_forms_write` moderates ENTRIES only — `delete_entry`, `mark_spam`, `unmark_spam`. It cannot create or edit a form. To create a CF7 form, use `rolepod_wp_cf7_form_create(target_id, title, form_markup)`. For Gravity/WPForms form definitions, use wp-admin.
 
 **Quirks:**
 - Gravity Forms writes go through wp-cli (`wp gf ...`), not the GF REST API. There is no `GF_REST_KEY` / `GF_REST_SECRET` support; do not ask the user for API keys.

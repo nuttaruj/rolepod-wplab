@@ -8,8 +8,6 @@
  */
 export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_admin_one_time_link",
-  "rolepod_wp_cf7_form_create",
-  "rolepod_wp_conventions_get",
   "rolepod_wp_conventions_set",
   "rolepod_wp_custom_init",
   "rolepod_wp_custom_task_list",
@@ -33,8 +31,6 @@ export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_job_status",
   "rolepod_wp_media_optimize",
   "rolepod_wp_memory_list",
-  "rolepod_wp_memory_note",
-  "rolepod_wp_memory_recall",
   "rolepod_wp_menu_add_item",
   "rolepod_wp_menu_assign",
   "rolepod_wp_menu_create",
@@ -42,7 +38,6 @@ export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_metabox_write",
   "rolepod_wp_pods_read",
   "rolepod_wp_pods_write",
-  "rolepod_wp_product_create",
   "rolepod_wp_recovery_disable_file",
   "rolepod_wp_recovery_disable_plugin",
   "rolepod_wp_recovery_list_changes",
@@ -56,10 +51,8 @@ export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_site_backup",
   "rolepod_wp_site_restore",
   "rolepod_wp_site_scaffold",
-  "rolepod_wp_skill_catalog",
   "rolepod_wp_skill_delete",
   "rolepod_wp_skill_edit",
-  "rolepod_wp_skill_get",
   "rolepod_wp_skill_write",
   "rolepod_wp_target_alias",
 ];
