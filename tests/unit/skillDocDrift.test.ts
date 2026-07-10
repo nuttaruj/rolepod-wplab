@@ -158,6 +158,31 @@ describe("skill/doc drift — documentation must match the registered tools", ()
     expect(bad).toEqual([]);
   });
 
+  /**
+   * Identifiers the docs used to promise and the code never had. Each may only
+   * appear on a line that says it does not exist — otherwise the fiction has
+   * crept back in.
+   */
+  it.each([
+    ["_wplab_backup", "adapter backups are files, not a meta side-row"],
+    ["BACKUP_FAILED", "no such error code"],
+    ["plan_id", "migrate_data has no plan_id"],
+    ["GF_REST", "Gravity Forms writes go through wp-cli"],
+    ["rolepod_wp_elementor_widget_inventory", "the tool is widget_schema"],
+  ])("does not resurrect `%s` — %s", (token) => {
+    const affirmed: string[] = [];
+    for (const file of DOCS) {
+      readFileSync(file, "utf8")
+        .split("\n")
+        .forEach((line, i) => {
+          if (!line.includes(token)) return;
+          if (/\b(no|not|never|cannot)\b/i.test(line)) return; // a denial
+          affirmed.push(`${file}:${i + 1}`);
+        });
+    }
+    expect(affirmed).toEqual([]);
+  });
+
   it("documents every tool, except the ones on the shrink-only allowlist", () => {
     const cited = new Set(ALL.map((c) => c.tool));
     const undocumented = [...TOOL_NAMES].filter((n) => !cited.has(n)).sort();

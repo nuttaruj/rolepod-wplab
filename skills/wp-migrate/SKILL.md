@@ -80,7 +80,7 @@ Show the plan, ask for explicit OK. If destination is production-matched:
 
 ### 5. Apply
 
-`rolepod_wp_migrate_data { source_target_id, dest_target_id, scope, plan_id: <from dryrun> }`. The `plan_id` ties apply to the dryrun — a fresh dryrun is required if more than 5 minutes elapsed.
+`rolepod_wp_migrate_data { source_target_id, dest_target_id, scope, allow_destructive: true, confirm: true }`. There is no `plan_id` — nothing ties the apply to the dryrun, so re-run the dryrun yourself and read it before applying. `scope` accepts `plugin_versions` and nothing else: this tool installs/upgrades plugins on the destination to match the source. It does not move posts, media, or tables.
 
 ### 6. Verify
 
@@ -94,7 +94,7 @@ State: rows migrated, files copied, URLs rewritten, backup file path, verificati
 
 ### 8. Rollback (only if needed)
 
-If verification fails: `rolepod_wp_backup_restore { target_id: dest_target_id, backup_path: <from step 4> }`. Surface restored state.
+If verification fails: `rolepod_wp_backup_restore { target_id: dest_target_id, artifact_dir: <from step 4> }`. Surface restored state.
 
 ## If a matching Rolepod agent is available
 

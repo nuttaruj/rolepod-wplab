@@ -43,7 +43,7 @@ Lead:
 
 8. User: "apply now"
 
-9. migrate_data with plan_id from step 3.
+9. migrate_data (scope=plugin_versions) after re-reading the dryrun — there is no plan_id to carry.
 
 10. wp-health-check → green. wp-diagnose → 0 NEW HIGH/CRITICAL.
 
@@ -61,7 +61,7 @@ Lead:
 | Production guard | bypassed | type-back hostname |
 | Backup before apply | no | yes, path surfaced |
 | Verification post-apply | no | health + diagnose + spot-check |
-| Recovery path on failure | "ticket the host" | auto-rollback via backup_path |
+| Recovery path on failure | "ticket the host" | restore via backup_restore with the `artifact_dir` from backup_create |
 
 ## Scenario 2 — partial scope vs full migration
 
@@ -94,7 +94,7 @@ Lead: migrate_dryrun with scope=posts:[8,12,14].
 User: "go"
 
 Lead: backup_create staging.
-Lead: migrate_data with scope=posts:[8,12,14], plan_id from above.
+Lead: migrate_data cannot copy posts — scope is plugin_versions only. Copy the 3 posts with post_get on the source + post_create on the destination.
 Lead: spot-check the 3 posts render on staging → all 200.
 Lead: surface "3 posts copied, staging otherwise unchanged."
 ```

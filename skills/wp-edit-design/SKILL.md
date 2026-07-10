@@ -40,7 +40,7 @@ Page-builder layout writes. Auto-detects the active builder, backs up before ove
 
 <EXTREMELY-IMPORTANT>
 1. **Native widget FIRST — HTML widget is a LAST RESORT.** Before writing any builder data, open `references/builders/<builder>.md` and `references/patterns.md`. Find a recipe that matches the mockup section, compose native widgets per recipe + theme CSS classes. Use the HTML widget only when no native widget covers the visual (terminal, marquee, scramble headline). One big HTML widget per section defeats the point of the page builder — the user must be able to drag/drop and edit each text/image/button via the builder UI.
-2. NEVER overwrite a builder's widget tree without `backup: true` — every adapter writes a `<key>_wplab_backup` meta side-row before replacing; restore-from-backup is the only safety net for tree-shape mistakes.
+2. NEVER overwrite a builder's widget tree without reading `backup_path` from the response. There is no `backup: true` parameter and no `<key>_wplab_backup` meta row. The adapter snapshots the previous meta value to a file under `wp-content/uploads/rolepod-wp/backups/` ONLY when that meta already had a value; otherwise `backup_path` is `null` and nothing was saved.
 3. NEVER hand-write Divi shortcodes / Oxygen JSON / Bricks JSON / Elementor `_elementor_data` without first reading the existing structure via `*_read` — every builder has version-specific shape quirks (Elementor `widgetType` capitalization, Divi `et_pb_*` opening tags, Oxygen flat-array container refs).
 4. ALWAYS run `wp-health-check` on the target after a global-styles or theme.json write — bad JSON in those surfaces breaks the Site Editor irrecoverably on screen but the REST returns 200, so the failure mode is invisible until reload.
 5. After any non-trivial page build → run `rolepod_wp_elementor_validate_data` (catches setting shape mismatches like the legacy `icon` Array bug) AND `rolepod_wp_elementor_html_audit` (refuses if HTML widget count > 30% of total). Then `rolepod_wp_elementor_publish` to flush CSS + bump theme asset filemtime.
@@ -122,7 +122,7 @@ Run `rolepod_wp_elementor_validate_data` on the section tree you're about to com
 
 ### 6. Write with backup
 
-All adapter `*_write` calls accept `backup: true` (default true on this skill). The adapter writes `<key>_wplab_backup` containing the prior tree. Surface the backup key so the user can rollback manually. For Elementor specifically, prefer `rolepod_wp_elementor_template_apply` — handles `_elementor_data` + flags + element id regeneration + cache invalidation atomically.
+Adapter `*_write` calls take `allow_destructive` and `confirm`, not `backup`. Each returns `backup_path`: the file holding the previous meta value, or `null` when there was no previous value to save. Surface that path so the user can roll back manually. For Elementor specifically, prefer `rolepod_wp_elementor_template_apply` — handles `_elementor_data` + flags + element id regeneration + cache invalidation atomically.
 
 ### 7. Audit (Elementor)
 
@@ -151,7 +151,7 @@ Call `wp-health-check`. If the change touched theme.json or global-styles → al
 
 ## Output
 
-No durable artifact per call. The adapter's backup meta is the rollback artifact, named `<original_key>_wplab_backup` and held in `wp_postmeta`.
+No durable artifact per call. The rollback artifact is the file at `backup_path`, under `wp-content/uploads/rolepod-wp/backups/`. It is absent (`null`) whenever the meta key had no prior value.
 
 ## Examples
 
@@ -199,7 +199,7 @@ For each section of the mockup:
 ## Hard stops
 
 - `*_write` returns `BUILDER_NOT_ACTIVE` → STOP, tell user to activate the plugin or pick a different builder.
-- `*_write` returns `BACKUP_FAILED` → STOP, do NOT retry without backup; the postmeta write failed and writing forward could lose the live tree.
+- `*_write` returns `backup_path: null` → the previous tree was NOT saved (the meta key was empty, or the snapshot never ran). There is no `BACKUP_FAILED` error code; nothing stops you. Decide deliberately before writing forward.
 - Theme.json JSON parse fails server-side → STOP, surface the line/column from `json_last_error`; ask user to confirm the patch.
 
 ## Full Rolepod enhancement

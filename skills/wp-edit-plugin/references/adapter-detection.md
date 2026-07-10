@@ -105,6 +105,6 @@ How each adapter detects its plugin, where the writes go, and the per-plugin qui
 **Writes (v1.1):** Gravity + WPForms only. CF7 form definitions live in `wp_posts` (`type=wpcf7_contact_form`) — write via `wp-content` (core REST) instead.
 
 **Quirks:**
-- Gravity Forms requires API keys for REST writes — adapter accepts them via env `GF_REST_KEY` / `GF_REST_SECRET`.
+- Gravity Forms writes go through wp-cli (`wp gf ...`), not the GF REST API. There is no `GF_REST_KEY` / `GF_REST_SECRET` support; do not ask the user for API keys.
 - WPForms free has read-only REST; Pro unlocks writes.
 - Form `id` formats differ: Gravity uses int, CF7 uses post ID, WPForms uses int — adapter routes the right format per engine.
