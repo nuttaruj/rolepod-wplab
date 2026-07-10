@@ -28,6 +28,23 @@ Skip when:
 - Credentials for the site are already in the vault — use `wp-connect` instead.
 - The user wants manual App Password entry — use `wp-connect` Path B.
 
+## Session bootstrap (run once, right after connecting)
+
+The connect tools return `prod_guard`. Read it before any write: `armed: false`
+does not mean the target is safe, it means nobody told the server otherwise.
+
+Then, in order:
+
+1. `rolepod_wp_memory_recall(target_id)` — notes from earlier sessions on this
+   site. Skip nothing here; this is where "the client hates the blue" lives.
+2. `rolepod_wp_conventions_get(target_id)` — the project's own rules (naming,
+   builder, deploy). Follow them over your defaults.
+3. `rolepod_wp_skill_catalog(target_id)` — which workflow guides exist,
+   including any the user wrote. `rolepod_wp_skill_get` reads one.
+
+Record what you learn with `rolepod_wp_memory_note(target_id, ...)` before the
+session ends, or the next session starts blind.
+
 ## Boundary
 
 Owns:

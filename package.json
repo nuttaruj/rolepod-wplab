@@ -50,7 +50,7 @@
     "dev": "tsup --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "drift": "vitest run tests/unit/skillDocDrift.test.ts tests/unit/serverInstructions.test.ts",
+    "drift": "vitest run tests/unit/skillDocDrift.test.ts tests/unit/serverInstructions.test.ts tests/unit/skillParity.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "oxlint src tests/unit tests/smoke",
     "format": "prettier --write \"src/**/*.ts\" \"tests/unit/**/*.ts\" \"tests/smoke/**/*.ts\"",

@@ -1,10 +1,9 @@
 # Migration Plan — {{source_siteurl}} → {{dest_siteurl}}
 
 **run_id:** `{{run_id}}`
-**plan_id:** `{{plan_id}}`
 **run_at:** {{timestamp_utc}}
 **dryrun_only:** {{true | false}}
-**scope:** {{full | db | wp-content | tables: [...] | posts: [...]}}
+**scope:** `plugin_versions` (the only scope rolepod_wp_migrate_data accepts)
 
 ## Pre-flight
 
@@ -54,9 +53,9 @@
 
 ## Backup plan
 
-- Pre-apply backup file: `{{backup_path | "(not yet created)"}}`
+- Pre-apply backup dir: `{{artifact_dir | "(not yet created)"}}`
 - Backup size: {{MB | "(unknown)"}}
-- Restore command: `rolepod_wp_backup_restore { target_id: <dest>, backup_path: "<above>" }`
+- Restore command: `rolepod_wp_backup_restore { target_id: <dest>, artifact_dir: "<above>" }`
 
 ## Apply checklist
 

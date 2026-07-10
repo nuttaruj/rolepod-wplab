@@ -13,7 +13,7 @@ Re-open a previously paired site, or open a new connection over local/SSH/Docker
 ## Iron Rule
 
 <EXTREMELY-IMPORTANT>
-1. NEVER pick a connection kind without knowing what the user will DO — REST works for 58 of 62 tools but Local/SSH/Docker are needed for the wp-cli-via-companion-shortcut bypass (rare) and direct filesystem ops outside ABSPATH.
+1. NEVER pick a connection kind without knowing what the user will DO — REST covers almost everything, but Local/SSH/Docker are needed for direct filesystem work outside ABSPATH, and for wp-cli when the companion is not installed (a RestTarget without it raises COMPANION_REQUIRED_V0_2).
 2. NEVER store the chosen kind silently — surface "I'm opening this as a `<kind>` target because <reason>" so the user can correct mid-flow.
 3. ALWAYS close the previous target with `rolepod_wp_disconnect` before opening the same site under a different kind — registry collisions cause confusing tool failures later.
 </EXTREMELY-IMPORTANT>
@@ -28,6 +28,23 @@ Re-open a previously paired site, or open a new connection over local/SSH/Docker
 Skip when:
 - No creds in vault AND user pasted a pair prompt → `wp-pair-setup`.
 - User already has an active target_id → no need to reconnect.
+
+## Session bootstrap (run once, right after connecting)
+
+The connect tools return `prod_guard`. Read it before any write: `armed: false`
+does not mean the target is safe, it means nobody told the server otherwise.
+
+Then, in order:
+
+1. `rolepod_wp_memory_recall(target_id)` — notes from earlier sessions on this
+   site. Skip nothing here; this is where "the client hates the blue" lives.
+2. `rolepod_wp_conventions_get(target_id)` — the project's own rules (naming,
+   builder, deploy). Follow them over your defaults.
+3. `rolepod_wp_skill_catalog(target_id)` — which workflow guides exist,
+   including any the user wrote. `rolepod_wp_skill_get` reads one.
+
+Record what you learn with `rolepod_wp_memory_note(target_id, ...)` before the
+session ends, or the next session starts blind.
 
 ## Boundary
 

@@ -39,9 +39,11 @@ Page-builder layout writes. Auto-detects the active builder, backs up before ove
 ## Iron Rule
 
 <EXTREMELY-IMPORTANT>
-1. NEVER overwrite a builder's widget tree without `backup: true` — every adapter writes a `<key>_wplab_backup` meta side-row before replacing; restore-from-backup is the only safety net for tree-shape mistakes.
-2. NEVER hand-write Divi shortcodes / Oxygen JSON / Bricks JSON / Elementor `_elementor_data` without first reading the existing structure via `*_read` — every builder has version-specific shape quirks (Elementor `widgetType` capitalization, Divi `et_pb_*` opening tags, Oxygen flat-array container refs).
-3. ALWAYS run `wp-health-check` on the target after a global-styles or theme.json write — bad JSON in those surfaces breaks the Site Editor irrecoverably on screen but the REST returns 200, so the failure mode is invisible until reload.
+1. **Native widget FIRST — HTML widget is a LAST RESORT.** Before writing any builder data, open `references/builders/<builder>.md` and `references/patterns.md`. Find a recipe that matches the mockup section, compose native widgets per recipe + theme CSS classes. Use the HTML widget only when no native widget covers the visual (terminal, marquee, scramble headline). One big HTML widget per section defeats the point of the page builder — the user must be able to drag/drop and edit each text/image/button via the builder UI.
+2. NEVER overwrite a builder's widget tree without reading `backup_path` from the response. There is no `backup: true` parameter and no `<key>_wplab_backup` meta row. The adapter snapshots the previous meta value to a file under `wp-content/uploads/rolepod-wp/backups/` ONLY when that meta already had a value; otherwise `backup_path` is `null` and nothing was saved.
+3. NEVER hand-write Divi shortcodes / Oxygen JSON / Bricks JSON / Elementor `_elementor_data` without first reading the existing structure via `*_read` — every builder has version-specific shape quirks (Elementor `widgetType` capitalization, Divi `et_pb_*` opening tags, Oxygen flat-array container refs).
+4. ALWAYS run `wp-health-check` on the target after a global-styles or theme.json write — bad JSON in those surfaces breaks the Site Editor irrecoverably on screen but the REST returns 200, so the failure mode is invisible until reload.
+5. After any non-trivial page build → run `rolepod_wp_elementor_validate_data` (catches setting shape mismatches like the legacy `icon` Array bug) AND `rolepod_wp_elementor_html_audit` (refuses if HTML widget count > 30% of total). Then `rolepod_wp_elementor_publish` to flush CSS + bump theme asset filemtime.
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -86,23 +88,53 @@ Return / hand off:
 
 ### 1. Detect the active builder
 
-If the user named one ("edit in Elementor"), use it. Else call each `*_read` with `page_id`; first one that returns `detected: true` is the active builder for that page. See `references/builder-formats.md` for the per-builder detection signal.
+If the user named one ("edit in Elementor"), use it. Else call `rolepod_wp_builder_detect` (Phase 6.2) which inspects the active plugin list. Falls back to per-builder `*_read` probes returning `detected: true`. See `references/builder-formats.md` for the per-builder detection signal.
 
-### 2. Read the current tree
+### 2. Open the builder catalog
 
-Always read before write. The structures are non-obvious — see `references/builder-formats.md` for each shape.
+Before constructing a widget tree, READ the relevant builder catalog:
+- `references/builders/elementor.md` — widget list + settings + quirks + CSS-to-widget-DOM map
+- `references/builders/bricks.md`, `divi.md`, `gutenberg.md` — same shape for the other supported builders
 
-### 3. Plan the diff
+Also read `references/patterns.md` — mockup pattern → recipe map (P-001 hero, P-002 feature grid, P-003 FAQ accordion, etc). Each pattern lists the exact widget composition + theme CSS classes + known quirks.
 
-Describe the change to the user in plain text BEFORE writing the new tree: "I will add a 3-column section with widgets X, Y, Z between the current hero and the testimonial block." If the user has not approved, do not write.
+### 3. Read the current tree
 
-### 4. Write with backup
+Always read before write. The structures are non-obvious — see `references/builder-formats.md` for each shape. When CLONING from an existing page, use `rolepod_wp_elementor_template_export` to dump that page's tree.
 
-All adapter `*_write` calls accept `backup: true` (default true on this skill). The adapter writes `<key>_wplab_backup` containing the prior tree. Surface the backup key so the user can rollback manually.
+### 4. Plan the diff (with native-first decision)
 
-### 5. Verify
+For each section of the mockup, follow the decision flowchart in `references/patterns.md`:
 
-Call `wp-health-check`. If the change touched theme.json or global-styles → also `rest_request GET /wp/v2/global-styles/<id>` to confirm the new value is loadable.
+```
+1. Pattern match in patterns.md? → use the recipe.
+2. Otherwise look up a widget in the builder catalog that covers ≥70% of the visual.
+3. Compose: section + columns + native widgets + _css_classes.
+4. Only when no native widget fits → HTML widget per CARD (NOT per section).
+5. If the entire section is a single decorative block (terminal, marquee) → ONE HTML widget for that section is acceptable.
+```
+
+Describe the change to the user in plain text BEFORE writing the new tree: "I will add a 3-column section with `icon-box` widgets X, Y, Z between the current hero and the testimonial block." If the user has not approved, do not write.
+
+### 5. Validate BEFORE write (Elementor)
+
+Run `rolepod_wp_elementor_validate_data` on the section tree you're about to commit. Catches setting shape mismatches (legacy `icon` Array bug, unknown setting keys, wrong value types) against the live widget schema fetched from the target.
+
+### 6. Write with backup
+
+Adapter `*_write` calls take `allow_destructive` and `confirm`, not `backup`. Each returns `backup_path`: the file holding the previous meta value, or `null` when there was no previous value to save. Surface that path so the user can roll back manually. For Elementor specifically, prefer `rolepod_wp_elementor_template_apply` — handles `_elementor_data` + flags + element id regeneration + cache invalidation atomically.
+
+### 7. Audit (Elementor)
+
+After write, run `rolepod_wp_elementor_html_audit`. Reports HTML widget percentage per page + lists candidates for refactoring to native widgets. If the audit reports > 30% HTML widget, consider a refactor pass.
+
+### 8. Publish
+
+For Elementor, run `rolepod_wp_elementor_publish(post_id)` — runs `wp elementor flush-css` + `wp cache flush` + bumps `filemtime()` on every `*.css`/`*.js` under the active theme's `assets/` dir + (optionally) warm-fetches the permalink.
+
+### 9. Verify
+
+Call `wp-health-check`. If the change touched theme.json or global-styles → also `rest_request GET /wp/v2/global-styles/<id>` to confirm the new value is loadable. For visual verification, run `rolepod-uiproof`'s `verify-ui` flow with text_visible assertions for each new section's headline.
 
 ## If a matching Rolepod agent is available
 
@@ -119,7 +151,7 @@ Call `wp-health-check`. If the change touched theme.json or global-styles → al
 
 ## Output
 
-No durable artifact per call. The adapter's backup meta is the rollback artifact, named `<original_key>_wplab_backup` and held in `wp_postmeta`.
+No durable artifact per call. The rollback artifact is the file at `backup_path`, under `wp-content/uploads/rolepod-wp/backups/`. It is absent (`null`) whenever the meta key had no prior value.
 
 ## Examples
 
@@ -130,11 +162,44 @@ Read when constructing a widget tree non-trivially or when the diff is multi-sec
 
 Load before the FIRST write for any given builder on a target:
 - `references/builder-formats.md` — per-builder data shape, detection signal, common pitfalls (Elementor widget vs section vs column, Divi shortcode escaping, Oxygen flat-array refs, Bricks element nesting).
+- `references/builders/elementor.md` — Elementor widget catalog + settings + quirks + CSS-to-widget-DOM map. **READ before writing `_elementor_data`.**
+- `references/builders/bricks.md` — Bricks element catalog.
+- `references/builders/divi.md` — Divi module catalog.
+- `references/builders/gutenberg.md` — Gutenberg core blocks + popular block library catalog.
+- `references/builders/oxygen.md` — Oxygen primitives catalog.
+- `references/patterns.md` — **builder-agnostic mockup pattern → recipe map**. P-001 through P-012 cover hero, feature grid, FAQ, stat row, pricing, process, portfolio, marquee, terminal, big CTA, header, footer. READ for every page build — most mockup sections have a canonical recipe.
+
+### Decision rule: native vs HTML widget
+
+The single most important rule for AI-driven page builds. Posted prominently in every catalog. Restated:
+
+```
+For each section of the mockup:
+
+1. Look up the pattern in references/patterns.md.
+   - Match? → Use the recipe exactly. Done.
+
+2. No pattern match? → Open the relevant builder catalog.
+   - Find a widget that covers ≥70% of the visual.
+   - Compose: section + column + that widget + _css_classes.
+
+3. No native widget fits? → HTML widget PER CARD (NOT per section).
+   - e.g., a 3-tier pricing row = section + 3 columns + HTML widget per tier card,
+     NEVER one HTML widget for the whole row.
+
+4. Single decorative block (terminal, marquee, scramble headline)?
+   - One HTML widget for that section is acceptable.
+
+5. After build:
+   - rolepod_wp_elementor_validate_data → catches setting shape errors
+   - rolepod_wp_elementor_html_audit → refuses if HTML widget > 30%
+   - rolepod_wp_elementor_publish → flushes + warm-fetches
+```
 
 ## Hard stops
 
 - `*_write` returns `BUILDER_NOT_ACTIVE` → STOP, tell user to activate the plugin or pick a different builder.
-- `*_write` returns `BACKUP_FAILED` → STOP, do NOT retry without backup; the postmeta write failed and writing forward could lose the live tree.
+- `*_write` returns `backup_path: null` → the previous tree was NOT saved (the meta key was empty, or the snapshot never ran). There is no `BACKUP_FAILED` error code; nothing stops you. Decide deliberately before writing forward.
 - Theme.json JSON parse fails server-side → STOP, surface the line/column from `json_last_error`; ask user to confirm the patch.
 
 ## Full Rolepod enhancement

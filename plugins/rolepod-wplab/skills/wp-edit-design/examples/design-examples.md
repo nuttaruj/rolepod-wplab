@@ -62,10 +62,14 @@ Issues: `elType` PascalCased (must be lowercase), `widgetType` PascalCased (must
        },
        { ...cta unchanged... }
      ],
-     backup: true
+     allow_destructive: true
    }
 
-5. Adapter writes `_elementor_data_wplab_backup` with the prior tree.
+5. Adapter snapshots the prior tree to a FILE under
+   `wp-content/uploads/rolepod-wp/backups/` and returns its path as
+   `backup_path` — but only if `_elementor_data` already had a value. There is
+   no `_elementor_data_wplab_backup` meta row. Read `backup_path`; a `null`
+   means nothing was saved.
 6. wp-health-check → REST OK.
 ```
 

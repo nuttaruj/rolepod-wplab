@@ -183,14 +183,16 @@ describe("skill/doc drift — documentation must match the registered tools", ()
     expect(affirmed).toEqual([]);
   });
 
-  it("quotes the real tool count", () => {
-    const readme = readFileSync("README.md", "utf8");
-    const claimed = [...readme.matchAll(/(\d+)\+? MCP tools/g)].map((m) =>
-      Number(m[1]),
-    );
-    expect(claimed.length).toBeGreaterThan(0);
-    for (const n of claimed) expect(n).toBe(TOOL_NAMES.size);
-  });
+  it.each(["README.md", ".claude-plugin/plugin.json"])(
+    "%s quotes the real tool count",
+    (file) => {
+      const claimed = [
+        ...readFileSync(file, "utf8").matchAll(/(\d+)\+? MCP tools/g),
+      ].map((m) => Number(m[1]));
+      expect(claimed.length).toBeGreaterThan(0);
+      for (const n of claimed) expect(n).toBe(TOOL_NAMES.size);
+    },
+  );
 
   it("documents every tool, except the ones on the shrink-only allowlist", () => {
     const cited = new Set(ALL.map((c) => c.tool));
