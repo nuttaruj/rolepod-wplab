@@ -213,4 +213,4 @@ Divi WINS — pricing_tables is first-class. No HTML widget fallback needed.
 ## Helpers + tools
 
 - `rolepod_wp_divi_read(target_id, page_id)` — parse shortcode tree
-- `rolepod_wp_divi_write(target_id, page_id, content, backup: true)` — write with backup + clear builder cache
+- `rolepod_wp_divi_write(target_id, post_id, content, ensure_builder_flag, allow_destructive: true)` — write + clear builder cache. There is no `backup` parameter: the previous meta value is snapshotted only when it already had a value, and `backup_path` comes back `null` otherwise.

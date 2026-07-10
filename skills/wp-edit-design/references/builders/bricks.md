@@ -221,5 +221,5 @@ Bricks WINS here — pricing-tables is a first-class element. No HTML widget fal
 ## Helpers + tools
 
 - `rolepod_wp_bricks_read(target_id, page_id)` — read JSON tree
-- `rolepod_wp_bricks_write(target_id, page_id, content, backup: true)` — write with backup
+- `rolepod_wp_bricks_write(target_id, post_id, scope, elements, allow_destructive: true)` — write. There is no `backup` parameter: the previous meta value is snapshotted to `wp-content/uploads/rolepod-wp/backups/` ONLY when it already had a value, and `backup_path` comes back `null` when nothing was snapshotted. Check it before assuming you can roll back.
 - No widget_schema introspection endpoint yet (Phase 7 candidate). Use this catalog as the reference.

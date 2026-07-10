@@ -249,7 +249,7 @@ section (structure: 10, css_classes: "wnz-marquee", full-width)
 
 ### Rule
 
-HTML widget REQUIRED. No native marquee in Elementor Free. Pro has a marquee addon in some bundles — check via `rolepod_wp_elementor_widget_inventory`.
+HTML widget REQUIRED. No native marquee in Elementor Free. Pro has a marquee addon in some bundles — check via `rolepod_wp_elementor_widget_schema`.
 
 ---
 

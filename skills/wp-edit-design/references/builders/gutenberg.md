@@ -415,8 +415,8 @@ Headline, blockquote, container, posts, image-box, icon-box, feature, accordion,
 
 ## Helpers + tools
 
-- `rolepod_wp_post_get(target_id, post_id)` — read block HTML from `post_content`
-- `rolepod_wp_post_update(target_id, post_id, content)` — write block HTML
+- `rolepod_wp_post_get(target_id, id)` — read block HTML from `post_content`
+- `rolepod_wp_post_update(target_id, id, content)` — write block HTML
 - `rolepod_wp_scaffold_block` — generate a custom block for project-specific patterns (counter, pricing, etc).
 
 ---

@@ -1039,6 +1039,14 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   { def: wpPairToolDef, handler: (d, raw) => wpPairHandler(d.registry, raw) },
 ];
 
+/**
+ * The registered tool defs, for anything that needs to check documentation
+ * against the code (see tests/unit/skillDocDrift.test.ts).
+ */
+export function listToolDefs(): readonly ToolDef[] {
+  return TOOLS.map(({ def }) => def);
+}
+
 export function registerTools(server: Server, deps: RegisterDeps): void {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
     tools: TOOLS.map(({ def }) => ({

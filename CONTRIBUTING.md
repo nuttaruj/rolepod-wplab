@@ -25,6 +25,10 @@ Every PR must pass:
 - `npm run typecheck` — TypeScript strict + `exactOptionalPropertyTypes` + `noUncheckedIndexedAccess`.
 - `npm run build` — tsup ESM build clean.
 - `npm test` — all unit + smoke tests green.
+- `npm run drift` — the skills and README cite no tool or parameter that does
+  not exist, and no new tool ships undocumented. A new tool must either be
+  documented in a skill or added to `tests/unit/undocumented-tools.allowlist.ts`,
+  which is shrink-only: once a tool is documented, its entry must come out.
 - `npx oxlint src tests/unit tests/smoke` — 0 warnings.
 - `npx prettier --check "src/**/*.ts" "tests/unit/**/*.ts" "tests/smoke/**/*.ts"` — formatted.
 - `claude plugin validate ./ --strict` — plugin manifest valid.

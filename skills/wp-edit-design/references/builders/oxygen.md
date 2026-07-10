@@ -182,7 +182,7 @@ ct_section
 ## Helpers + tools
 
 - `rolepod_wp_oxygen_read(target_id, page_id)` — read flat array
-- `rolepod_wp_oxygen_write(target_id, page_id, content, backup: true)`
+- `rolepod_wp_oxygen_write(target_id, post_id, shortcodes, allow_destructive: true)` — there is no `backup` parameter; `backup_path` comes back `null` when the meta had no previous value.
 
 ---
 
