@@ -78,7 +78,7 @@ Top 5 surfaced. User shown the CRITICAL first.
 Next-action recommendation:
   - CRITICAL: rename "admin" user to something unique
     (cannot auto — user must change login + tell WP via UI)
-  - HIGH: set WP_DEBUG=false in wp-config.php (via wp-execute-php or fs-write)
+  - HIGH: set WP_DEBUG=false via `wp config set WP_DEBUG false --raw` (wp-cli rewrites wp-config.php safely; do not hand-edit it with fs-write or execute-php)
   - HIGH: update WordPress core (via wp-content REST or wp-cli)
   - MEDIUM: update 12 CVE-exposed plugins first (sorted list)
   - LOW: rest deferable

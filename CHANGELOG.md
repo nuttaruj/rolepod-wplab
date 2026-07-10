@@ -2,6 +2,55 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — safety chokepoint
+
+### Changed — BREAKING
+
+- **The wp-cli allow-list now applies to every target kind.** It used to run
+  inside `runWpCli()`, which only `LocalTarget` calls, so `rolepod_wp_cli_run`
+  passed anything through on REST, SSH and Docker targets — while its own
+  description claimed the opposite. **Any subcommand that is not in the
+  allow-list now fails on REST/SSH/Docker too**, not just on local. If a
+  workflow relied on running an unlisted subcommand over REST or SSH, it will
+  now raise `WPCLI_BLOCKED`.
+- `db reset`, `db drop`, `db clean` and `core multisite-convert` are refused for
+  every caller on every target kind, with no opt-out — `allow_destructive` does
+  not reach that layer.
+- `role reset` is now never-allowed (it wipes every capability on every default
+  role, site-wide).
+- `wp user delete` requires `--reassign`; without it the user's posts are
+  deleted along with the user.
+- `rolepod_wp_db_query` rejects stacked statements. `SELECT 1; DELETE FROM
+  wp_posts` used to pass the read-only check, because only the head statement
+  was inspected while wp-cli ran both.
+- `rolepod_wp_diagnose` no longer aborts the run when one probe throws; the
+  failing scope is reported as a warn finding that says it was not checked.
+
+### Added
+
+- Production guard arms itself from the site's own `WP_ENVIRONMENT_TYPE`
+  (raw value — an unset signal leaves it **disarmed**, since WordPress' own
+  `wp_get_environment_type()` defaults to `production` and would arm every
+  unconfigured local install). Connect tools, `rolepod_wp_pair` and
+  `rolepod_wp_health_check` report `prod_guard`, and health_check warns when
+  the guard is disarmed.
+- Allow-list additions: `core is-installed`, `core verify-checksums`,
+  `plugin verify-checksums`, `plugin get`, `theme get`, `maintenance-mode
+  status`, `role/cap/term/comment` reads (read-only); `config set`,
+  `config delete`, `core update-db`, `theme delete`, `maintenance-mode
+  activate|deactivate`, `rewrite flush`, `media import`, `media regenerate`,
+  `role/cap/term/comment` writes (destructive). `db query` is classified by its
+  SQL rather than by the subcommand.
+
+### Fixed
+
+- `rolepod_wp_db_query` never worked on `LocalTarget` — `db query` was not in
+  the allow-list, so every call was blocked before it ran.
+- `rolepod_wp_audit_security` advertised a CVE lookup it does not perform.
+- `rolepod_wp_recovery_safe_mode` claimed the companion refuses execute-php,
+  theme switches and file writes while safe-mode is on. It does not; only media
+  optimization reads the flag.
+
 ## [1.23.0] — 2026-06-05 — MCP tools for companion media-optimize + site backup/restore
 
 ### Added

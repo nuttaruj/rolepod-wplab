@@ -80,7 +80,7 @@ Does not own:
 Return / hand off:
 - Findings include outdated plugins → user/`wp-content` to update via REST.
 - Findings include weak admins → user task (cannot auto-fix passwords).
-- Findings include WP_DEBUG=true on prod → `wp-edit-plugin` or direct option_set.
+- Findings include WP_DEBUG=true on prod → `rolepod_wp_cli_run` with `["config","set","WP_DEBUG","false","--raw"]` and `allow_destructive=true`. WP_DEBUG is a wp-config.php constant, NOT an option — `option_set` does nothing.
 - Findings span 20 sites → `audit_many` for the consolidated index.
 
 ## Inputs to gather

@@ -75,7 +75,7 @@
   Map each CRITICAL/HIGH finding to the skill that fixes it:
   - outdated core/plugin/theme → wp-content (REST POST /wp/v2/plugins update)
   - weak admin login=admin → user task (cannot auto)
-  - WP_DEBUG=true on prod → wp-content option_set
+  - WP_DEBUG=true on prod → `wp config set WP_DEBUG false --raw` (a wp-config.php constant, not an option)
   - slow autoload row → wp-edit-plugin (locate plugin) or direct option fix
   - SMTP not working → wp-edit-plugin (configure SMTP plugin)
 }}
