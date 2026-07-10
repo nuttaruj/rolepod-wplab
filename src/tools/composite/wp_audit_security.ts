@@ -12,7 +12,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpAuditSecurityToolDef = {
   name: "rolepod_wp_audit_security",
   description:
-    'Audit a WP target — checks for outdated core/plugins/themes, weak admin users (login = "admin"), and WP_DEBUG flag. v0.2 covers the basic surface; v0.3 adds CVE lookup against patchstack/wpvulndb mirror + file-permission audit. Returns structured report + writes markdown/json artifact to ./.rolepod-wplab/artifacts/<run_id>/audit-report.md|.json.',
+    'Audit a WP target — checks for outdated core/plugins/themes, weak admin users (login = "admin"), and the WP_DEBUG flag. It does NOT check for known vulnerabilities: there is no CVE lookup, no vulnerability database, and no file-permission audit. A clean result here does not mean the site has no known CVEs. Returns a structured report + writes a markdown/json artifact to ./.rolepod-wplab/artifacts/<run_id>/audit-report.md|.json.',
   inputSchema: AuditSecurityInputSchema,
 };
 

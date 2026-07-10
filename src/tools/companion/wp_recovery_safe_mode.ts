@@ -10,7 +10,7 @@ export const RecoverySafeModeInputSchema = z.object({
 export const wpRecoverySafeModeToolDef = {
   name: "rolepod_wp_recovery_safe_mode",
   description:
-    "Toggle the safe-mode flag on the target. When ON, the main companion (when alive) should refuse risky ops — execute-php, theme switch, file write to functions.php/wp-config. Use after a fatal to prevent the AI from immediately re-introducing the bad write. Admins can also toggle this from Settings → Rolepod for WordPress.",
+    "Toggle the safe-mode flag on the target. WARNING — on the currently released companion this flag is ADVISORY for most operations: only media optimization honours it. execute-php, fs-write, fs-write-batch and wp-cli still run with safe-mode ON. Treat it as a signal to yourself to stop writing after a fatal, not as an enforced lock. Admins can also toggle it from Settings → Rolepod for WordPress.",
   inputSchema: RecoverySafeModeInputSchema,
 };
 

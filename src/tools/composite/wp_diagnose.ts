@@ -37,17 +37,29 @@ export async function wpDiagnoseHandler(
 
   const findings: Finding[] = [];
 
+  // One probe that throws must not take the whole diagnosis with it. A failed
+  // scope becomes a warn finding so the report says which checks did not run,
+  // instead of the caller seeing a partial run as a clean bill of health.
   for (const scope of input.scopes) {
-    if (scope === "plugin_conflict_probe") {
-      findings.push(...(await pluginConflictProbe(target)));
-    } else if (scope === "slow_queries") {
-      findings.push(...(await slowQueriesProbe(target)));
-    } else if (scope === "large_options") {
-      findings.push(...(await largeOptionsProbe(target)));
-    } else if (scope === "broken_images") {
-      findings.push(...(await brokenImagesProbe(target)));
-    } else if (scope === "php_errors") {
-      findings.push(...(await phpErrorsProbe(target)));
+    try {
+      if (scope === "plugin_conflict_probe") {
+        findings.push(...(await pluginConflictProbe(target)));
+      } else if (scope === "slow_queries") {
+        findings.push(...(await slowQueriesProbe(target)));
+      } else if (scope === "large_options") {
+        findings.push(...(await largeOptionsProbe(target)));
+      } else if (scope === "broken_images") {
+        findings.push(...(await brokenImagesProbe(target)));
+      } else if (scope === "php_errors") {
+        findings.push(...(await phpErrorsProbe(target)));
+      }
+    } catch (err) {
+      findings.push({
+        scope,
+        severity: "warn",
+        message: `probe did not run — this scope was NOT checked: ${(err as Error).message}`,
+        detail: { probe_failed: true },
+      });
     }
   }
 
