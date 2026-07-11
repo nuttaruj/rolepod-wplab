@@ -32,6 +32,8 @@ export async function wpPostCreateHandler(
   };
   if (input.excerpt !== undefined) body["excerpt"] = input.excerpt;
   if (input.meta !== undefined) body["meta"] = input.meta;
+  if (input.categories !== undefined) body["categories"] = input.categories;
+  if (input.tags !== undefined) body["tags"] = input.tags;
 
   const res = await target.rest({
     method: "POST",

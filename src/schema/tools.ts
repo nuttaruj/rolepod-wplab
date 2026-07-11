@@ -319,6 +319,14 @@ export const PostCreateInputSchema = z.object({
     .default("draft"),
   excerpt: z.string().optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
+  categories: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe("Category term IDs to assign (core `category` taxonomy)."),
+  tags: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe("Tag term IDs to assign (core `post_tag` taxonomy)."),
 });
 export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 
@@ -339,6 +347,14 @@ export const PostUpdateInputSchema = z.object({
     .enum(["publish", "future", "draft", "pending", "private"])
     .optional(),
   meta: z.record(z.string(), z.unknown()).optional(),
+  categories: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe("Category term IDs to assign (replaces the current set)."),
+  tags: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe("Tag term IDs to assign (replaces the current set)."),
 });
 export type PostUpdateInput = z.infer<typeof PostUpdateInputSchema>;
 
