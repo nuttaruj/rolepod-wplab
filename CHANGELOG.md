@@ -51,6 +51,31 @@ All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Cha
   theme switches and file writes while safe-mode is on. It does not; only media
   optimization reads the flag.
 
+### Fixed — builders and change ledger
+
+- **Builder meta writes are now verified.** `wp eval update_post_meta(...)`
+  exits 0 even when the write does not take effect, so every builder adapter
+  reported success it could not confirm. `replacePostMeta` reads the value back
+  and compares it structurally (tolerating PHP's `{}`→`[]`), throwing
+  `POST_META_VERIFY_FAILED` on a mismatch.
+- **Bricks header/footer writes were silent no-ops.** They wrote
+  `_bricks_header_content` / `_bricks_footer_content`, which Bricks never reads;
+  all scopes now write `_bricks_page_content_2`. Because a page body shares that
+  key, header/footer writes now require a `bricks_template` post
+  (`BRICKS_WRONG_POST_TYPE`, fail-closed) so they cannot overwrite a page.
+- **`rolepod_wp_builder_detect` never detected Bricks** — it looked in the
+  plugin list, but Bricks is a theme. It now reads the theme list too, and
+  reports unsupported builders (Beaver, WPBakery, Breakdance, Brizy) with
+  `supported: false` instead of falling through to Gutenberg.
+- **Change-ledger coverage and honesty.** Builder writes (Bricks/Oxygen/
+  Elementor/Rank Math) now record a revert row at the shared chokepoint;
+  Elementor `_elementor_data` is recorded reversible:false with its backup
+  path. `wp_set_front_page` records one row per real option instead of a single
+  junk `front-page` key. Nav-menu tools, WooCommerce, forms, WPML and ACF now
+  record reversible:false visibility rows with manual-undo notes rather than
+  claiming a revert that would corrupt state or no-op. `changes_query` returns
+  `ledger_available:false` on non-REST targets instead of an empty list.
+
 ## [1.23.0] — 2026-06-05 — MCP tools for companion media-optimize + site backup/restore
 
 ### Added
