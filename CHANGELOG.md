@@ -21,7 +21,7 @@ All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Cha
 - `wp user delete` requires `--reassign`; without it the user's posts are
   deleted along with the user.
 - `rolepod_wp_db_query` rejects stacked statements. `SELECT 1; DELETE FROM
-  wp_posts` used to pass the read-only check, because only the head statement
+wp_posts` used to pass the read-only check, because only the head statement
   was inspected while wp-cli ran both.
 - `rolepod_wp_diagnose` no longer aborts the run when one probe throws; the
   failing scope is reported as a warn finding that says it was not checked.
@@ -36,9 +36,9 @@ All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Cha
   the guard is disarmed.
 - Allow-list additions: `core is-installed`, `core verify-checksums`,
   `plugin verify-checksums`, `plugin get`, `theme get`, `maintenance-mode
-  status`, `role/cap/term/comment` reads (read-only); `config set`,
+status`, `role/cap/term/comment` reads (read-only); `config set`,
   `config delete`, `core update-db`, `theme delete`, `maintenance-mode
-  activate|deactivate`, `rewrite flush`, `media import`, `media regenerate`,
+activate|deactivate`, `rewrite flush`, `media import`, `media regenerate`,
   `role/cap/term/comment` writes (destructive). `db query` is classified by its
   SQL rather than by the subcommand.
 
@@ -132,8 +132,8 @@ on a cron loop) and require a `rest` target with the companion enabled.
   - **block-level HTML in an icon-box `description_text`** (`<ul>`/`<div>`/…) —
     Elementor wraps the description in a `<p>`, so the browser auto-closes it
     and the block escapes the container.
-  Pure helper `collectStructuralWarnings` (unit-tested; verified live).
-  `src/lib/elementorValidator.ts`.
+    Pure helper `collectStructuralWarnings` (unit-tested; verified live).
+    `src/lib/elementorValidator.ts`.
 
 ### Removed
 
@@ -155,7 +155,7 @@ read token budget).
 ### Added
 
 - **`rolepod_wp_elementor_section`** — surgically `get | replace | insert |
-  delete` ONE top-level section, matched by element id or a `_css_classes`
+delete` ONE top-level section, matched by element id or a `_css_classes`
   token, instead of rewriting the whole `_elementor_data` tree. Auto-backups +
   auto-flushes the Elementor CSS cache. `src/tools/composite/wp_elementor_section.ts`.
 - **`rolepod_wp_elementor_restore`** — `list` the timestamped `_elementor_data`
@@ -357,7 +357,7 @@ verification source, target version, audit tool, and date:
   WordPress 7.0, 102 core blocks + 3 plugin blocks audited via
   `WP_Block_Type_Registry::get_instance()`.
 - `bricks.md`, `divi.md`, `oxygen.md` → `verified_from:
-  docs-and-ai-memory`, with explicit `to_verify:` instructions
+docs-and-ai-memory`, with explicit `to_verify:` instructions
   documenting how to swap to a live audit when a target with that
   builder is available.
 - `patterns.md` → mixed verification status per builder, accurately
@@ -397,9 +397,9 @@ parent / ancestor relationships from the live registry. Notable
 verified-live additions on the WP 7.0 target:
 
 - `core/accordion` + `core/accordion-item` + `core/accordion-heading`
-  + `core/accordion-panel` — native FAQ block family. P-003 FAQ
-  recipe updated to prefer this on WP 7.0+ and fall back to
-  `core/details` on WP 6.x.
+  - `core/accordion-panel` — native FAQ block family. P-003 FAQ
+    recipe updated to prefer this on WP 7.0+ and fall back to
+    `core/details` on WP 6.x.
 - `core/math` — LaTeX rendering block.
 - `core/breadcrumbs` — native breadcrumb trail (parallel to Yoast).
 - `core/icon` — SVG icon block.
@@ -470,7 +470,7 @@ the universe of native widgets BEFORE reaching for HTML.
   row, P-005 pricing, P-006 process, P-007 portfolio, P-008
   marquee, P-009 terminal, P-010 big CTA, P-011 header, P-012
   footer) with builder-specific recipes + theme CSS pairs + rules
-  + quirks.
+  - quirks.
 - Updated **`skills/wp-edit-design/SKILL.md`** with the native-first
   Iron Rule (#1) + 9-step workflow including builder catalog read +
   validate_data + html_audit + publish gates.
@@ -601,7 +601,7 @@ User says "ปรับ contact snippet field email" → AI knows = task id
 
 - New libs:
   - `src/lib/rolepodCustomTemplates.ts` — PHP plugin file templates
-    + per-task PHP code generator with proper quote escaping.
+    - per-task PHP code generator with proper quote escaping.
   - `src/lib/rolepodCustomOps.ts` — shared lazy-install + parse + run
     helpers used by all 6 tools.
 - New tools under `src/tools/composite/wp_custom_*`.
@@ -639,7 +639,7 @@ WalnutZtudio polish session — both fixed.
 - **`elementor_publish` now bumps theme asset filemtime (#20)** — added
   `bump_theme_assets` (default true). After flushing object cache, the
   tool walks every `*.css` / `*.js` under `wp-content/themes/<active>/
-  assets/` and `touch()`-es each one. The theme's enqueue layer derives
+assets/` and `touch()`-es each one. The theme's enqueue layer derives
   the `?ver=` query string from `filemtime()`, so this forces the CDN
   / browser cache to miss on the next asset request — closes the class
   of bug where the AI edits `walnut.css` but the served body keeps
@@ -660,7 +660,7 @@ WalnutZtudio polish session — both fixed.
 - `WpElementorPublishInputSchema` adds `bump_theme_assets: boolean`
   (default true).
 - `WpElementorPublishOutputSchema` adds `theme_assets_bumped: { ok,
-  files_touched, theme_dir }`.
+files_touched, theme_dir }`.
 - `bumpThemeAssets()` runs via `wp eval` + RecursiveIteratorIterator
   so the existing companion fs-list endpoint doesn't have to be live
   for this to work.
@@ -701,8 +701,8 @@ document is now empty.
   counterpart to `template_export`. Takes a sections array, optionally
   runs find/replace string substitutions, regenerates element ids so
   the clone doesn't collide with the source, then writes the result
-  + Elementor flags to a target post. Refuses to overwrite when target
-  has data unless overwrite=true.
+  - Elementor flags to a target post. Refuses to overwrite when target
+    has data unless overwrite=true.
 - **`wp-content/private/` write zone** (closes #13) — All four scoped
   endpoints (FsWrite, FsWriteBatch, DirEnsure, FsCopy) now accept
   paths under `wp-content/private/`. The companion auto-installs a
@@ -894,7 +894,7 @@ additive — no companion plugin update required.
   `@<alias>` (persistent alias). All existing tools transparently accept
   the new form.
 - `ConnectRestOutputSchema` adds an optional `warnings: [{ code,
-  message, suggested_fix }]` field. Empty when clean.
+message, suggested_fix }]` field. Empty when clean.
 
 ### Internal
 
@@ -947,17 +947,17 @@ end-to-end and are fixed here.
 `writeManifest()` existed in v1.12.0 but had zero call sites. Wired in:
 
 - **`rolepod_wp_health_check`** (verify phase) — writes `health.json`
-  + `manifest.json` to
-  `<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-health-check/`
-  when the marker is present. Status is `fail` when `db_ok` or
-  `wp_cli_ok` is false, `warn` when warnings are non-empty otherwise,
-  `pass` otherwise. Evidence emission failure is caught and
-  surfaced as a stderr warning — it never breaks the tool's
-  primary contract.
+  - `manifest.json` to
+    `<git-root>/.rolepod/evidence/<ts>-rolepod-wplab-wp-health-check/`
+    when the marker is present. Status is `fail` when `db_ok` or
+    `wp_cli_ok` is false, `warn` when warnings are non-empty otherwise,
+    `pass` otherwise. Evidence emission failure is caught and
+    surfaced as a stderr warning — it never breaks the tool's
+    primary contract.
 - **`rolepod_wp_changes_query`** (review phase) — writes `diff.json`
-  + `manifest.json`. Status is `warn` when any change in the result
-  set is non-reversible, `pass` otherwise. Same failure-mode
-  treatment as health-check.
+  - `manifest.json`. Status is `warn` when any change in the result
+    set is non-reversible, `pass` otherwise. Same failure-mode
+    treatment as health-check.
 
 ### Changed — 8 SKILL.md mode-selection blocks
 
@@ -1083,11 +1083,12 @@ patches the root cause.
 ```ts
 await replacePostMeta(target, postId, "_elementor_data", widgetTree, {
   backupPrefix: "elementor",
-  serialization: "json",     // or "raw" for plain string payloads
+  serialization: "json", // or "raw" for plain string payloads
 });
 ```
 
 Centralizes:
+
 - Shell-capable-OR-RestTarget+companion gate (was 9 duplicated checks).
 - Backup-read via `wp post meta get`, with stamped backup file under
   `wp-content/uploads/wplab-backups/`.
@@ -1113,9 +1114,9 @@ Opt-in E2E test that runs the full RestTarget + companion path against a
 real WordPress install. Skipped by default; enabled when these env vars
 are set:
 
-- `WPLAB_TEST_URL`           HTTPS URL of a throwaway WP install
-- `WPLAB_TEST_USERNAME`      WP user login
-- `WPLAB_TEST_APP_PASSWORD`  WP Application Password
+- `WPLAB_TEST_URL` HTTPS URL of a throwaway WP install
+- `WPLAB_TEST_USERNAME` WP user login
+- `WPLAB_TEST_APP_PASSWORD` WP Application Password
 
 The test installs Elementor (idempotent), creates a draft page, calls
 `elementorWrite.updatePageData`, verifies the meta persisted, and
@@ -1126,7 +1127,7 @@ flags, schema drift, companion response shape mismatches — before ship.
 
 - Adapters that don't use the temp-file pattern (yoast, jetengine,
   metabox, pods, wpml, woo, acf, divi, forms) — they call `wp post meta
-  update <id> <key> <value>` directly with positional args and are fine.
+update <id> <key> <value>` directly with positional args and are fine.
 - Unit tests still pass (147/147).
 
 ## [1.11.10] — 2026-05-27 — `wp eval` path falls back to relative when companion fs-write omits absolute_path
@@ -1172,8 +1173,9 @@ await target.wpCli(["eval", phpScript], { allowDestructive: true });
 ```
 
 Applied to:
-- `elementor_write` (_elementor_data, JSON-decoded)
-- `bricks_write` (_bricks_page_content_2 / _bricks_header_content / _bricks_footer_content, JSON-decoded)
+
+- `elementor_write` (\_elementor_data, JSON-decoded)
+- `bricks_write` (\_bricks_page_content_2 / \_bricks_header_content / \_bricks_footer_content, JSON-decoded)
 - `oxygen_write` (ct_builder_shortcodes, raw string — no json_decode)
 - `rankmath_write` (rank_math_robots, JSON-decoded)
 
@@ -1303,6 +1305,7 @@ quotes (`'<img'`, `'src="'`, `'%<img%'`) that escapeshellarg mangled.
 
 Both adapter `postMeta` paths returned only `{ post_id }` on RestTarget
 because:
+
 - Yoast meta keys (`_yoast_wpseo_*`) aren't `register_meta(show_in_rest)`,
   so `/wp/v2/posts/<id>?_fields=meta` excludes them.
 - Rank Math meta keys (`rank_math_*`) — same.
@@ -1314,7 +1317,7 @@ postmeta via parameterised db-query:
 bridge.dbQuery(
   "SELECT meta_key, meta_value FROM {prefix}postmeta WHERE post_id = %d AND meta_key IN (...)",
   [postId],
-)
+);
 ```
 
 Verified live: pages with `_yoast_wpseo_focuskw` + `_yoast_wpseo_metadesc`
@@ -1358,6 +1361,7 @@ RestTarget + companion.
 
 Both adapter `postMeta` paths returned only `{ post_id }` on RestTarget
 because:
+
 - Yoast meta keys (`_yoast_wpseo_*`) aren't `register_meta` show_in_rest,
   so `/wp/v2/posts/<id>?_fields=meta` excludes them.
 - Rank Math meta keys (`rank_math_*`) — same.
@@ -1417,6 +1421,7 @@ on RestTarget with companion.
 ### Fixed — sub-gap B: `diagnose` slow_queries + large_options query failures
 
 Two root causes:
+
 1. `wp db query` over the wp-cli endpoint does NOT substitute `{prefix}`
    placeholders — the literal string went straight to mysql, got
    "Unknown table" error.
@@ -1437,6 +1442,7 @@ via `$wpdb->prepare`.
 ### Fixed — sub-gap C: `wp_execute_php` POWER_PROFILE UX
 
 `PowerProfileRequiredError` now returns a detailed message including:
+
 - Exact env var name (`ROLEPOD_WPLAB_PROFILE`)
 - Required value (`power`)
 - Concrete `.mcp.json` snippet ready to paste
@@ -1446,6 +1452,7 @@ via `$wpdb->prepare`.
 ### Added — `connect_rest` exposes active profile
 
 `rolepod_wp_connect_rest` response now includes:
+
 ```jsonc
 "profile": {
   "active": "default" | "power",
@@ -1686,8 +1693,8 @@ Eleven new MCP tools driven by the v2.4 competitive analysis pass. 71 → 82 too
   list + post meta. Detection via REST plugin search.
 - **`rolepod_wp_metabox_{read,write}`** — Meta Box (metabox.io) field
   groups (rwmb_meta_box post type) + post meta.
-- **`rolepod_wp_pods_{read,write}`** — Pods Framework pods (_pods_pod) +
-  fields (_pods_field) + post meta. Compatible free + Pro.
+- **`rolepod_wp_pods_{read,write}`** — Pods Framework pods (\_pods_pod) +
+  fields (\_pods_field) + post meta. Compatible free + Pro.
 
 All field-plugin writes auto-ledger (category=post) with before-state
 captured via REST GET ?context=edit.
@@ -1722,6 +1729,7 @@ jetengine_write, metabox_read, metabox_write, pods_read, pods_write.
 
 Considered + deferred. WP Abilities API (WP 6.9+) has minimal cross-ecosystem
 adoption today. Re-evaluate when:
+
 - WordPress 7.0 ships with Abilities in core.
 - Multiple well-known plugins adopt the API publicly.
 - Users explicitly ask for cross-consumer ability discovery.
@@ -1732,7 +1740,7 @@ adds composer dep + PHP layer for marginal benefit at present.
 ### Pairs with
 
 - `rolepod-wp` v2.5.0 — adds `/admin/one-time-login`, `/fs-rename` endpoints
-  + execute-php crash recovery.
+  - execute-php crash recovery.
 
 ## [1.7.0] — 2026-05-27 — Theme safety: pre-write validators + snapshot + child-theme-first + safe-switch
 
@@ -1821,6 +1829,7 @@ Future tools to wire (v1.7): adapter writes (`wp_elementor_write`, `wp_divi_writ
 ### Added — `wp-changes` skill (12th skill)
 
 Phase = recovery. Owns the rollback workflow:
+
 - query the ledger,
 - toggle individual rows,
 - panic-disable a window when the site breaks,
@@ -1843,6 +1852,7 @@ Updated `wp-full` alias to list it.
 The 11 skills are rewritten end-to-end per the [Rolepod parent skill-authoring contract](https://github.com/nuttaruj/rolepod/tree/main/core/skills). Each `SKILL.md` now follows the mandatory shape (frontmatter with `tier` + `phase`, `Iron Rule`, `When to use` + `Skip when`, `Boundary` with Owns / Does not own / Hand off, `Workflow`, `Output`, `Examples` pointer, `References` pointer, `Hard stops`, `Full Rolepod enhancement`, `Next phase`). Each skill ≤ 144 lines.
 
 Supporting files (16 total — under the 36-file cap):
+
 - `wp-pair-setup/examples/pair-examples.md`
 - `wp-connect/references/connect-kinds.md`
 - `wp-health-check/templates/health-report.md`
@@ -1858,19 +1868,20 @@ Supporting files (16 total — under the 36-file cap):
 
 ### Skill set, by phase
 
-| Phase | Skill |
-|---|---|
-| define | wp-pair-setup, wp-connect |
-| verify | wp-health-check |
-| build | wp-content, wp-edit-design, wp-edit-plugin, wp-scaffold |
-| debug | wp-introspect, wp-diagnose |
-| ship | wp-migrate |
-| power | wp-execute-php |
-| alias | wp-full |
+| Phase  | Skill                                                   |
+| ------ | ------------------------------------------------------- |
+| define | wp-pair-setup, wp-connect                               |
+| verify | wp-health-check                                         |
+| build  | wp-content, wp-edit-design, wp-edit-plugin, wp-scaffold |
+| debug  | wp-introspect, wp-diagnose                              |
+| ship   | wp-migrate                                              |
+| power  | wp-execute-php                                          |
+| alias  | wp-full                                                 |
 
 ### Coverage
 
 The new 11 cover all 62 MCP tools with zero overlap:
+
 - **wp-pair-setup** owns the single-use pair_token redemption flow.
 - **wp-connect** owns target-kind selection (local / rest / ssh / docker) post-pair.
 - **wp-health-check** owns the sub-5s readiness ping.
@@ -1922,7 +1933,7 @@ over RestTarget transparently.
 
 ### Bumped
 
-- `MIN_COMPANION_VERSION` = `2.1.0` (companion v2.0.0 had the wp_cache_* session
+- `MIN_COMPANION_VERSION` = `2.1.0` (companion v2.0.0 had the wp*cache*\* session
   token bug; v2.1 uses transients so the handshake-then-act flow actually works
   on shared hosting). MCP warns post-pair if the detected companion is older.
 
@@ -1977,12 +1988,12 @@ over RestTarget transparently.
 
 ### Schema-bound source URLs (locked in for SCHEMA-BOUND-file hook policy)
 
-| File | Source |
-|---|---|
-| `.claude-plugin/marketplace.json` | https://code.claude.com/docs/en/plugin-marketplaces |
-| `.claude-plugin/plugin.json` | https://code.claude.com/docs/en/plugins-reference |
-| `.codex-plugin/plugin.json` | https://developers.openai.com/codex/plugins/build |
-| `.agents/plugins/marketplace.json` | https://developers.openai.com/codex/plugins/build |
+| File                               | Source                                              |
+| ---------------------------------- | --------------------------------------------------- |
+| `.claude-plugin/marketplace.json`  | https://code.claude.com/docs/en/plugin-marketplaces |
+| `.claude-plugin/plugin.json`       | https://code.claude.com/docs/en/plugins-reference   |
+| `.codex-plugin/plugin.json`        | https://developers.openai.com/codex/plugins/build   |
+| `.agents/plugins/marketplace.json` | https://developers.openai.com/codex/plugins/build   |
 
 ### Numbers
 
@@ -2046,7 +2057,7 @@ over RestTarget transparently.
 
 ### Schema additions
 
-- `PairInputSchema` — siteurl https-only refine + pair_token regex `/^wplab_pair_[a-f0-9]{48}$/`.
+- `PairInputSchema` — siteurl https-only refine + pair*token regex `/^wplab_pair*[a-f0-9]{48}$/`.
 - `PairOutputSchema` — target_id + siteurl + username + capabilities + companion_version + is_production + app_password_name + credential_stored.
 
 ### Security
@@ -2133,6 +2144,7 @@ over RestTarget transparently.
 All MCP tool **names** and **required input fields** locked. Breaking changes require a **major bump**. Adding optional input fields, adding output fields, adding new tools = minor. Bug fixes + dep bumps = patch.
 
 The frozen schema:
+
 - **46 MCP tools** with `rolepod_wp_*` prefix (connect + lifecycle + atomic + typed CRUD + adapters + composites + memory + companion-gated power).
 - Schema source: `src/schema/tools.ts` (zod). Exported to `dist/schemas/tools.json` on build.
 - Replay bundle format `v1` (`src/bin/replay.ts`).
@@ -2219,11 +2231,13 @@ The frozen schema:
 ### Added — Multi-target + cross-target composites + SEO/i18n adapters
 
 **New target kinds (W-009):**
+
 - `SshTarget` — node-ssh based. Supports private_key_path or password auth. wp-cli via ssh exec; fileRead/fileWrite via SFTP.
 - `DockerTarget` — dockerode based. `docker exec` per call. File ops via stdin-piped tee. Demuxes docker stream multiplex header.
 - `factory.openTarget` handles 4 kinds: local | rest | ssh | docker.
 
 **New MCP tools (8 — total 46, was 34 in v0.2):**
+
 - `rolepod_wp_connect_ssh { host, user, wp_path, port?, private_key_path?, password? }`
 - `rolepod_wp_connect_docker { container_name, wp_path?, docker_host?, docker_socket_path? }`
 - `rolepod_wp_audit_many { target_ids[], report_format? }` — fan out audit across N targets, consolidate.
@@ -2233,6 +2247,7 @@ The frozen schema:
 - `rolepod_wp_rankmath_read { target_id, scope, post_id? }` — post_meta / settings.
 
 **Adapters (3 new):**
+
 - `wpml/read` — supportedRange 4.5 — 4.7.
 - `yoast/read` — supportedRange 21.0 — 23.5.
 - `rankmath/read` — supportedRange 1.0.200 — 1.0.220.
@@ -2257,20 +2272,23 @@ The frozen schema:
 ### Added — Companion online + Memory + Power tools
 
 **Memory (W-028):**
-- `MemoryStore` — per-site file-based storage at `~/.config/rolepod-wplab/memory/<site-slug>/` (mode 0700 dir, 0600 files). Layout: meta.json + site.md + notes.md (append-only) + conventions.md (versioned append) + runbooks/*.md.
+
+- `MemoryStore` — per-site file-based storage at `~/.config/rolepod-wplab/memory/<site-slug>/` (mode 0700 dir, 0600 files). Layout: meta.json + site.md + notes.md (append-only) + conventions.md (versioned append) + runbooks/\*.md.
 - `rolepod_wp_memory_recall { target_id, query?, kind? }` — substring + kind filter.
 - `rolepod_wp_memory_note { target_id, content, kind?, runbook_name?, tags? }` — append note / version convention / replace runbook.
 - `rolepod_wp_memory_list { target_id }` — metadata-only file listing.
 - CLI: `rolepod-wplab memory show | list | clear | export`.
 
 **Companion bridge + power tools (W-003R, W-004R):**
+
 - `src/companion/Bridge.ts` — handshake + session token mgmt + AST pre-screen + auto-refresh on 401.
-- `src/safety/AstScreen.ts` — token-blocklist screen (defence in depth with companion v0.1+ PHP-side screen). Rejects eval/assert/system/exec/shell_exec/proc_open/popen/pcntl_*/dl/backtick/dynamic-include.
+- `src/safety/AstScreen.ts` — token-blocklist screen (defence in depth with companion v0.1+ PHP-side screen). Rejects eval/assert/system/exec/shell*exec/proc_open/popen/pcntl*\*/dl/backtick/dynamic-include.
 - `rolepod_wp_execute_php { target_id, payload, timeout_ms?, confirm:true }` — requires `ROLEPOD_WPLAB_PROFILE=power`.
 - `rolepod_wp_introspect { target_id, scope, include_values? }`.
 - `rolepod_wp_hook_state { target_id, hook, kind? }` — specialized wrapper over introspect(scope=hooks).
 
 **Adapter writes + Bricks (W-023 extended):**
+
 - `elementor/write.updatePageData` — auto-backup `_elementor_data` before overwrite.
 - `woocommerce/write.updateProduct` + `bulkUpdatePrices` (via /wc/v3/products/batch).
 - `acf/write.setPostMeta` — ACF Pro REST first, wp-cli fallback.
@@ -2278,6 +2296,7 @@ The frozen schema:
 - 4 new MCP tools: `wp_elementor_write`, `wp_woo_write`, `wp_acf_write`, `wp_bricks_read`. All writes enforce production guard.
 
 **Composites (5 total):**
+
 - `rolepod_wp_scaffold_block` — generates block.json + index.js + render.php (or save) + style.css.
 - `rolepod_wp_scaffold_plugin` — main PHP + readme + uninstall + optional rest_endpoint/admin_page/cli_command stubs.
 - `rolepod_wp_scaffold_theme` — block-theme skeleton (style.css + theme.json + functions.php + templates).
@@ -2285,6 +2304,7 @@ The frozen schema:
 - `rolepod_wp_migrate_dryrun` — diffs two targets across plugin_versions / options / users / posts.
 
 **Shipped skills (6 new — total 10):**
+
 - `wp-execute-php` (companion-gated, power profile required)
 - `wp-introspect` (companion-gated)
 - `wp-edit-elementor` (adapter)
@@ -2314,12 +2334,14 @@ The frozen schema:
 ### Added — PoC complete (Path C foundation)
 
 **Runtime layer:**
+
 - `RestTarget` (W-027) — remote WordPress via HTTPS REST + optional companion. No host wp-cli, no SSH needed. Closes shared-hosting gap.
 - `restClient` — Basic-Auth App Password, content-type sniffing, `?rest_route=` fallback for permalink-disabled WP, AbortController timeout, redacts auth from error context.
 - `Target` interface gains `companion: CompanionStatus | null` field. `executePhp` / `introspect` are optional methods (companion-gated).
 - Companion handshake at every target-open. 200 + power profile + non-prod → power tools available. Else → power tools unregistered.
 
 **Credentials (W-018, W-027):**
+
 - Vault interface: `add` / `get` / `list` / `remove` / `touch`.
 - `KeychainVault` — macOS Keychain via `security` binary + sidecar metadata JSON.
 - `FileVault` — JSON at mode 0600 (Linux + portable fallback).
@@ -2332,11 +2354,13 @@ The frozen schema:
 **MCP tools — 19 total (was 5 in v0.0):**
 
 Connectivity + lifecycle:
+
 - `rolepod_wp_connect_local { path }`
 - `rolepod_wp_connect_rest { url, credential_ref?, require_companion? }` (NEW)
 - `rolepod_wp_disconnect { target_id }` (NEW)
 
 Atomic surface:
+
 - `rolepod_wp_cli_run { target_id, args, allow_destructive?, timeout_ms? }`
 - `rolepod_wp_health_check { target_id }`
 - `rolepod_wp_file_read { target_id, path }`
@@ -2352,21 +2376,25 @@ Atomic surface:
 - `rolepod_wp_rest_request { target_id, method, path, query?, body?, headers? }` (NEW)
 
 Adapter-backed (read-only v0.1, W-023):
+
 - `rolepod_wp_elementor_read { target_id, page_id?, type?, per_page? }` (NEW)
 - `rolepod_wp_woo_read { target_id, scope, group?, per_page?, search?, status? }` (NEW)
 - `rolepod_wp_acf_read { target_id, scope, group_key?, post_id? }` (NEW)
 
 **Adapters (src/adapters/):**
+
 - `_contract.ts` — `Adapter<TRead, TWrite>` interface + `AdapterUnavailableError`.
 - `elementor/read` — listPages (REST), getPage (wp-cli post meta; RestTarget needs companion v0.2). supportedRange: 3.18 — 3.22.
 - `woocommerce/read` — products, orders, settings_groups, settings_in_group, shipping_zones, payment_gateways via `/wc/v3` REST. supportedRange: 8.0 — 9.4.
 - `acf/read` — fieldGroups, fieldsInGroup, postMeta via wp-cli + ACF Pro REST fallback. supportedRange: 6.0 — 6.3.
 
 **Safety:**
+
 - `DbGuard` (W-007) — SELECT/SHOW/DESCRIBE/DESC/EXPLAIN allow-list. Strips leading comments + handles `WITH ... SELECT` (CTE). `DbWriteBlockedError` on violation.
 - All write tools enforce `ProdGuard` (W-008) unless `confirm: true`.
 
 **Plugin layout (Claude Code, verified against https://code.claude.com/docs/en/plugins-reference + /skills):**
+
 - `.claude-plugin/plugin.json` — metadata only (NO inline `mcpServers`; that lives in `.mcp.json`).
 - `.mcp.json` at plugin root — declares MCP server pointing at `${CLAUDE_PLUGIN_ROOT}/dist/bin/rolepod-wplab.js`.
 - `skills/wp-health-check/SKILL.md`
@@ -2378,6 +2406,7 @@ Adapter-backed (read-only v0.1, W-023):
 Cursor + Codex + Gemini manifests NOT shipped this release — schemas not yet verified per SCHEMA-BOUND-file policy. Deferred to v0.5.
 
 **Tests — 87 green:**
+
 - `tests/unit/server.test.ts` (18) — server boot + AllowList + ProdGuard + FsScope
 - `tests/unit/TargetRegistry.test.ts` (8) — lifecycle + idle close + collision
 - `tests/unit/profile-load.test.ts` (6) — env / file / malformed
