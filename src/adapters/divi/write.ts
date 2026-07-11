@@ -1,3 +1,4 @@
+import { recordChange } from "../../companion/ledger.js";
 import type { Target } from "../../runtime/Target.js";
 
 export interface DiviWriteAPI {
@@ -32,6 +33,7 @@ export const diviWrite: DiviWriteAPI = {
       String(postId),
       "--field=post_content",
     ]);
+    const beforeContent = before.exitCode === 0 ? before.stdout : null;
     let backupPath: string | null = null;
     if (before.exitCode === 0 && before.stdout.length > 0) {
       const stamp = new Date().toISOString().replace(/[:.]/g, "-");
@@ -63,6 +65,22 @@ export const diviWrite: DiviWriteAPI = {
           `wp post meta update _et_pb_use_builder failed: ${setMeta.stderr.slice(0, 200)}`,
         );
       }
+    }
+
+    // Divi writes the layout into post_content, so it bypasses the
+    // replacePostMeta chokepoint where every other builder gets its ledger row.
+    // Record here instead. Reversible only when we captured the prior content —
+    // the companion's `post` dispatcher restores post_content from beforeState.
+    if (beforeContent !== null) {
+      await recordChange(target, {
+        category: "post",
+        subcategory: "post_content",
+        targetDescriptor: `divi layout → post ${postId} content`,
+        beforeState: { post_content: beforeContent },
+        afterState: { post_content: content },
+        reversible: true,
+        sourceTool: "rolepod_wp_divi_write",
+      });
     }
 
     return { bytesWritten: content.length, backupPath };

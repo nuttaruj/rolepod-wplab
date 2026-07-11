@@ -1,6 +1,6 @@
 ---
 name: wp-changes
-description: Query the AI Change Ledger on a connected target — every write the MCP issued, categorized; toggle on/off; panic-revert recent changes. Phase = Recovery.
+description: Query the AI Change Ledger on a connected target — the writes the MCP recorded through the companion (RestTarget only), categorized; toggle on/off; panic-revert recent changes. Phase = Recovery.
 when_to_use: site broke after AI activity ("ตอบ tool หลังเปิด AI แล้วเว็บพัง"), OR user wants to audit "อะไรที่ AI แก้ไปบ้างวันนี้", OR debug a regression by bisecting AI changes, OR roll back a single AI write without affecting others
 tier: 1
 phase: recovery
@@ -42,7 +42,7 @@ themselves.
 
 # WP Changes
 
-The rollback skill. Every write the MCP issued through companion v2.3+ is captured in the Change Ledger (categorized, before+after state, applied flag). This skill queries that ledger, toggles individual rows, runs git-bisect-style binary narrowing, and panic-disables every change in a time window when the site is on fire.
+The rollback skill. Writes the MCP issues through the companion (v2.3+) are recorded in the Change Ledger (categorized, before+after state, applied flag). Coverage is NOT total: the ledger records on RestTarget connections only, and a row's `reversible` flag says whether the companion can actually undo it — a menu, a nav-menu item, or an Elementor `_elementor_data` write is recorded `reversible:false` with a manual-undo note. Writes on a local/ssh/docker target are not recorded at all; changes_query returns `ledger_available:false` there. This skill queries the ledger, toggles individual rows, runs git-bisect-style binary narrowing, and panic-disables reversible changes in a time window when the site is on fire.
 
 ## Iron Rule
 

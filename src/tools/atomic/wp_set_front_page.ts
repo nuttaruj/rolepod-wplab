@@ -66,20 +66,48 @@ return [
     show_on_front?: string;
     page_on_front?: number;
     page_for_posts?: number;
-    previous?: Record<string, unknown>;
+    previous?: {
+      show_on_front?: unknown;
+      page_on_front?: unknown;
+      page_for_posts?: unknown;
+    };
   };
-  await recordChange(target, {
-    category: "option",
-    subcategory: "front-page",
-    targetDescriptor: `front page → page ${input.front_page_id}${input.posts_page_id ? `, blog → page ${input.posts_page_id}` : ""}`,
-    beforeState: rv.previous ?? null,
-    afterState: {
-      show_on_front: rv.show_on_front,
-      page_on_front: rv.page_on_front,
-      page_for_posts: rv.page_for_posts,
+
+  // One ledger row per option, keyed by the real option name — the companion's
+  // `option` dispatcher restores by option name + beforeState.value, so a single
+  // row keyed "front-page" would look for an option that does not exist and
+  // revert nothing. `page_for_posts` is only recorded when we changed it.
+  const prev = rv.previous ?? {};
+  const rows: Array<{ name: string; before: unknown; after: unknown }> = [
+    {
+      name: "show_on_front",
+      before: prev.show_on_front,
+      after: rv.show_on_front,
     },
-    reversible: true,
-    sourceTool: "wp_set_front_page",
-  });
+    {
+      name: "page_on_front",
+      before: prev.page_on_front,
+      after: rv.page_on_front,
+    },
+  ];
+  if (input.posts_page_id !== undefined) {
+    rows.push({
+      name: "page_for_posts",
+      before: prev.page_for_posts,
+      after: rv.page_for_posts,
+    });
+  }
+
+  for (const row of rows) {
+    await recordChange(target, {
+      category: "option",
+      subcategory: row.name,
+      targetDescriptor: `option ${row.name} (via wp_set_front_page)`,
+      beforeState: { value: row.before },
+      afterState: { value: row.after },
+      reversible: true,
+      sourceTool: "wp_set_front_page",
+    });
+  }
   return rv;
 }

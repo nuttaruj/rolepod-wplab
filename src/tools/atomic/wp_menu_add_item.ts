@@ -100,7 +100,10 @@ return ['item_id' => (int) $item_id, 'menu_id' => ${input.menu_id}];`;
       menu_id: input.menu_id,
       title: input.title,
     },
-    reversible: true,
+    // A menu item is a post, not post meta. The `layout` dispatcher cannot
+    // delete it, so this row is for visibility only.
+    reversible: false,
+    notes: `To undo: delete menu item post ${rv.item_id} (wp post delete ${rv.item_id} --force), or remove it from menu ${input.menu_id} in Appearance → Menus.`,
     sourceTool: "wp_menu_add_item",
   });
   return { item_id: rv.item_id, menu_id: input.menu_id };

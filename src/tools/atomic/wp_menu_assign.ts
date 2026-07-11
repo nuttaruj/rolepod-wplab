@@ -59,7 +59,14 @@ return ['location' => ${locJson}, 'menu_id' => ${input.menu_id}, 'previous_menu_
     targetDescriptor: `assigned menu ${input.menu_id} to theme location "${input.location}"`,
     beforeState: { menu_id: rv.previous_menu_id ?? null },
     afterState: { menu_id: input.menu_id },
-    reversible: true,
+    // Menu-to-location mapping lives in theme_mods (nav_menu_locations), not
+    // post meta, so the `layout` dispatcher cannot restore it. The previous
+    // menu id is captured above so a human can reassign it by hand.
+    reversible: false,
+    notes:
+      rv.previous_menu_id != null
+        ? `To undo: reassign location "${input.location}" back to menu ${rv.previous_menu_id} (wp menu location assign ${rv.previous_menu_id} ${input.location}).`
+        : `To undo: clear location "${input.location}" in Appearance → Menus — it had no menu before.`,
     sourceTool: "wp_menu_assign",
   });
   return rv;

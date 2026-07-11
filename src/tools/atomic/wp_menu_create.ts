@@ -72,7 +72,11 @@ return ['menu_id' => (int) $id, 'created' => true, 'name' => ${nameJson}];`;
       targetDescriptor: `nav menu "${input.name}" created`,
       beforeState: null,
       afterState: { menu_id: rv.menu_id, name: rv.name },
-      reversible: true,
+      // A nav menu is a taxonomy term, not post meta. The companion's `layout`
+      // dispatcher restores post meta, so it cannot delete this term — a
+      // "revert" would be a silent no-op. Record it for visibility, honestly.
+      reversible: false,
+      notes: `To undo: delete the "${rv.name}" nav menu (term id ${rv.menu_id}) from Appearance → Menus, or wp menu delete ${rv.menu_id}.`,
       sourceTool: "wp_menu_create",
     });
   }

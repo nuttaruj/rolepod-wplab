@@ -24,7 +24,7 @@ export type ChangesQueryInput = z.infer<typeof ChangesQueryInputSchema>;
 export const wpChangesQueryToolDef = {
   name: "rolepod_wp_changes_query",
   description:
-    "Query the AI Change Ledger on the target. Lists every change the MCP recorded via the companion (v2.3+) — categorized, with applied flag and reversible flag. Filters: category, applied, since_minutes (last N minutes), source_session.",
+    "Query the AI Change Ledger on the target. The ledger is companion-only: changes are recorded solely on RestTarget connections with the companion (v2.3+). On a local/ssh/docker target nothing is recorded, and this returns `ledger_available:false` rather than an empty list that would read as 'no changes were made'. Lists what was recorded — categorized, with applied and reversible flags. Filters: category, applied, since_minutes, source_session.",
   inputSchema: ChangesQueryInputSchema,
 };
 
@@ -35,6 +35,19 @@ export async function wpChangesQueryHandler(
   const startedAt = new Date();
   const input = ChangesQueryInputSchema.parse(raw);
   const target = registry.get(input.target_id);
+
+  // The ledger only exists on the companion, and recordChange only writes on
+  // RestTarget (see companion/ledger.ts). Querying a local/ssh/docker target
+  // would find nothing — say so, rather than return an empty list that reads as
+  // "this session made no changes".
+  if (target.kind !== "rest") {
+    return {
+      ledger_available: false,
+      rows: [],
+      note: `The change ledger is companion-only and records changes on RestTarget connections. This is a ${target.kind} target, so no changes were recorded here. Anything written on a ${target.kind} target must be reverted from its own backup files.`,
+    };
+  }
+
   const bridge = await bridgeFor(target);
   const filters: Parameters<typeof bridge.queryChanges>[0] = {};
   if (input.category !== undefined) filters.category = input.category;
