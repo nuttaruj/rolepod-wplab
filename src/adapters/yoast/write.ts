@@ -1,3 +1,4 @@
+import { writeScalarMeta } from "../_shared/writeScalarMeta.js";
 import type { Target } from "../../runtime/Target.js";
 
 export interface YoastWriteFields {
@@ -52,15 +53,13 @@ export const yoastWrite: YoastWriteAPI = {
       const metaKey = KEY_MAP[field];
       const metaValue =
         field === "noindex" ? (value ? "1" : "0") : String(value);
-      const r = await target.wpCli(
-        ["post", "meta", "update", String(postId), metaKey, metaValue],
-        { allowDestructive: true },
+      await writeScalarMeta(
+        target,
+        postId,
+        metaKey,
+        metaValue,
+        "rolepod_wp_yoast_write",
       );
-      if (r.exitCode !== 0) {
-        throw new Error(
-          `yoast.setPostMeta ${metaKey} failed: ${r.stderr.slice(0, 200)}`,
-        );
-      }
       updated.push(field);
     }
     return { updated, source: "wp_cli" };

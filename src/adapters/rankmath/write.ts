@@ -1,5 +1,6 @@
-import type { Target } from "../../runtime/Target.js";
 import { replacePostMeta } from "../_shared/replacePostMeta.js";
+import { writeScalarMeta } from "../_shared/writeScalarMeta.js";
+import type { Target } from "../../runtime/Target.js";
 
 export interface RankMathWriteFields {
   focus_keyword?: string;
@@ -53,15 +54,13 @@ export const rankmathWrite: RankMathWriteAPI = {
         continue;
       }
       const metaKey = KEY_MAP[field];
-      const r = await target.wpCli(
-        ["post", "meta", "update", String(postId), metaKey, String(value)],
-        { allowDestructive: true },
+      await writeScalarMeta(
+        target,
+        postId,
+        metaKey,
+        String(value),
+        "rolepod_wp_rankmath_write",
       );
-      if (r.exitCode !== 0) {
-        throw new Error(
-          `rankmath ${metaKey} failed: ${r.stderr.slice(0, 200)}`,
-        );
-      }
       updated.push(field);
     }
     return { updated, source: "wp_cli" };

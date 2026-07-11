@@ -1,5 +1,6 @@
 import { formsAdapter } from "../../adapters/forms/read.js";
 import { formsWrite } from "../../adapters/forms/write.js";
+import { recordChange } from "../../companion/ledger.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import {
   FormsWriteInputSchema,
@@ -50,6 +51,23 @@ export async function wpFormsWriteHandler(
         ? formsWrite.markSpam
         : formsWrite.unmarkSpam;
   const r = await op(target, input.engine, input.entry_id);
+
+  // Entry moderation is not reversible through the ledger — deleting an entry
+  // is permanent, and a spam-status flip is a one-liner the user can redo by
+  // hand. Record for visibility.
+  await recordChange(target, {
+    category: "post",
+    subcategory: `form-entry:${input.op}`,
+    targetDescriptor: `${input.engine} entry ${input.entry_id} — ${input.op}`,
+    afterState: { op: input.op, entry_id: input.entry_id },
+    reversible: false,
+    notes:
+      input.op === "delete_entry"
+        ? `Entry ${input.entry_id} was deleted — this cannot be undone from the ledger.`
+        : `Spam status changed. To reverse, run the opposite op (mark_spam ⇄ unmark_spam) on entry ${input.entry_id}.`,
+    sourceTool: "rolepod_wp_forms_write",
+  });
+
   return FormsWriteOutputSchema.parse({
     op: input.op,
     entry_id: input.entry_id,

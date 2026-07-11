@@ -1,5 +1,6 @@
 import { woocommerceAdapter } from "../../adapters/woocommerce/read.js";
 import { woocommerceWrite } from "../../adapters/woocommerce/write.js";
+import { recordChange } from "../../companion/ledger.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import {
   WooWriteInputSchema,
@@ -58,6 +59,18 @@ export async function wpWooWriteHandler(
       input.product_id,
       input.fields,
     );
+    // Visibility only: the WC REST PUT does not return the prior values, so we
+    // cannot revert. Record what changed with reversible:false.
+    await recordChange(target, {
+      category: "post",
+      subcategory: `product:${input.product_id}`,
+      targetDescriptor: `WooCommerce product ${input.product_id} updated`,
+      afterState: { fields: input.fields },
+      reversible: false,
+      notes:
+        "WooCommerce writes go through the WC REST API, which does not return the prior values — this change cannot be reverted from the ledger. Note the previous values before editing if you may need to roll back.",
+      sourceTool: "rolepod_wp_woo_write",
+    });
     return WooWriteOutputSchema.parse({ op: input.op, result });
   }
   if (input.op === "bulk_update_prices") {
@@ -72,6 +85,16 @@ export async function wpWooWriteHandler(
       target,
       input.price_updates,
     );
+    await recordChange(target, {
+      category: "post",
+      subcategory: "bulk_prices",
+      targetDescriptor: `WooCommerce bulk price update — ${input.price_updates.length} product(s)`,
+      afterState: { price_updates: input.price_updates },
+      reversible: false,
+      notes:
+        "Bulk price update via the WC REST batch endpoint — prior prices were not captured and cannot be reverted from the ledger.",
+      sourceTool: "rolepod_wp_woo_write",
+    });
     return WooWriteOutputSchema.parse({ op: input.op, result });
   }
 

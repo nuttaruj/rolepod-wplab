@@ -1,6 +1,8 @@
 import { wpmlAdapter } from "../../adapters/wpml/read.js";
 import { wpmlWrite } from "../../adapters/wpml/write.js";
+import { recordChange } from "../../companion/ledger.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import type { Target } from "../../runtime/Target.js";
 import {
   WpmlWriteInputSchema,
   WpmlWriteOutputSchema,
@@ -54,6 +56,12 @@ export async function wpWpmlWriteHandler(
       input.post_id,
       input.language_code,
     );
+    await recordWpmlVisibility(
+      target,
+      "set_post_language",
+      `post ${input.post_id} language → ${input.language_code}`,
+      { post_id: input.post_id, language_code: input.language_code },
+    );
     return WpmlWriteOutputSchema.parse({
       op: input.op,
       source: r.source,
@@ -77,6 +85,15 @@ export async function wpWpmlWriteHandler(
       input.original_post_id,
       input.translations,
     );
+    await recordWpmlVisibility(
+      target,
+      "link_translations",
+      `linked ${r.linked_count} translation(s) to post ${input.original_post_id}`,
+      {
+        original_post_id: input.original_post_id,
+        translations: input.translations,
+      },
+    );
     return WpmlWriteOutputSchema.parse({
       op: input.op,
       source: r.source,
@@ -96,9 +113,40 @@ export async function wpWpmlWriteHandler(
     input.post_id,
     input.target_language,
   );
+  await recordWpmlVisibility(
+    target,
+    "duplicate_for_translation",
+    `duplicated post ${input.post_id} for ${input.target_language} → new post ${r.new_post_id}`,
+    { source_post_id: input.post_id, new_post_id: r.new_post_id },
+  );
   return WpmlWriteOutputSchema.parse({
     op: input.op,
     source: r.source,
     result: { new_post_id: r.new_post_id },
+  });
+}
+
+/**
+ * WPML operations touch translation groups and duplicate posts — state the
+ * `layout`/`post` dispatchers do not know how to unwind. Record them for
+ * visibility with reversible:false and a manual-undo note.
+ */
+async function recordWpmlVisibility(
+  target: Target,
+  op: string,
+  descriptor: string,
+  afterState: Record<string, unknown>,
+): Promise<void> {
+  await recordChange(target, {
+    category: "post",
+    subcategory: `wpml:${op}`,
+    targetDescriptor: descriptor,
+    afterState,
+    reversible: false,
+    notes:
+      op === "duplicate_for_translation"
+        ? "A duplicate post was created. To undo, delete the new post."
+        : "WPML translation links cannot be reverted from the ledger — adjust the language/links by hand in WPML.",
+    sourceTool: "rolepod_wp_wpml_write",
   });
 }
