@@ -34,6 +34,8 @@ export async function wpPostCreateHandler(
   if (input.meta !== undefined) body["meta"] = input.meta;
   if (input.categories !== undefined) body["categories"] = input.categories;
   if (input.tags !== undefined) body["tags"] = input.tags;
+  if (input.featured_media !== undefined)
+    body["featured_media"] = input.featured_media;
 
   const res = await target.rest({
     method: "POST",

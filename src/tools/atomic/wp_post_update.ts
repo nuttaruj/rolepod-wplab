@@ -32,11 +32,13 @@ export async function wpPostUpdateHandler(
   if (input.meta !== undefined) body["meta"] = input.meta;
   if (input.categories !== undefined) body["categories"] = input.categories;
   if (input.tags !== undefined) body["tags"] = input.tags;
+  if (input.featured_media !== undefined)
+    body["featured_media"] = input.featured_media;
 
   if (Object.keys(body).length === 0) {
     throw new WplabError(
       "POST_UPDATE_NO_FIELDS",
-      "post_update requires at least one of: title, content, status, meta, categories, tags",
+      "post_update requires at least one of: title, content, status, meta, categories, tags, featured_media",
       { id: input.id },
     );
   }

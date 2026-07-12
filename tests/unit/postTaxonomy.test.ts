@@ -72,6 +72,18 @@ describe("post_create — taxonomy params", () => {
     });
     expect(mutateBody()).not.toHaveProperty("categories");
     expect(mutateBody()).not.toHaveProperty("tags");
+    expect(mutateBody()).not.toHaveProperty("featured_media");
+  });
+
+  it("passes featured_media through to the REST body", async () => {
+    const { registry, mutateBody } = harness();
+    await wpPostCreateHandler(registry, guard, {
+      target_id: "tgt_posttax0",
+      title: "T",
+      content: "C",
+      featured_media: 55,
+    });
+    expect(mutateBody()).toMatchObject({ featured_media: 55 });
   });
 });
 
@@ -95,6 +107,16 @@ describe("post_update — taxonomy params", () => {
         tags: [1],
       }),
     ).resolves.toBeDefined();
+  });
+
+  it("a featured_media-only update passes through and does not trip NO_FIELDS", async () => {
+    const { registry, mutateBody } = harness();
+    await wpPostUpdateHandler(registry, guard, {
+      target_id: "tgt_posttax0",
+      id: 10,
+      featured_media: 88,
+    });
+    expect(mutateBody()).toMatchObject({ featured_media: 88 });
   });
 
   it("still rejects a truly empty update", async () => {

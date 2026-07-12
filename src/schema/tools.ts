@@ -327,6 +327,14 @@ export const PostCreateInputSchema = z.object({
     .array(z.number().int().positive())
     .optional()
     .describe("Tag term IDs to assign (core `post_tag` taxonomy)."),
+  featured_media: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      "Attachment ID to set as the featured image (upload one with rolepod_wp_media_upload).",
+    ),
 });
 export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 
@@ -355,6 +363,14 @@ export const PostUpdateInputSchema = z.object({
     .array(z.number().int().positive())
     .optional()
     .describe("Tag term IDs to assign (replaces the current set)."),
+  featured_media: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      "Attachment ID to set as the featured image (upload one with rolepod_wp_media_upload).",
+    ),
 });
 export type PostUpdateInput = z.infer<typeof PostUpdateInputSchema>;
 
