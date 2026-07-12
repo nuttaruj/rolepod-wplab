@@ -28,7 +28,10 @@ export interface ChangeRecord {
     | "file"
     | "plugin"
     | "theme"
-    | "execute_php";
+    | "execute_php"
+    | "term"
+    | "user"
+    | "comment";
   subcategory: string;
   targetDescriptor: string;
   beforeState?: unknown;

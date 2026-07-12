@@ -29,6 +29,8 @@
  *       admin.css                  — minimal styling
  *     readme.txt                   — wp.org-style metadata
  */
+import { escapeBlockComment, phpLiteral, phpQuote } from "./phpEmbed.js";
+
 export const ROLEPOD_CUSTOM_PLUGIN_SLUG = "rolepod-custom";
 export const ROLEPOD_CUSTOM_PLUGIN_DIR = `wp-content/plugins/${ROLEPOD_CUSTOM_PLUGIN_SLUG}`;
 export const ROLEPOD_CUSTOM_MAIN_FILE = `${ROLEPOD_CUSTOM_PLUGIN_DIR}/rolepod-custom.php`;
@@ -634,24 +636,10 @@ ${extraMethods}}
 `;
 }
 
-function phpQuote(s: string): string {
-  return "'" + s.replace(/\\/g, "\\\\").replace(/'/g, "\\'") + "'";
-}
-
-function phpLiteral(v: string | number | boolean): string {
-  if (typeof v === "string") return phpQuote(v);
-  if (typeof v === "number") return String(v);
-  return v ? "true" : "false";
-}
-
 function indent(s: string, levels: number): string {
   const tabs = "\t".repeat(levels);
   return s
     .split("\n")
     .map((line) => (line.length > 0 ? tabs + line : line))
     .join("\n");
-}
-
-function escapeBlockComment(s: string): string {
-  return s.replace(/\*\//g, "* /");
 }

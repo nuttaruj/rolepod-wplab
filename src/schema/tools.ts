@@ -2671,3 +2671,106 @@ export const WpRenderGetOutputSchema = z.object({
   content: z.string(),
 });
 export type WpRenderGetOutput = z.infer<typeof WpRenderGetOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// WS9 — Roles/users/terms/CPT/comments. Dual-path (wp-cli for shell targets,
+// REST for RestTarget); ledger records only on rest targets.
+// ---------------------------------------------------------------------------
+
+export const TermInputSchema = z.object({
+  target_id: TargetIdSchema,
+  action: z.enum(["list", "create", "ensure"]).default("list"),
+  // wp-cli taxonomy key: "category", "post_tag", or a custom taxonomy key.
+  taxonomy: z.string().default("category"),
+  // REST base override for custom taxonomies whose rest_base ≠ the key.
+  // Built-ins map automatically (category→categories, post_tag→tags).
+  rest_base: z.string().optional(),
+  name: z.string().optional(),
+  slug: z.string().optional(),
+  parent: z.number().int().nonnegative().optional(),
+  description: z.string().optional(),
+  per_page: z.number().int().min(1).max(100).default(50),
+  confirm: z.boolean().default(false),
+});
+export type TermInput = z.infer<typeof TermInputSchema>;
+export const TermOutputSchema = z.object({
+  action: z.string(),
+  taxonomy: z.string(),
+  source: z.enum(["wp_cli", "rest"]),
+  terms: z.array(z.record(z.unknown())).optional(),
+  term_id: z.number().optional(),
+  existed: z.boolean().optional(),
+});
+export type TermOutput = z.infer<typeof TermOutputSchema>;
+
+export const UserWriteInputSchema = z.object({
+  target_id: TargetIdSchema,
+  action: z.enum(["create", "update", "delete"]),
+  id: z.number().int().positive().optional(),
+  username: z.string().optional(),
+  email: z.string().optional(),
+  password: z.string().optional(),
+  role: z.string().optional(),
+  display_name: z.string().optional(),
+  // delete: REQUIRED — every post the user authored is reassigned here rather
+  // than deleted with them.
+  reassign_to: z.number().int().positive().optional(),
+  confirm: z.boolean().default(false),
+});
+export type UserWriteInput = z.infer<typeof UserWriteInputSchema>;
+export const UserWriteOutputSchema = z.object({
+  action: z.string(),
+  source: z.enum(["wp_cli", "rest"]),
+  user_id: z.number().optional(),
+  reassigned_to: z.number().optional(),
+});
+export type UserWriteOutput = z.infer<typeof UserWriteOutputSchema>;
+
+export const CommentInputSchema = z.object({
+  target_id: TargetIdSchema,
+  action: z.enum(["list", "moderate", "delete"]).default("list"),
+  id: z.number().int().positive().optional(),
+  status: z.enum(["approve", "hold", "spam", "trash"]).optional(),
+  post: z.number().int().positive().optional(),
+  per_page: z.number().int().min(1).max(100).default(50),
+  force: z.boolean().default(false),
+  confirm: z.boolean().default(false),
+});
+export type CommentInput = z.infer<typeof CommentInputSchema>;
+export const CommentOutputSchema = z.object({
+  action: z.string(),
+  source: z.enum(["wp_cli", "rest"]),
+  comments: z.array(z.record(z.unknown())).optional(),
+  comment_id: z.number().optional(),
+  status: z.string().optional(),
+});
+export type CommentOutput = z.infer<typeof CommentOutputSchema>;
+
+export const CptScaffoldInputSchema = z.object({
+  target_id: TargetIdSchema,
+  // Post-type key — WordPress caps it at 20 chars, [a-z0-9_-]. Validated here.
+  slug: z
+    .string()
+    .min(1)
+    .max(20)
+    .regex(
+      /^[a-z][a-z0-9_-]*$/,
+      "post-type key must start with a letter and contain only [a-z0-9_-]",
+    ),
+  singular: z.string().min(1),
+  plural: z.string().min(1),
+  public: z.boolean().default(true),
+  show_in_rest: z.boolean().default(true),
+  has_archive: z.boolean().default(true),
+  supports: z.array(z.string()).optional(),
+  confirm: z.boolean().default(false),
+});
+export type CptScaffoldInput = z.infer<typeof CptScaffoldInputSchema>;
+export const CptScaffoldOutputSchema = z.object({
+  slug: z.string(),
+  plugin_file: z.string(),
+  activated: z.boolean(),
+  rest_verified: z.boolean(),
+  rest_base: z.string(),
+});
+export type CptScaffoldOutput = z.infer<typeof CptScaffoldOutputSchema>;

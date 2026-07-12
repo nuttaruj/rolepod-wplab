@@ -417,6 +417,16 @@ import {
   wpMigrateSiteHandler,
   wpMigrateSiteToolDef,
 } from "./composite/wp_migrate_site.js";
+import { wpTermHandler, wpTermToolDef } from "./atomic/wp_term.js";
+import {
+  wpUserWriteHandler,
+  wpUserWriteToolDef,
+} from "./atomic/wp_user_write.js";
+import { wpCommentHandler, wpCommentToolDef } from "./atomic/wp_comment.js";
+import {
+  wpCptScaffoldHandler,
+  wpCptScaffoldToolDef,
+} from "./composite/wp_cpt_scaffold.js";
 import {
   wpWpmlReadHandler,
   wpWpmlReadToolDef,
@@ -955,6 +965,22 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMigrateSiteToolDef,
     handler: (d, raw) => wpMigrateSiteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpTermToolDef,
+    handler: (d, raw) => wpTermHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpUserWriteToolDef,
+    handler: (d, raw) => wpUserWriteHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCommentToolDef,
+    handler: (d, raw) => wpCommentHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpCptScaffoldToolDef,
+    handler: (d, raw) => wpCptScaffoldHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpWpmlReadToolDef,
