@@ -1237,6 +1237,10 @@ export type OxygenWriteInput = z.infer<typeof OxygenWriteInputSchema>;
 export const OxygenWriteOutputSchema = z.object({
   bytes_written: z.number().int().nonnegative(),
   backup_path: z.string().nullable(),
+  // WS12-T3 honesty: whether the page also has a ct_builder_json tree (Oxygen
+  // 4.0+), in which case a shortcodes-only write may not take effect.
+  ct_builder_json_present: z.boolean().optional(),
+  note: z.string().optional(),
 });
 export type OxygenWriteOutput = z.infer<typeof OxygenWriteOutputSchema>;
 

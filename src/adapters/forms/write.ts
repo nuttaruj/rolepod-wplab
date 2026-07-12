@@ -1,5 +1,19 @@
+import { WplabError } from "../../util/errors.js";
 import type { Target } from "../../runtime/Target.js";
 import type { FormsEngine } from "./read.js";
+
+/** Only Gravity Forms exposes a safe wp-cli entry API. CF7/WPForms (and Fluent/
+ *  Ninja/Formidable) have no verified write surface — refuse LOUDLY rather than
+ *  guess their storage, which is the wrong-data bug class the audit closes. */
+function assertGravity(engine: FormsEngine, op: string): void {
+  if (engine !== "gravity") {
+    throw new WplabError(
+      "FORMS_ENGINE_UNSUPPORTED_WRITE",
+      `${op} is only supported for Gravity Forms (got "${engine}"). CF7 / WPForms / other engines have no verified write API here — edit the entry in the plugin's own UI.`,
+      { engine, op, supported: ["gravity"] },
+    );
+  }
+}
 
 export interface FormsWriteAPI {
   deleteEntry(
@@ -34,8 +48,7 @@ function requireShell(target: Target): void {
 
 export const formsWrite: FormsWriteAPI = {
   async deleteEntry(target, engine, entryId) {
-    if (engine !== "gravity")
-      throw new Error(`delete_entry only wired for Gravity (got ${engine})`);
+    assertGravity(engine, "delete_entry");
     requireShell(target);
     const r = await target.wpCli(["gf", "entry", "delete", String(entryId)], {
       allowDestructive: true,
@@ -46,8 +59,7 @@ export const formsWrite: FormsWriteAPI = {
   },
 
   async markSpam(target, engine, entryId) {
-    if (engine !== "gravity")
-      throw new Error(`mark_spam only wired for Gravity (got ${engine})`);
+    assertGravity(engine, "mark_spam");
     requireShell(target);
     const r = await target.wpCli(
       ["gf", "entry", "update", String(entryId), "--status=spam"],
@@ -59,8 +71,7 @@ export const formsWrite: FormsWriteAPI = {
   },
 
   async unmarkSpam(target, engine, entryId) {
-    if (engine !== "gravity")
-      throw new Error(`unmark_spam only wired for Gravity (got ${engine})`);
+    assertGravity(engine, "unmark_spam");
     requireShell(target);
     const r = await target.wpCli(
       ["gf", "entry", "update", String(entryId), "--status=active"],
