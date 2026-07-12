@@ -1923,6 +1923,18 @@ export class CompanionBridge {
     return this.companionCall("POST", "/wplab/v1/backup-delete", { id });
   }
 
+  async backupDownloadChunk(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-download", input);
+  }
+
+  async backupImportChunk(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/backup-import", input);
+  }
+
   async restoreStart(
     input: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {

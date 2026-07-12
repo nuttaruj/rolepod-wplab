@@ -2114,7 +2114,16 @@ const BackupComponentsSchema = z
 export const WpSiteBackupInputSchema = z.object({
   target_id: TargetIdSchema,
   action: z
-    .enum(["start", "status", "list", "inspect", "cancel", "delete"])
+    .enum([
+      "start",
+      "status",
+      "list",
+      "inspect",
+      "cancel",
+      "delete",
+      "download",
+      "import",
+    ])
     .default("status"),
   components: BackupComponentsSchema,
   compress: z.boolean().optional(),
@@ -2122,6 +2131,12 @@ export const WpSiteBackupInputSchema = z.object({
   id: z.string().optional(),
   entry: z.string().optional(),
   max_bytes: z.number().int().min(1).max(5_000_000).optional(),
+  // action=download: local path on the MCP host to write the pulled archive to.
+  dest_path: z.string().optional(),
+  // action=import: local path of the archive to push into WordPress.
+  src_path: z.string().optional(),
+  // Transfer chunk size (raw bytes per round-trip); defaults to 1 MiB.
+  chunk_bytes: z.number().int().min(1).max(5_000_000).optional(),
 });
 export type WpSiteBackupInput = z.infer<typeof WpSiteBackupInputSchema>;
 export const WpSiteBackupOutputSchema = z.record(z.unknown());
