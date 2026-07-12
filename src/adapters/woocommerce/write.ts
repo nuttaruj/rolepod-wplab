@@ -1,4 +1,16 @@
+import { WplabError } from "../../util/errors.js";
 import type { Target } from "../../runtime/Target.js";
+
+/** Surface WooCommerce's own error code + message verbatim rather than a bare
+ *  HTTP status — callers can branch on the code and the user sees the reason. */
+function wcError(res: { status: number; body: unknown }, path: string): never {
+  const rb = (res.body ?? {}) as { code?: string; message?: string };
+  throw new WplabError(
+    rb.code ?? "WC_REQUEST_FAILED",
+    rb.message ?? `WC ${path} returned HTTP ${res.status}`,
+    { status: res.status, path },
+  );
+}
 
 export interface WooWriteAPI {
   /** Update a single product via REST PUT /wc/v3/products/{id}. */
@@ -16,7 +28,15 @@ export interface WooWriteAPI {
       regular_price?: string | undefined;
       sale_price?: string | undefined;
     }>,
-  ): Promise<{ updated: number; failed: number }>;
+  ): Promise<{
+    updated: number;
+    failed: number;
+    errors?: Array<{
+      id?: number | undefined;
+      code?: string | undefined;
+      message?: string | undefined;
+    }>;
+  }>;
 
   /** Create an order via POST /wc/v3/orders. */
   createOrder(
@@ -61,12 +81,7 @@ async function wcPost(
   body: Record<string, unknown>,
 ): Promise<unknown> {
   const res = await target.rest({ method: "POST", path, body });
-  if (res.status < 200 || res.status >= 300) {
-    const rb = (res.body ?? {}) as { code?: string; message?: string };
-    throw new Error(
-      rb.message ?? `WC POST ${path} returned HTTP ${res.status}`,
-    );
-  }
+  if (res.status < 200 || res.status >= 300) wcError(res, `POST ${path}`);
   return res.body;
 }
 
@@ -77,9 +92,8 @@ export const woocommerceWrite: WooWriteAPI = {
       path: `/wc/v3/products/${id}`,
       body: fields,
     });
-    if (res.status < 200 || res.status >= 300) {
-      throw new Error(`WC product update returned HTTP ${res.status}`);
-    }
+    if (res.status < 200 || res.status >= 300)
+      wcError(res, `PUT /wc/v3/products/${id}`);
     return res.body;
   },
 
@@ -90,14 +104,35 @@ export const woocommerceWrite: WooWriteAPI = {
       path: "/wc/v3/products/batch",
       body: { update: updates },
     });
-    if (res.status < 200 || res.status >= 300) {
-      throw new Error(`WC batch update returned HTTP ${res.status}`);
-    }
-    const body = (res.body ?? {}) as { update?: unknown[] };
+    if (res.status < 200 || res.status >= 300)
+      wcError(res, "POST /wc/v3/products/batch");
+    // WC batch returns HTTP 200 even on PARTIAL failure — a rejected item comes
+    // back inside `update` as { id, error:{code,message} }, NOT omitted. Count
+    // only entries WITHOUT an error as updated, so the report never claims a
+    // price changed when WC rejected it.
+    const body = (res.body ?? {}) as {
+      update?: Array<{
+        id?: number;
+        error?: { code?: string; message?: string };
+      }>;
+    };
+    const rows = Array.isArray(body.update) ? body.update : [];
+    const errored = rows.filter((r) => r && r.error);
+    const updated = rows.filter((r) => r && !r.error).length;
     return {
-      updated: Array.isArray(body.update) ? body.update.length : 0,
-      failed:
-        updates.length - (Array.isArray(body.update) ? body.update.length : 0),
+      updated,
+      // Anything the API didn't return as a clean row is a failure — both
+      // per-item errors and items dropped from the response.
+      failed: updates.length - updated,
+      ...(errored.length
+        ? {
+            errors: errored.map((r) => ({
+              id: r.id,
+              code: r.error?.code,
+              message: r.error?.message,
+            })),
+          }
+        : {}),
     };
   },
 
@@ -111,9 +146,8 @@ export const woocommerceWrite: WooWriteAPI = {
       path: `/wc/v3/orders/${id}`,
       body: { status },
     });
-    if (res.status < 200 || res.status >= 300) {
-      throw new Error(`WC order status update returned HTTP ${res.status}`);
-    }
+    if (res.status < 200 || res.status >= 300)
+      wcError(res, `PUT /wc/v3/orders/${id}`);
     return res.body;
   },
 

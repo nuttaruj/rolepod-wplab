@@ -19,16 +19,58 @@ export const wpRestRequestToolDef = {
 const WRITE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /**
- * True when a write is aimed at a WooCommerce money endpoint. Path is normalized
- * first (leading slashes stripped, lowercased) so `/wc/v3/...`, `wc/v3/...`, and
- * `/WC/V3/...` all match, and nested refund routes (orders/{id}/refunds) are
- * caught too.
+ * Normalize a route for matching: percent-decode (repeatedly, to defeat single-
+ * and double-encoding like `%6frders` / `%256frders`), strip leading slashes,
+ * lowercase. WordPress decodes path segments before route matching, so a guard
+ * that matches the raw spelling is trivially bypassed by encoding a letter.
  */
-export function isMoneyEndpointWrite(method: string, path: string): boolean {
+function normalizeRoute(raw: string): string {
+  let s = raw;
+  for (let i = 0; i < 3; i++) {
+    let dec: string;
+    try {
+      dec = decodeURIComponent(s);
+    } catch {
+      dec = s;
+    }
+    if (dec === s) break;
+    s = dec;
+  }
+  return s.replace(/^\/+/, "").toLowerCase();
+}
+
+/** True when a normalized route names a WooCommerce money endpoint. */
+function isMoneyRoute(raw: string): boolean {
+  const np = normalizeRoute(raw);
+  // Classic WC REST (orders / refunds / coupons — incl. nested orders/{id}/refunds).
+  if (
+    /^wc\/v[123]\//.test(np) &&
+    /(^|\/)(orders|refunds|coupons)(\/|$|\?)/.test(np)
+  ) {
+    return true;
+  }
+  // Store API checkout processes cart payment through the gateway.
+  if (/^wc\/store\/(v\d+\/)?checkout(\/|$|\?)/.test(np)) return true;
+  return false;
+}
+
+/**
+ * True when a write is aimed at a WooCommerce money endpoint — via the path OR
+ * the `rest_route` query var (WordPress dispatches by rest_route on
+ * permalink-off sites, and the client itself falls back to `?rest_route=`, so a
+ * money route hidden in the query must be caught too). Percent-encoding and
+ * mixed case are normalized away first.
+ */
+export function isMoneyEndpointWrite(
+  method: string,
+  path: string,
+  query?: Record<string, unknown>,
+): boolean {
   if (!WRITE_METHODS.has(method)) return false;
-  const np = path.replace(/^\/+/, "").toLowerCase();
-  if (!/^wc\/v[123]\//.test(np)) return false;
-  return /(^|\/)(orders|refunds|coupons)(\/|$|\?)/.test(np);
+  if (isMoneyRoute(path)) return true;
+  const rr = query?.["rest_route"];
+  if (typeof rr === "string" && isMoneyRoute(rr)) return true;
+  return false;
 }
 
 export async function wpRestRequestHandler(
@@ -41,7 +83,7 @@ export async function wpRestRequestHandler(
   // Money seal: refuse raw writes to WC orders/refunds/coupons. These move money
   // (a raw refund POST defaults api_refund=true) and must go through the
   // dedicated, ledgered, confirm-gated woo_write ops instead.
-  if (isMoneyEndpointWrite(input.method, input.path)) {
+  if (isMoneyEndpointWrite(input.method, input.path, input.query)) {
     throw new WplabError(
       "WC_MONEY_ENDPOINT_BLOCKED",
       `refusing a raw ${input.method} to a WooCommerce money endpoint (${input.path}) — use rolepod_wp_woo_write (create_refund / create_order / update_order_status / create_coupon), which defaults api_refund=false, gates money ops behind confirm, and ledgers the change`,
