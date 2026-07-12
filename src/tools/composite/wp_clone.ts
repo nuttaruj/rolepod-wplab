@@ -71,6 +71,23 @@ export async function wpCloneHandler(
     steps.push(await syncPluginVersions(source, dest));
   }
 
+  // Post-clone SEO safety: a cloned prod DB often carries blog_public=1, which
+  // means the sandbox is now indexable — OR a sandbox source carried
+  // blog_public=0 onto a new prod. Surface it (info only; do NOT mutate).
+  try {
+    const bp = await dest.wpCli(["option", "get", "blog_public"]);
+    if (bp.exitCode === 0 && bp.stdout.trim() === "0") {
+      steps.push({
+        step: "indexability_warning",
+        ok: true,
+        detail:
+          "dest blog_public=0 — the destination is set to DISCOURAGE search engines (noindex). If dest is production, flip Settings → Reading; if it is a sandbox, this is fine.",
+      });
+    }
+  } catch {
+    /* best-effort */
+  }
+
   const reportPath = join(artifactDir, "clone-report.json");
   await writeFile(
     reportPath,

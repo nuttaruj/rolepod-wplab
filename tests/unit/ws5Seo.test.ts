@@ -62,6 +62,27 @@ describe("wp_seo_set — G7 indexable rebuild + rendered-head verify (WS5-T1/T2)
     expect(rv.indexable_rebuilt).toBe(true);
     expect(rv.desc_in_head).toBe(true);
   });
+
+  it("maps OG + Twitter fields to the plugin's documented postmeta keys", async () => {
+    const target = {
+      id: "tgt_seo00001",
+      kind: "rest",
+      siteurl: "https://x.test",
+      companion: { enabled: true },
+    };
+    const registry = { get: () => target } as unknown as TargetRegistry;
+    await wpSeoSetHandler(registry, {
+      target_id: "tgt_seo00001",
+      post_id: 12,
+      og_title: "Share title",
+      twitter_image: "https://x.test/card.png",
+    });
+    // Yoast OG/Twitter keys are present in the mapping table.
+    expect(capturedPayload).toContain("_yoast_wpseo_opengraph-title");
+    expect(capturedPayload).toContain("_yoast_wpseo_twitter-image");
+    // RankMath equivalents too (the other branch of the mapping).
+    expect(capturedPayload).toContain("rank_math_facebook_title");
+  });
 });
 
 describe("wp_health_check — blog_public noindex probe (WS5-T5)", () => {

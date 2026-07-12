@@ -13,6 +13,14 @@ export const SeoSetInputSchema = z.object({
   meta_title: z.string().optional(),
   canonical: z.string().url().optional(),
   noindex: z.boolean().optional(),
+  // Social/OpenGraph + Twitter cards (WS5-T3, additive). Mapped to the plugin's
+  // own documented postmeta keys.
+  og_title: z.string().optional(),
+  og_description: z.string().optional(),
+  og_image: z.string().url().optional(),
+  twitter_title: z.string().optional(),
+  twitter_description: z.string().optional(),
+  twitter_image: z.string().url().optional(),
 });
 
 export const wpSeoSetToolDef = {
@@ -47,8 +55,8 @@ $plugin = $yoast ? 'yoast' : 'rankmath';
 $before = [];
 $set = [];
 $mappings = $yoast
-  ? ['focus_keyword' => '_yoast_wpseo_focuskw', 'meta_description' => '_yoast_wpseo_metadesc', 'meta_title' => '_yoast_wpseo_title', 'canonical' => '_yoast_wpseo_canonical', 'noindex' => '_yoast_wpseo_meta-robots-noindex']
-  : ['focus_keyword' => 'rank_math_focus_keyword', 'meta_description' => 'rank_math_description', 'meta_title' => 'rank_math_title', 'canonical' => 'rank_math_canonical_url', 'noindex' => 'rank_math_robots'];
+  ? ['focus_keyword' => '_yoast_wpseo_focuskw', 'meta_description' => '_yoast_wpseo_metadesc', 'meta_title' => '_yoast_wpseo_title', 'canonical' => '_yoast_wpseo_canonical', 'noindex' => '_yoast_wpseo_meta-robots-noindex', 'og_title' => '_yoast_wpseo_opengraph-title', 'og_description' => '_yoast_wpseo_opengraph-description', 'og_image' => '_yoast_wpseo_opengraph-image', 'twitter_title' => '_yoast_wpseo_twitter-title', 'twitter_description' => '_yoast_wpseo_twitter-description', 'twitter_image' => '_yoast_wpseo_twitter-image']
+  : ['focus_keyword' => 'rank_math_focus_keyword', 'meta_description' => 'rank_math_description', 'meta_title' => 'rank_math_title', 'canonical' => 'rank_math_canonical_url', 'noindex' => 'rank_math_robots', 'og_title' => 'rank_math_facebook_title', 'og_description' => 'rank_math_facebook_description', 'og_image' => 'rank_math_facebook_image', 'twitter_title' => 'rank_math_twitter_title', 'twitter_description' => 'rank_math_twitter_description', 'twitter_image' => 'rank_math_twitter_image'];
 $input = ${phpJsonArg(input)};
 foreach ($mappings as $field => $key) {
   if (array_key_exists($field, $input)) {
