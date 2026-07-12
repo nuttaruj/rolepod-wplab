@@ -34,11 +34,12 @@ export async function wpPostUpdateHandler(
   if (input.tags !== undefined) body["tags"] = input.tags;
   if (input.featured_media !== undefined)
     body["featured_media"] = input.featured_media;
+  if (input.slug !== undefined) body["slug"] = input.slug;
 
   if (Object.keys(body).length === 0) {
     throw new WplabError(
       "POST_UPDATE_NO_FIELDS",
-      "post_update requires at least one of: title, content, status, meta, categories, tags, featured_media",
+      "post_update requires at least one of: title, content, status, meta, categories, tags, featured_media, slug",
       { id: input.id },
     );
   }
@@ -47,6 +48,7 @@ export async function wpPostUpdateHandler(
   // (deleted between read + write, perms drop), we still proceed with the
   // write and skip the ledger record.
   let beforeState: Record<string, unknown> | null = null;
+  let oldSlug = "";
   try {
     const pre = await target.rest({
       method: "GET",
@@ -54,11 +56,13 @@ export async function wpPostUpdateHandler(
     });
     if (pre.status >= 200 && pre.status < 300) {
       const pb = (pre.body ?? {}) as Record<string, unknown>;
+      oldSlug = String(pb["slug"] ?? "");
       beforeState = {
         post_id: input.id,
         post_title: (pb["title"] as { raw?: string })?.raw ?? "",
         post_content: (pb["content"] as { raw?: string })?.raw ?? "",
         post_status: pb["status"] ?? null,
+        post_slug: oldSlug,
       };
     }
   } catch {
@@ -82,7 +86,22 @@ export async function wpPostUpdateHandler(
     );
   }
 
-  const b = (res.body ?? {}) as { id?: number; modified?: string };
+  const b = (res.body ?? {}) as {
+    id?: number;
+    modified?: string;
+    slug?: string;
+  };
+
+  // Slug change → the OLD permalink now 404s. Warn LOUDLY (the redirect backend
+  // is a separate, plugin-dependent concern — surface it, don't silently break).
+  const newSlug = String(b.slug ?? input.slug ?? "");
+  const slugChangedWarning =
+    input.slug !== undefined &&
+    oldSlug !== "" &&
+    newSlug !== "" &&
+    newSlug !== oldSlug
+      ? `slug changed "${oldSlug}" → "${newSlug}" — the OLD URL will now return 404. Set a 301 redirect (via your redirect plugin / rolepod_wp_redirect_set) from the old path to preserve links + SEO.`
+      : undefined;
 
   // Ledger record — non-fatal on failure.
   if (beforeState !== null) {
@@ -104,5 +123,8 @@ export async function wpPostUpdateHandler(
     status: res.status,
     id: b.id ?? input.id,
     ...(b.modified !== undefined ? { modified: b.modified } : {}),
+    ...(slugChangedWarning !== undefined
+      ? { slug_changed_warning: slugChangedWarning }
+      : {}),
   });
 }

@@ -261,6 +261,7 @@ describe("MCP smoke", () => {
         "rolepod_wp_recovery_restore_snapshot",
         "rolepod_wp_recovery_safe_mode",
         "rolepod_wp_recovery_status",
+        "rolepod_wp_redirect_set",
         "rolepod_wp_render_get",
         "rolepod_wp_rest_dump",
         "rolepod_wp_rest_request",

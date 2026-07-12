@@ -83,6 +83,45 @@ describe("wp_seo_set — G7 indexable rebuild + rendered-head verify (WS5-T1/T2)
     // RankMath equivalents too (the other branch of the mapping).
     expect(capturedPayload).toContain("rank_math_facebook_title");
   });
+
+  it("term mode read-merge-writes wpseo_taxonomy_meta (siblings preserved)", async () => {
+    const target = {
+      id: "tgt_seo00001",
+      kind: "rest",
+      siteurl: "https://x.test",
+      companion: { enabled: true },
+    };
+    const registry = { get: () => target } as unknown as TargetRegistry;
+    await wpSeoSetHandler(registry, {
+      target_id: "tgt_seo00001",
+      term_id: 7,
+      taxonomy: "category",
+      meta_description: "Cat desc",
+    });
+    // Term payload uses the Yoast option (merge), not post meta.
+    expect(capturedPayload).toContain("wpseo_taxonomy_meta");
+    expect(capturedPayload).toContain("update_option");
+    expect(capturedPayload).toContain("MULTISITE_UNSUPPORTED");
+    expect(capturedPayload).not.toContain("update_post_meta");
+  });
+
+  it("rejects passing both post_id and term_id", async () => {
+    const target = {
+      id: "tgt_seo00001",
+      kind: "rest",
+      siteurl: "https://x.test",
+      companion: { enabled: true },
+    };
+    const registry = { get: () => target } as unknown as TargetRegistry;
+    await expect(
+      wpSeoSetHandler(registry, {
+        target_id: "tgt_seo00001",
+        post_id: 5,
+        term_id: 7,
+        taxonomy: "category",
+      }),
+    ).rejects.toThrow();
+  });
 });
 
 describe("wp_health_check — blog_public noindex probe (WS5-T5)", () => {

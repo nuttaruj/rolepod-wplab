@@ -335,6 +335,10 @@ export const PostCreateInputSchema = z.object({
     .describe(
       "Attachment ID to set as the featured image (upload one with rolepod_wp_media_upload).",
     ),
+  slug: z
+    .string()
+    .optional()
+    .describe("URL slug (the `post_name`). WP sanitizes it."),
 });
 export type PostCreateInput = z.infer<typeof PostCreateInputSchema>;
 
@@ -371,6 +375,12 @@ export const PostUpdateInputSchema = z.object({
     .describe(
       "Attachment ID to set as the featured image (upload one with rolepod_wp_media_upload).",
     ),
+  slug: z
+    .string()
+    .optional()
+    .describe(
+      "New URL slug (`post_name`). Changing it 404s the OLD URL — see slug_changed_warning in the output.",
+    ),
 });
 export type PostUpdateInput = z.infer<typeof PostUpdateInputSchema>;
 
@@ -378,6 +388,8 @@ export const PostUpdateOutputSchema = z.object({
   status: z.number().int(),
   id: z.number().int().positive(),
   modified: z.string().optional(),
+  // Present when the slug changed — the old permalink now 404s unless a 301 is set.
+  slug_changed_warning: z.string().optional(),
 });
 export type PostUpdateOutput = z.infer<typeof PostUpdateOutputSchema>;
 
@@ -2855,3 +2867,27 @@ export const HtaccessEditOutputSchema = z.object({
   reason: z.string().optional(),
 });
 export type HtaccessEditOutput = z.infer<typeof HtaccessEditOutputSchema>;
+
+// WS5-T8 — set a redirect through the site's own redirect plugin (RankMath).
+export const RedirectSetInputSchema = z.object({
+  target_id: TargetIdSchema,
+  source: z
+    .string()
+    .min(1)
+    .describe("Path/URL to redirect FROM (e.g. /old-page)."),
+  target: z.string().min(1).describe("URL/path to redirect TO."),
+  code: z
+    .union([z.literal(301), z.literal(302), z.literal(307), z.literal(410)])
+    .default(301),
+  confirm: z.boolean().default(false),
+});
+export type RedirectSetInput = z.infer<typeof RedirectSetInputSchema>;
+export const RedirectSetOutputSchema = z.object({
+  backend: z.string(),
+  source: z.string(),
+  target: z.string(),
+  code: z.number().int(),
+  created: z.boolean(),
+  id: z.number().optional(),
+});
+export type RedirectSetOutput = z.infer<typeof RedirectSetOutputSchema>;

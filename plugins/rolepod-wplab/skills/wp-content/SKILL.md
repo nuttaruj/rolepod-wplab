@@ -83,6 +83,8 @@ Return / hand off:
 | add/find a category, tag, or custom term  | `rolepod_wp_term` (action=ensure is idempotent)                         |
 | approve / spam / trash / delete a comment | `rolepod_wp_comment`                                                    |
 | register a custom post type               | `rolepod_wp_cpt_scaffold`                                               |
+| change a post's slug (URL)                | `rolepod_wp_post_update` with `slug` — heed `slug_changed_warning`      |
+| add a 301 redirect (Rank Math backend)    | `rolepod_wp_redirect_set`                                               |
 | read site setting                         | `rolepod_wp_option_get`                                                 |
 | write site setting                        | `rolepod_wp_option_set` (production guard fires if siteurl-matched)     |
 | arbitrary REST call                       | `rolepod_wp_rest_request`                                               |

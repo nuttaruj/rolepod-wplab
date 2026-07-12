@@ -436,6 +436,10 @@ import {
   wpHtaccessEditToolDef,
 } from "./composite/wp_htaccess_edit.js";
 import {
+  wpRedirectSetHandler,
+  wpRedirectSetToolDef,
+} from "./composite/wp_redirect_set.js";
+import {
   wpWpmlReadHandler,
   wpWpmlReadToolDef,
 } from "./adapter/wp_wpml_read.js";
@@ -998,6 +1002,10 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpHtaccessEditToolDef,
     handler: (d, raw) => wpHtaccessEditHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpRedirectSetToolDef,
+    handler: (d, raw) => wpRedirectSetHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpWpmlReadToolDef,

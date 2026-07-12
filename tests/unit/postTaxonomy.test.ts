@@ -128,4 +128,43 @@ describe("post_update — taxonomy params", () => {
       }),
     ).rejects.toMatchObject({ code: "POST_UPDATE_NO_FIELDS" });
   });
+
+  it("warns when the slug changes (old URL will 404)", async () => {
+    // GET returns the current slug; the mutating response reports the new slug.
+    const bodies: Array<{ method: string; path: string; body?: unknown }> = [];
+    const rest = vi.fn(
+      async (req: { method: string; path: string; body?: unknown }) => {
+        bodies.push(req);
+        if (req.method === "GET")
+          return {
+            status: 200,
+            body: {
+              title: { raw: "" },
+              content: { raw: "" },
+              slug: "old-slug",
+            },
+            headers: {},
+          };
+        return {
+          status: 200,
+          body: { id: 10, slug: "new-slug" },
+          headers: {},
+        };
+      },
+    );
+    const registry = {
+      get: () => ({
+        id: "tgt_posttax0",
+        kind: "rest",
+        siteurl: "https://x.test",
+        rest,
+      }),
+    } as unknown as TargetRegistry;
+    const out = await wpPostUpdateHandler(registry, guard, {
+      target_id: "tgt_posttax0",
+      id: 10,
+      slug: "new-slug",
+    });
+    expect(out.slug_changed_warning).toMatch(/old-slug.*new-slug|404/);
+  });
 });

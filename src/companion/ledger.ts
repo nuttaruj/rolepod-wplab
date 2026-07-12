@@ -32,7 +32,8 @@ export interface ChangeRecord {
     | "term"
     | "user"
     | "comment"
-    | "maintenance";
+    | "maintenance"
+    | "redirect";
   subcategory: string;
   targetDescriptor: string;
   beforeState?: unknown;
