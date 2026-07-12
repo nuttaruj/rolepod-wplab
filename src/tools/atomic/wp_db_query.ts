@@ -46,9 +46,20 @@ export async function wpDbQueryHandler(
     { allowDestructive: input.allow_write },
   );
 
+  // Always-correct static HPOS caveat: with WooCommerce High-Performance Order
+  // Storage on, orders live in wp_wc_orders (custom tables), not wp_posts/
+  // wp_postmeta — a posts-based order query silently returns stale/empty rows.
+  const warnings: string[] = [];
+  if (/shop_order|wc_order|woocommerce_order|order_item/i.test(input.sql)) {
+    warnings.push(
+      "This query touches order data. If WooCommerce HPOS (High-Performance Order Storage) is enabled, orders live in the custom wp_wc_orders tables — NOT wp_posts / wp_postmeta — so a posts-based order query can return stale or empty results. Confirm which storage the site uses before trusting the output.",
+    );
+  }
+
   return DbQueryOutputSchema.parse({
     stdout: result.stdout,
     stderr: result.stderr,
     exit_code: result.exitCode,
+    ...(warnings.length ? { warnings } : {}),
   });
 }

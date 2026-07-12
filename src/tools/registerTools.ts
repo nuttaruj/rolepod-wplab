@@ -856,7 +856,7 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   },
   {
     def: wpProductCreateToolDef,
-    handler: (d, raw) => wpProductCreateHandler(d.registry, raw),
+    handler: (d, raw) => wpProductCreateHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpSetFrontPageToolDef,

@@ -42,6 +42,7 @@ Plugin-specific config writes. Each adapter detects its plugin (REST namespace p
 1. NEVER write Yoast post meta via raw `postmeta` calls — Yoast's REST has hooks for analysis recompute + sitemap rebuild; raw writes desync the indexer.
 2. NEVER write Woo products via core `wp/v2/posts` with `type=product` — `/wc/v3/products` runs Woo-side hooks (price index, attribute lookup, stock cache) that the core endpoint skips.
 3. ALWAYS check `detected: true` in the adapter response before chaining a write — adapters return `detected: false` cleanly when the plugin is inactive; writing against a `false` detection throws inscrutable errors at the plugin layer.
+4. NEVER issue a WooCommerce refund through `rolepod_wp_rest_request` — raw writes to `/wc/v*/orders|refunds|coupons` are sealed (WC_MONEY_ENDPOINT_BLOCKED) because a raw refund POST defaults `api_refund=true` and moves real money. Use `rolepod_wp_woo_write(op: create_refund)`, which defaults `api_refund=false` (records the refund WITHOUT touching the gateway); a real gateway refund needs BOTH `api_refund=true` AND `confirm=true` (MONEY_OP_NEEDS_CONFIRM).
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -53,12 +54,14 @@ Plugin-specific config writes. Each adapter detects its plugin (REST namespace p
 - "Create a contact form" (CF7 / Gravity / WPForms)
 
 Skip when:
+
 - The content is core (post title/content) → `wp-content`.
 - The change is a visual layout (Elementor JSON, theme.json) → `wp-edit-design`.
 
 ## Boundary
 
 Owns:
+
 - `rolepod_wp_yoast_{read,write}` — Yoast SEO.
 - `rolepod_wp_rankmath_{read,write}` — Rank Math.
 - `rolepod_wp_wpml_{read,write}` — WPML translations.
@@ -67,11 +70,13 @@ Owns:
 - `rolepod_wp_forms_{read,write}` — Gravity / CF7 / WPForms.
 
 Does not own:
+
 - Core REST CRUD → `wp-content`.
 - Layout writes → `wp-edit-design`.
 - Plugin BOOTSTRAP (creating a brand-new plugin) → `wp-scaffold`.
 
 Return / hand off:
+
 - The required plugin is not active → tell user to install via REST `wp/v2/plugins` + activate, or via wp-admin.
 - The user needs a page wrap → after meta write, hand off to `wp-content` for the page itself.
 
@@ -134,6 +139,7 @@ No examples file. The per-adapter request shapes mirror each plugin's REST docs 
 ## References
 
 Load before the FIRST write for any given plugin family on this target:
+
 - `references/adapter-detection.md` — per-adapter detection signal, REST namespace, scopes table, common pitfalls (ACF Pro vs free, WooCommerce settings group ordering, WPML licence detect).
 
 ## Hard stops

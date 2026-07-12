@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { bridgeFor } from "../../companion/Bridge.js";
+import { ProdGuard } from "../../safety/ProdGuard.js";
 import { recordChange } from "../../companion/ledger.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
@@ -16,91 +16,97 @@ export const ProductCreateInputSchema = z.object({
   stock: z.number().int().min(0).optional(),
   category_ids: z.array(z.number().int().positive()).optional(),
   status: z.enum(["publish", "draft", "pending", "private"]).default("publish"),
+  confirm: z.boolean().default(false),
 });
 
 export const wpProductCreateToolDef = {
   name: "rolepod_wp_product_create",
   description:
-    "Create a WooCommerce simple product. Refuses if WooCommerce is not active. Sets regular_price, sku, stock, short/long description, categories. Auto-ledgered.",
+    "Create a simple WooCommerce product through the WooCommerce REST CRUD API (POST /wc/v3/products) — NOT raw postmeta, so WC's own hooks, stock-status derivation, and lookup tables stay consistent. Sets regular_price, sku, stock, descriptions, categories. A duplicate SKU is surfaced as product_invalid_sku. Needs a rest target with WooCommerce active (Application Password user with manage_woocommerce). Production writes need confirm=true. Auto-ledgered.",
   inputSchema: ProductCreateInputSchema,
 };
 
 export async function wpProductCreateHandler(
   registry: TargetRegistry,
+  prodGuard: ProdGuard,
   raw: unknown,
 ): Promise<unknown> {
   const input = ProductCreateInputSchema.parse(raw);
   const target = registry.get(input.target_id);
-  if (!target.companion?.enabled) {
+
+  const matched = prodGuard.matches(target.siteurl);
+  if (matched.matched && !input.confirm) {
     throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_product_create requires the rolepod-wp companion.",
-      { targetId: input.target_id },
+      "PRODUCTION_BLOCKED",
+      "product_create blocked on production-matched target — pass confirm=true",
+      { siteurl: target.siteurl, matchedPattern: matched.pattern },
     );
   }
-  const bridge = await bridgeFor(target);
 
-  const payload = `if (!class_exists('WooCommerce')) {
-  return ['error' => 'WOOCOMMERCE_NOT_ACTIVE', 'detail' => 'Install + activate WooCommerce before using wp_product_create.'];
-}
-$args = [
-  'post_title' => ${JSON.stringify(input.name)},
-  'post_status' => ${JSON.stringify(input.status)},
-  'post_type' => 'product',
-];
-${input.description !== undefined ? `$args['post_content'] = ${JSON.stringify(input.description)};` : ""}
-${input.short_description !== undefined ? `$args['post_excerpt'] = ${JSON.stringify(input.short_description)};` : ""}
-$post_id = wp_insert_post($args);
-if (is_wp_error($post_id)) return ['error' => 'INSERT_FAILED', 'detail' => $post_id->get_error_message()];
-update_post_meta($post_id, '_regular_price', ${JSON.stringify(input.regular_price)});
-update_post_meta($post_id, '_price', ${JSON.stringify(input.regular_price)});
-${input.sku !== undefined ? `update_post_meta($post_id, '_sku', ${JSON.stringify(input.sku)});` : ""}
-${
-  input.stock !== undefined
-    ? `update_post_meta($post_id, '_manage_stock', 'yes');
-update_post_meta($post_id, '_stock', ${input.stock});
-update_post_meta($post_id, '_stock_status', 'instock');`
-    : ""
-}
-update_post_meta($post_id, '_virtual', 'no');
-update_post_meta($post_id, '_downloadable', 'no');
-wp_set_object_terms($post_id, 'simple', 'product_type');
-${
-  input.category_ids && input.category_ids.length > 0
-    ? `wp_set_object_terms($post_id, [${input.category_ids.join(",")}], 'product_cat');`
-    : ""
-}
-return ['product_id' => (int) $post_id, 'name' => ${JSON.stringify(input.name)}, 'permalink' => get_permalink($post_id)];`;
-
-  const result = await bridge.executePhp(payload);
-  if (!result.ok) {
-    throw new WplabError(
-      result.error_code ?? "PRODUCT_CREATE_FAILED",
-      result.error_message ?? "wp_product_create execute-php failed",
-      { result },
-    );
-  }
-  const rv = (result.return_value ?? {}) as {
-    product_id?: number;
-    permalink?: string;
-    error?: string;
-    detail?: string;
+  const body: Record<string, unknown> = {
+    name: input.name,
+    type: "simple",
+    regular_price: input.regular_price,
+    status: input.status,
   };
-  if (rv.error) {
-    throw new WplabError(rv.error, rv.detail ?? rv.error, { input });
+  if (input.description !== undefined) body["description"] = input.description;
+  if (input.short_description !== undefined)
+    body["short_description"] = input.short_description;
+  if (input.sku !== undefined) body["sku"] = input.sku;
+  if (input.stock !== undefined) {
+    body["manage_stock"] = true;
+    body["stock_quantity"] = input.stock;
+    // WC derives stock_status from manage_stock + quantity (0 → outofstock).
   }
+  if (input.category_ids && input.category_ids.length > 0) {
+    body["categories"] = input.category_ids.map((id) => ({ id }));
+  }
+
+  const res = await target.rest({
+    method: "POST",
+    path: "/wc/v3/products",
+    body,
+  });
+
+  const rb = (res.body ?? {}) as {
+    id?: number;
+    permalink?: string;
+    code?: string;
+    message?: string;
+  };
+  if (res.status < 200 || res.status >= 300) {
+    // WC returns e.g. { code: "product_invalid_sku", message: "...", data:{status:400} }
+    throw new WplabError(
+      rb.code ?? "PRODUCT_CREATE_FAILED",
+      rb.message ?? `WC product create returned HTTP ${res.status}`,
+      { status: res.status, body: res.body },
+    );
+  }
+  if (typeof rb.id !== "number") {
+    throw new WplabError(
+      "PRODUCT_CREATE_NO_ID",
+      "WC product create returned no product id",
+      { body: res.body },
+    );
+  }
+
   await recordChange(target, {
     category: "post",
-    subcategory: `product:${rv.product_id}`,
+    subcategory: `product:${rb.id}`,
     targetDescriptor: `WC product "${input.name}" created`,
-    beforeState: null,
+    beforeState: { existed: false },
     afterState: {
-      product_id: rv.product_id,
+      product_id: rb.id,
       name: input.name,
       price: input.regular_price,
     },
     reversible: true,
     sourceTool: "wp_product_create",
   });
-  return rv;
+
+  return {
+    product_id: rb.id,
+    name: input.name,
+    ...(rb.permalink !== undefined ? { permalink: rb.permalink } : {}),
+  };
 }

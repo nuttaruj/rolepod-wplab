@@ -470,6 +470,7 @@ export const DbQueryOutputSchema = z.object({
   stdout: z.string(),
   stderr: z.string(),
   exit_code: z.number().int(),
+  warnings: z.array(z.string()).optional(),
 });
 export type DbQueryOutput = z.infer<typeof DbQueryOutputSchema>;
 
@@ -991,9 +992,29 @@ export type ElementorWriteOutput = z.infer<typeof ElementorWriteOutputSchema>;
 
 export const WooWriteInputSchema = z.object({
   target_id: TargetIdSchema,
-  op: z.enum(["update_product", "bulk_update_prices"]),
+  op: z.enum([
+    "update_product",
+    "bulk_update_prices",
+    "create_order",
+    "update_order_status",
+    "create_refund",
+    "create_coupon",
+    "create_variation",
+  ]),
   product_id: z.number().int().positive().optional(),
+  order_id: z.number().int().positive().optional(),
+  order_status: z.string().optional(),
+  // create_refund: amount as a decimal string; a refund is a money movement.
+  refund_amount: z.string().optional(),
+  refund_reason: z.string().optional(),
+  // MONEY SAFETY: default FALSE — the refund is recorded in WooCommerce but NO
+  // money is sent back through the payment gateway unless explicitly set true
+  // (which then also requires confirm=true → MONEY_OP_NEEDS_CONFIRM).
+  api_refund: z.boolean().default(false),
+  // Generic payloads for create_order / create_coupon / create_variation.
   fields: JsonObjectSchema.optional(),
+  coupon: JsonObjectSchema.optional(),
+  variation: JsonObjectSchema.optional(),
   price_updates: z
     .array(
       z.object({
