@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import { recordChange } from "../../companion/ledger.js";
+import { verifyRestMeta } from "../../adapters/_shared/verifyRestMeta.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -14,7 +15,7 @@ export const PodsWriteInputSchema = z.object({
 export const wpPodsWriteToolDef = {
   name: "rolepod_wp_pods_write",
   description:
-    "Write Pods Framework post meta on a connected target. v1.8 supports scope=post_meta only — pass { post_id, meta: {field_id: value, ...} }. Pods fields must be REST-exposed (Pods Pro auto-exposes; free version may need show_in_rest=true on the field definition). Auto-ledgered.",
+    "Write Pods Framework post meta on a connected target (scope=post_meta) — pass { post_id, meta: {field_id: value, ...} }. Writes via the core /wp/v2/posts meta endpoint, so the field must be REST-exposed (Pods Pro auto-exposes; free may need show_in_rest=true). READ-BACK VERIFIED: after writing, it re-reads the meta and returns verified=false + an unverified_fields list if a value did not persist — a Pods field stored in a CUSTOM TABLE accepts the write with HTTP 200 but does not change (set those in the Pods UI). Auto-ledgered (reversible only when verified).",
   inputSchema: PodsWriteInputSchema,
 };
 
@@ -52,19 +53,28 @@ export async function wpPodsWriteHandler(
     );
   }
 
+  // Read-back verify — a Pods field stored in a custom table accepts the core
+  // REST meta write with 200 but does not actually change. Catch that no-op.
+  const check = await verifyRestMeta(target, input.post_id, input.meta);
+
   await recordChange(target, {
     category: "post",
     subcategory: `pods_meta:${input.post_id}`,
     targetDescriptor: `pods meta update post #${input.post_id}`,
     beforeState: { post_id: input.post_id, meta: beforeMeta },
     afterState: { post_id: input.post_id, meta: input.meta },
-    reversible: true,
+    // Only claim reversibility when the write actually landed.
+    reversible: check.verified,
+    ...(check.note ? { notes: check.note } : {}),
     sourceTool: "wp_pods_write",
   });
 
   return {
-    ok: true,
+    ok: check.verified,
     post_id: input.post_id,
     written: Object.keys(input.meta).length,
+    verified: check.verified,
+    ...(check.mismatched.length ? { unverified_fields: check.mismatched } : {}),
+    ...(check.note ? { note: check.note } : {}),
   };
 }

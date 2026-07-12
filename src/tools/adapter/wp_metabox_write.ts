@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import { recordChange } from "../../companion/ledger.js";
+import { verifyRestMeta } from "../../adapters/_shared/verifyRestMeta.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -14,7 +15,7 @@ export const MetaBoxWriteInputSchema = z.object({
 export const wpMetaboxWriteToolDef = {
   name: "rolepod_wp_metabox_write",
   description:
-    "Write Meta Box (metabox.io) post meta on a connected target. v1.8 supports scope=post_meta only — pass { post_id, meta: {field_id: value, ...} }. The plugin's fields must be register_meta'd with show_in_rest=true (Meta Box does this automatically for most field types). Auto-ledgered.",
+    "Write Meta Box (metabox.io) post meta on a connected target (scope=post_meta) — pass { post_id, meta: {field_id: value, ...} }. Writes via the core /wp/v2/posts meta endpoint; fields must be register_meta'd with show_in_rest=true (Meta Box does this for most field types). READ-BACK VERIFIED: it re-reads after writing and returns verified=false + unverified_fields when a value did not persist — a Meta Box group/clone/cloneable field can accept the write with 200 without changing (set those in the Meta Box UI). Auto-ledgered (reversible only when verified).",
   inputSchema: MetaBoxWriteInputSchema,
 };
 
@@ -52,19 +53,25 @@ export async function wpMetaboxWriteHandler(
     );
   }
 
+  const check = await verifyRestMeta(target, input.post_id, input.meta);
+
   await recordChange(target, {
     category: "post",
     subcategory: `metabox_meta:${input.post_id}`,
     targetDescriptor: `meta-box meta update post #${input.post_id}`,
     beforeState: { post_id: input.post_id, meta: beforeMeta },
     afterState: { post_id: input.post_id, meta: input.meta },
-    reversible: true,
+    reversible: check.verified,
+    ...(check.note ? { notes: check.note } : {}),
     sourceTool: "wp_metabox_write",
   });
 
   return {
-    ok: true,
+    ok: check.verified,
     post_id: input.post_id,
     written: Object.keys(input.meta).length,
+    verified: check.verified,
+    ...(check.mismatched.length ? { unverified_fields: check.mismatched } : {}),
+    ...(check.note ? { note: check.note } : {}),
   };
 }
