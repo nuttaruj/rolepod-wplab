@@ -96,6 +96,10 @@ import {
   wpMediaOptimizeToolDef,
 } from "./companion/wp_media_optimize.js";
 import {
+  wpMediaUploadHandler,
+  wpMediaUploadToolDef,
+} from "./companion/wp_media_upload.js";
+import {
   wpSiteBackupHandler,
   wpSiteBackupToolDef,
 } from "./companion/wp_site_backup.js";
@@ -600,6 +604,10 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMediaOptimizeToolDef,
     handler: (d, raw) => wpMediaOptimizeHandler(d.registry, raw),
+  },
+  {
+    def: wpMediaUploadToolDef,
+    handler: (d, raw) => wpMediaUploadHandler(d.registry, raw),
   },
   {
     def: wpSiteBackupToolDef,

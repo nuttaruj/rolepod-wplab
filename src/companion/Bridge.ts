@@ -1889,6 +1889,12 @@ export class CompanionBridge {
     return this.companionCall("POST", "/wplab/v1/media-optimize", input);
   }
 
+  async mediaImport(
+    input: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    return this.companionCall("POST", "/wplab/v1/media-import", input);
+  }
+
   async backupStart(
     input: Record<string, unknown>,
   ): Promise<Record<string, unknown>> {

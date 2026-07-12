@@ -2061,6 +2061,46 @@ export type WpMediaOptimizeInput = z.infer<typeof WpMediaOptimizeInputSchema>;
 export const WpMediaOptimizeOutputSchema = z.record(z.unknown());
 export type WpMediaOptimizeOutput = z.infer<typeof WpMediaOptimizeOutputSchema>;
 
+export const WpMediaUploadInputSchema = z
+  .object({
+    target_id: TargetIdSchema,
+    source: z.enum(["base64", "url", "local_path"]),
+    data: z.string().optional(),
+    url: z.string().url().optional(),
+    path: z.string().optional(),
+    filename: z.string().optional(),
+    alt: z.string().optional(),
+    title: z.string().optional(),
+    caption: z.string().optional(),
+    // Sets the attachment's post_parent (companion path). Featured-image use is
+    // separate: set_featured writes the post's featured_media (see below).
+    attach_to_post: z.number().int().positive().optional(),
+    // REST base of the post to feature the image on (e.g. "posts", "pages",
+    // or a CPT's rest_base).
+    attach_to_post_type: z.string().default("posts"),
+    set_featured: z.boolean().default(false),
+  })
+  // No silent no-op: featuring an image needs to know which post.
+  .refine((v) => !v.set_featured || v.attach_to_post !== undefined, {
+    message: "set_featured=true requires attach_to_post (the post to feature it on)",
+    path: ["set_featured"],
+  })
+  // Each source needs its matching payload field.
+  .refine(
+    (v) =>
+      (v.source === "base64" && !!v.data) ||
+      (v.source === "url" && !!v.url) ||
+      (v.source === "local_path" && !!v.path),
+    {
+      message:
+        "source requires its field: base64→data, url→url, local_path→path",
+      path: ["source"],
+    },
+  );
+export type WpMediaUploadInput = z.infer<typeof WpMediaUploadInputSchema>;
+export const WpMediaUploadOutputSchema = z.record(z.unknown());
+export type WpMediaUploadOutput = z.infer<typeof WpMediaUploadOutputSchema>;
+
 const BackupComponentsSchema = z
   .object({
     db: z.boolean().optional(),

@@ -71,6 +71,7 @@ Return / hand off:
 | create a page/post/cpt | `rolepod_wp_post_create` |
 | update an existing one | `rolepod_wp_post_get` first (if unknown), then `rolepod_wp_post_update` |
 | list / search / filter | `rolepod_wp_post_list` |
+| upload an image / set a featured image | `rolepod_wp_media_upload` |
 | list users | `rolepod_wp_user_list` |
 | read site setting | `rolepod_wp_option_get` |
 | write site setting | `rolepod_wp_option_set` (production guard fires if siteurl-matched) |
@@ -98,9 +99,15 @@ See `examples/content-examples.md` for non-trivial cases (group blocks, columns,
 
 Default to `status=draft` on create. Promote to `publish` only with explicit user OK. Never set `publish` for the first commit of a major page (allows revision review).
 
-### 4. Confirm + surface
+### 4. Media + featured images
 
-State the operation, the `id` (post / user / option), and any warnings. If the response includes `_links`, just show the canonical link.
+Upload with `rolepod_wp_media_upload(source: base64, data, filename, alt)` — or `source: url` for a remote image, or `source: local_path` for a file already on the server. **Always pass `alt`** (accessibility + SEO). To set a post's featured image in one step, add `rolepod_wp_media_upload(source: url, url, alt, set_featured: true, attach_to_post)`.
+
+With the rolepod-wp companion (v2.23+) the upload is bounded server-side and recorded as a reversible ledger row (disable it to delete the attachment). Without the companion it falls back to a bare REST upload that is **not** ledgered — remove such an upload manually via `rolepod_wp_rest_request` DELETE on `/wp/v2/media/<id>?force=true`.
+
+### 5. Confirm + surface
+
+State the operation, the `id` (post / user / option / attachment), and any warnings. If the response includes `_links`, just show the canonical link.
 
 ## If a matching Rolepod agent is available
 
