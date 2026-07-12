@@ -4,17 +4,17 @@
 
 **rolepod-wplab gives Claude Code, Cursor, Codex CLI, and Gemini CLI a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
 
-One MCP server, 89+ tools, 14 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
+One MCP server, 89+ tools, 15 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
 
 ## Standalone vs Combined
 
-**Standalone:** complete WordPress operations toolkit. 14 skills + 136 MCP tools
+**Standalone:** complete WordPress operations toolkit. 15 skills + 138 MCP tools
 cover the full lifecycle — connect, introspect, edit, verify, migrate. Use
 directly via skill commands. No external dependencies.
 
 **Combined with rolepod parent (v2.7+):** wplab phase-flavored skills narrow
 to WP-specific tool roles, deferring workflow orchestration to parent. Same
-14 skills, smarter division of labor. Detection is a single filesystem
+15 skills, smarter division of labor. Detection is a single filesystem
 marker (`<git-root>/.rolepod/parent-active` containing `v1`) written by the
 parent's SessionStart hook — no install-time coupling, no env-var
 propagation problems across Claude Code's subprocess boundaries.
@@ -57,7 +57,7 @@ Manifest schema (Extension Protocol v1): `src/lib/rolepodEvidence.ts`.
 - **Diagnose + back up before risky ops.** `diagnose` (plugin conflicts / slow queries / large autoloads / php errors), `backup_create` + `backup_restore`, `cache_tool`, `cron_tool`, `mail_test`.
 - **Safe `execute-php` (companion only).** AST screen on Node side AND PHP side, production-block unconditional, append-only audit log.
 
-## The 14 skills
+## The 15 skills
 
 | Skill                 | Wraps                               | What it does                                                                                                     |
 | --------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
@@ -116,7 +116,7 @@ Then **fully restart Cursor** — MCP servers load only at startup. Verify under
 **Update:** re-run the `curl` command above to overwrite `.cursor/mcp.json`, then restart Cursor.
 **Uninstall:** delete `.cursor/mcp.json` (or `~/.cursor/mcp.json` for the global install) and restart.
 
-Skills are not auto-registered under Cursor (no unified plugin format yet). The 136 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+Skills are not auto-registered under Cursor (no unified plugin format yet). The 138 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Codex CLI
 
@@ -163,7 +163,7 @@ args = ["-y", "@rolepod/wplab@latest", "serve"]
 **Update:** no command needed — `npx -y @rolepod/wplab@latest serve` pulls the latest version on every Gemini restart.
 **Uninstall:** remove the `rolepod-wplab` entry from `~/.gemini/settings.json` and restart.
 
-Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 136 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 138 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Direct npm (any MCP-aware tool)
 
@@ -178,7 +178,7 @@ Skills are not auto-registered under Gemini (no unified plugin format yet — `g
 }
 ```
 
-136 MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
+138 MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
 
 **Update:** `npx -y @rolepod/wplab@latest …` always fetches the latest published version. Pin to an exact version (e.g. `@rolepod/wplab@1.13.0`) if you want lockstep behavior.
 **Uninstall:** remove the `rolepod-wplab` entry from your client's MCP config.
@@ -214,7 +214,7 @@ rolepod-wplab credentials add walnutztudio.com
 # Lead → rolepod_wp_connect_rest { url: "https://walnutztudio.com" }
 ```
 
-Path B works without the companion plugin — you get all 136 MCP tools EXCEPT `execute_php`, `introspect`, `hook_state`, `mail_test` (those need the companion).
+Path B works without the companion plugin — you get all 138 MCP tools EXCEPT `execute_php`, `introspect`, `hook_state`, `mail_test` (those need the companion).
 
 ## Verify your setup
 
@@ -236,7 +236,7 @@ npx rolepod-wplab doctor
 
 ## What's inside
 
-- **136 MCP tools** — connectivity (4 kinds) + wp-cli passthrough + typed CRUD + page-builder adapters (Elementor / Divi / Oxygen / Bricks) + SEO/i18n (Yoast / RankMath / WPML) + WooCommerce + ACF + forms (Gravity / CF7 / WPForms) + cron + cache + mail + clone + backup + diagnose + scaffold (block / plugin / theme / pattern) + REST dump + user sessions + companion-gated (execute*php / introspect / hook_state) + pair (one-click setup). All prefixed `rolepod_wp*\*`.
+- **138 MCP tools** — connectivity (4 kinds) + wp-cli passthrough + typed CRUD + page-builder adapters (Elementor / Divi / Oxygen / Bricks) + SEO/i18n (Yoast / RankMath / WPML) + WooCommerce + ACF + forms (Gravity / CF7 / WPForms) + cron + cache + mail + clone + backup + diagnose + scaffold (block / plugin / theme / pattern) + REST dump + user sessions + companion-gated (execute*php / introspect / hook_state) + pair (one-click setup). All prefixed `rolepod_wp*\*`.
 - **4 connection kinds** — `LocalTarget` (filesystem + wp-cli), `RestTarget` (HTTPS + App Password, no shell needed), `SshTarget` (node-ssh), `DockerTarget` (dockerode). Same `Target` interface, same tools.
 - **3 profiles** — `strict` / `personal` / `power`. Profile-gated capability map (`power` required for execute_php; `strict` blocks all destructive ops).
 - **Safety floor that always applies** — wp-cli allow-list (3-token prefix match, hard-block on `db reset`/`db drop`/`core multisite-convert`), DB SELECT-only by default, scoped fs (resolves symlinks; refuses paths outside `wp-content/{themes,plugins,uploads}` + `wp-config.php`), AST screen on every `execute_php` payload (Node side + PHP side), production-host glob match with unconditional block on power tools, HTTPS-only RestTarget, OS-keychain credential vault.

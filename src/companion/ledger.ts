@@ -31,7 +31,8 @@ export interface ChangeRecord {
     | "execute_php"
     | "term"
     | "user"
-    | "comment";
+    | "comment"
+    | "maintenance";
   subcategory: string;
   targetDescriptor: string;
   beforeState?: unknown;

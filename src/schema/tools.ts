@@ -2809,3 +2809,49 @@ export const CptScaffoldOutputSchema = z.object({
   rest_base: z.string(),
 });
 export type CptScaffoldOutput = z.infer<typeof CptScaffoldOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// WS15 — Maintenance ops (safe core/plugin/theme update + guarded .htaccess).
+// REST + companion only; single-site only (assertSingleSite).
+// ---------------------------------------------------------------------------
+
+export const MaintenanceUpdateInputSchema = z.object({
+  target_id: TargetIdSchema,
+  scope: z.enum(["plugin", "theme", "core"]),
+  // plugin/theme: which slugs to update (omit = all with updates available).
+  slugs: z.array(z.string()).optional(),
+  auto_rollback: z.boolean().default(true),
+  confirm_production: z.boolean().default(false),
+  // REQUIRED for scope=core — the pre-made backup id whose files/db roll back a
+  // failed core update. Core files are NOT captured by a fresh backup here.
+  backup_id: z.string().optional(),
+});
+export type MaintenanceUpdateInput = z.infer<
+  typeof MaintenanceUpdateInputSchema
+>;
+export const MaintenanceUpdateOutputSchema = z.object({
+  scope: z.string(),
+  updated: z.array(z.string()),
+  backup_id: z.string(),
+  health_ok: z.boolean(),
+  rolled_back: z.boolean(),
+  reason: z.string().optional(),
+});
+export type MaintenanceUpdateOutput = z.infer<
+  typeof MaintenanceUpdateOutputSchema
+>;
+
+export const HtaccessEditInputSchema = z.object({
+  target_id: TargetIdSchema,
+  content: z.string(),
+  confirm_production: z.boolean().default(false),
+});
+export type HtaccessEditInput = z.infer<typeof HtaccessEditInputSchema>;
+export const HtaccessEditOutputSchema = z.object({
+  written: z.boolean(),
+  backup_path: z.string(),
+  health_ok: z.boolean(),
+  rolled_back: z.boolean(),
+  reason: z.string().optional(),
+});
+export type HtaccessEditOutput = z.infer<typeof HtaccessEditOutputSchema>;

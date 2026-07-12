@@ -428,6 +428,14 @@ import {
   wpCptScaffoldToolDef,
 } from "./composite/wp_cpt_scaffold.js";
 import {
+  wpMaintenanceUpdateHandler,
+  wpMaintenanceUpdateToolDef,
+} from "./composite/wp_maintenance_update.js";
+import {
+  wpHtaccessEditHandler,
+  wpHtaccessEditToolDef,
+} from "./composite/wp_htaccess_edit.js";
+import {
   wpWpmlReadHandler,
   wpWpmlReadToolDef,
 } from "./adapter/wp_wpml_read.js";
@@ -981,6 +989,15 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpCptScaffoldToolDef,
     handler: (d, raw) => wpCptScaffoldHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpMaintenanceUpdateToolDef,
+    handler: (d, raw) =>
+      wpMaintenanceUpdateHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpHtaccessEditToolDef,
+    handler: (d, raw) => wpHtaccessEditHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpWpmlReadToolDef,
