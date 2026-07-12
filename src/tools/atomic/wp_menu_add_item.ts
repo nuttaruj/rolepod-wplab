@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpJsonArg, phpQuote } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -111,14 +112,17 @@ return ['item_id' => (int) $item_id, 'menu_id' => ${input.menu_id}];`;
 
 function jsonToPhpArray(obj: Record<string, unknown>): string {
   const entries = Object.entries(obj)
-    .map(([k, v]) => `${JSON.stringify(k)} => ${phpValue(v)}`)
+    .map(([k, v]) => `${phpQuote(k)} => ${phpValue(v)}`)
     .join(", ");
   return `[${entries}]`;
 }
 
 function phpValue(v: unknown): string {
   if (v === null || v === undefined) return "null";
-  if (typeof v === "string") return JSON.stringify(v);
+  // Single-quoted PHP literal — a double-quoted JSON-encoded embed lets a value
+  // execute via PHP string interpolation. phpQuote closes that off.
+  if (typeof v === "string") return phpQuote(v);
   if (typeof v === "number" || typeof v === "boolean") return String(v);
-  return JSON.stringify(JSON.stringify(v));
+  // Nested object/array → json_decode('...', true) (a decoded PHP array).
+  return phpJsonArg(v);
 }

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpQuote } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -36,7 +37,7 @@ export async function wpMenuAssignHandler(
     );
   }
   const bridge = await bridgeFor(target);
-  const locJson = JSON.stringify(input.location);
+  const locJson = phpQuote(input.location);
   const payload = `$locations = (array) get_theme_mod('nav_menu_locations', []);
 $prev = isset($locations[${locJson}]) ? $locations[${locJson}] : null;
 $locations[${locJson}] = ${input.menu_id};

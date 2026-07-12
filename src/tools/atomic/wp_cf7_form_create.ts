@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpJsonArg, phpQuote } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -72,21 +73,18 @@ export async function wpCf7FormCreateHandler(
   return ['error' => 'CF7_NOT_ACTIVE', 'detail' => 'Install + activate Contact Form 7 before using this tool.'];
 }
 $form_id = wp_insert_post([
-  'post_title' => ${JSON.stringify(input.title)},
+  'post_title' => ${phpQuote(input.title)},
   'post_status' => 'publish',
   'post_type' => 'wpcf7_contact_form',
   'post_content' => '',
 ]);
 if (is_wp_error($form_id) || !$form_id) return ['error' => 'INSERT_FAILED'];
-update_post_meta($form_id, '_form', ${JSON.stringify(input.form_markup)});
-update_post_meta($form_id, '_mail', ${JSON.stringify(JSON.stringify(mail))});
-$mail_decoded = json_decode(${JSON.stringify(JSON.stringify(mail))}, true);
-update_post_meta($form_id, '_mail', $mail_decoded);
-$messages_decoded = json_decode(${JSON.stringify(JSON.stringify(messages))}, true);
-update_post_meta($form_id, '_messages', $messages_decoded);
+update_post_meta($form_id, '_form', ${phpQuote(input.form_markup)});
+update_post_meta($form_id, '_mail', ${phpJsonArg(mail)});
+update_post_meta($form_id, '_messages', ${phpJsonArg(messages)});
 update_post_meta($form_id, '_mail_2', ['active' => false, 'subject' => '', 'sender' => '', 'body' => '', 'recipient' => '', 'additional_headers' => '', 'attachments' => '', 'use_html' => false, 'exclude_blank' => false]);
 update_post_meta($form_id, '_additional_settings', '');
-return ['form_id' => (int) $form_id, 'shortcode' => '[contact-form-7 id="' . $form_id . '" title="' . esc_attr(${JSON.stringify(input.title)}) . '"]'];`;
+return ['form_id' => (int) $form_id, 'shortcode' => '[contact-form-7 id="' . $form_id . '" title="' . esc_attr(${phpQuote(input.title)}) . '"]'];`;
 
   const result = await bridge.executePhp(payload);
   if (!result.ok) {

@@ -1,4 +1,5 @@
 import { CompanionBridge } from "../../companion/Bridge.js";
+import { phpQuote } from "../../lib/phpEmbed.js";
 import {
   MailTestInputSchema,
   MailTestOutputSchema,
@@ -16,7 +17,7 @@ export const wpMailTestToolDef = {
 };
 
 const PHP_PAYLOAD = (to: string, subject: string, body: string): string =>
-  `$to=${JSON.stringify(to)};$subject=${JSON.stringify(subject)};$body=${JSON.stringify(body)};return wp_mail($to,$subject,$body);`;
+  `$to=${phpQuote(to)};$subject=${phpQuote(subject)};$body=${phpQuote(body)};return wp_mail($to,$subject,$body);`;
 
 export async function wpMailTestHandler(
   registry: TargetRegistry,

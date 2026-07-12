@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpQuote } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -36,7 +37,7 @@ export async function wpMenuCreateHandler(
     );
   }
   const bridge = await bridgeFor(target);
-  const nameJson = JSON.stringify(input.name);
+  const nameJson = phpQuote(input.name);
   const payload = `$existing = wp_get_nav_menu_object(${nameJson});
 if ($existing && ${input.reuse_existing ? "true" : "false"}) {
   return ['menu_id' => (int) $existing->term_id, 'created' => false, 'name' => ${nameJson}];

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpJsonArg } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -48,7 +49,7 @@ $set = [];
 $mappings = $yoast
   ? ['focus_keyword' => '_yoast_wpseo_focuskw', 'meta_description' => '_yoast_wpseo_metadesc', 'meta_title' => '_yoast_wpseo_title', 'canonical' => '_yoast_wpseo_canonical', 'noindex' => '_yoast_wpseo_meta-robots-noindex']
   : ['focus_keyword' => 'rank_math_focus_keyword', 'meta_description' => 'rank_math_description', 'meta_title' => 'rank_math_title', 'canonical' => 'rank_math_canonical_url', 'noindex' => 'rank_math_robots'];
-$input = json_decode(${JSON.stringify(JSON.stringify(input))}, true);
+$input = ${phpJsonArg(input)};
 foreach ($mappings as $field => $key) {
   if (array_key_exists($field, $input)) {
     $before[$key] = get_post_meta(${input.post_id}, $key, true);

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpQuote } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -74,7 +75,7 @@ $existing = get_posts([
   'post_status' => 'any',
 ]);
 $post_id = $existing ? (int) $existing[0]->ID : null;
-$styles_json = ${JSON.stringify(stylesEncoded)};
+$styles_json = ${phpQuote(stylesEncoded)};
 if ($post_id) {
   $prev = get_post($post_id);
   $prev_content = $prev ? $prev->post_content : null;

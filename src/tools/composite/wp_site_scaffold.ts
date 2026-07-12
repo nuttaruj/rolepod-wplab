@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
+import { phpJsonArg } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -70,14 +71,14 @@ export async function wpSiteScaffoldHandler(
   // syntax `{"a":1}` is NOT valid PHP. v1.10.0 first cut tried to embed
   // JSON.stringify(input.x) raw into PHP source which parse-errored on
   // any object with `{`. Fixed: stringify-then-jsondecode pattern.
-  const inputJson = JSON.stringify({
+  const inputObj = {
     identity: input.identity ?? {},
     pages: input.pages ?? [],
     menu: input.menu ?? null,
     front_page_slug: input.front_page_slug ?? null,
     blog_page_slug: input.blog_page_slug ?? null,
-  });
-  const payload = `$input = json_decode(${JSON.stringify(inputJson)}, true);
+  };
+  const payload = `$input = ${phpJsonArg(inputObj)};
 $result = ['identity' => [], 'pages' => [], 'menu' => null, 'front_page' => null];
 $identity = (array) ($input['identity'] ?? []);
 foreach ($identity as $key => $val) {
