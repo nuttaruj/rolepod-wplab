@@ -1,5 +1,7 @@
 import { makeRunId } from "../../artifact/runId.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { writeManagedFile } from "../../companion/managedWrite.js";
+import { escapeBlockComment } from "../../lib/phpEmbed.js";
 import {
   ScaffoldThemeInputSchema,
   ScaffoldThemeOutputSchema,
@@ -27,10 +29,18 @@ export async function wpScaffoldThemeHandler(
   const runId = makeRunId();
   const dir = `wp-content/themes/${input.slug}`;
   const written: string[] = [];
+  const emit = (path: string, content: string) =>
+    writeManagedFile(target, path, content, {
+      backup: false,
+      sourceTool: "wp_scaffold_theme",
+    });
+  // Name/description land in a CSS `/* */` header + PHP docblock — neutralize `*/`.
+  const safeName = escapeBlockComment(input.name);
+  const safeDesc = escapeBlockComment(input.description ?? input.name);
 
   const styleCss = `/*
-Theme Name: ${input.name}
-Description: ${input.description ?? input.name}
+Theme Name: ${safeName}
+Description: ${safeDesc}
 Author: ${input.author}
 Version: 0.1.0
 Requires at least: 6.0
@@ -38,7 +48,7 @@ Requires PHP: 7.4
 Text Domain: ${input.slug}
 */
 `;
-  await target.fileWrite(`${dir}/style.css`, styleCss, { backup: false });
+  await emit(`${dir}/style.css`, styleCss);
   written.push(`${dir}/style.css`);
 
   const themeJson = {
@@ -56,16 +66,12 @@ Text Domain: ${input.slug}
       typography: { fontSize: "var(--wp--preset--font-size--normal)" },
     },
   };
-  await target.fileWrite(
-    `${dir}/theme.json`,
-    JSON.stringify(themeJson, null, 2),
-    { backup: false },
-  );
+  await emit(`${dir}/theme.json`, JSON.stringify(themeJson, null, 2));
   written.push(`${dir}/theme.json`);
 
   const functions = `<?php
 /**
- * ${input.name} — functions.php
+ * ${safeName} — functions.php
  */
 if (!defined('ABSPATH')) {
     exit;
@@ -77,7 +83,7 @@ add_action('after_setup_theme', function () {
     add_theme_support('editor-styles');
 });
 `;
-  await target.fileWrite(`${dir}/functions.php`, functions, { backup: false });
+  await emit(`${dir}/functions.php`, functions);
   written.push(`${dir}/functions.php`);
 
   const indexHtml = `<!-- wp:template-part {"slug":"header","tagName":"header"} /-->
@@ -90,9 +96,7 @@ add_action('after_setup_theme', function () {
 
 <!-- wp:template-part {"slug":"footer","tagName":"footer"} /-->
 `;
-  await target.fileWrite(`${dir}/templates/index.html`, indexHtml, {
-    backup: false,
-  });
+  await emit(`${dir}/templates/index.html`, indexHtml);
   written.push(`${dir}/templates/index.html`);
 
   const partsHeader = `<!-- wp:group {"tagName":"div","layout":{"type":"constrained"}} -->
@@ -101,9 +105,7 @@ add_action('after_setup_theme', function () {
 </div>
 <!-- /wp:group -->
 `;
-  await target.fileWrite(`${dir}/parts/header.html`, partsHeader, {
-    backup: false,
-  });
+  await emit(`${dir}/parts/header.html`, partsHeader);
   written.push(`${dir}/parts/header.html`);
 
   const partsFooter = `<!-- wp:group {"tagName":"div","layout":{"type":"constrained"}} -->
@@ -114,9 +116,7 @@ add_action('after_setup_theme', function () {
 </div>
 <!-- /wp:group -->
 `;
-  await target.fileWrite(`${dir}/parts/footer.html`, partsFooter, {
-    backup: false,
-  });
+  await emit(`${dir}/parts/footer.html`, partsFooter);
   written.push(`${dir}/parts/footer.html`);
 
   return ScaffoldThemeOutputSchema.parse({

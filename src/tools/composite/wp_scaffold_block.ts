@@ -1,6 +1,7 @@
 import { makeRunId } from "../../artifact/runId.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
 import { phpQuote } from "../../lib/phpEmbed.js";
+import { writeManagedFile } from "../../companion/managedWrite.js";
 import {
   ScaffoldBlockInputSchema,
   ScaffoldBlockOutputSchema,
@@ -37,6 +38,13 @@ export async function wpScaffoldBlockHandler(
   }
   const blockDir = `wp-content/plugins/${input.plugin_slug}/blocks/${slug}`;
   const written: string[] = [];
+  // Route every file through the managed pipeline: php -l on render.php,
+  // JSON-validate block.json, + a ledger row per file (rest+companion targets).
+  const emit = (path: string, content: string) =>
+    writeManagedFile(target, path, content, {
+      backup: false,
+      sourceTool: "wp_scaffold_block",
+    });
 
   const blockJson = {
     $schema: "https://schemas.wp.org/trunk/block.json",
@@ -55,15 +63,11 @@ export async function wpScaffoldBlockHandler(
     attributes: {},
     supports: { html: false },
   };
-  await target.fileWrite(
-    `${blockDir}/block.json`,
-    JSON.stringify(blockJson, null, 2),
-    { backup: false },
-  );
+  await emit(`${blockDir}/block.json`, JSON.stringify(blockJson, null, 2));
   written.push(`${blockDir}/block.json`);
 
   const indexJs = renderIndexJs(input);
-  await target.fileWrite(`${blockDir}/index.js`, indexJs, { backup: false });
+  await emit(`${blockDir}/index.js`, indexJs);
   written.push(`${blockDir}/index.js`);
 
   // WP looks for <script>.asset.php next to an enqueued script to learn its
@@ -71,13 +75,11 @@ export async function wpScaffoldBlockHandler(
   // wp-block-editor / wp-element globals, so it must be enqueued AFTER them —
   // without this file WP enqueues with no deps and the globals are undefined.
   const assetPhp = `<?php return array('dependencies' => array('wp-blocks', 'wp-block-editor', 'wp-element'), 'version' => ${phpQuote(runId)});\n`;
-  await target.fileWrite(`${blockDir}/index.asset.php`, assetPhp, {
-    backup: false,
-  });
+  await emit(`${blockDir}/index.asset.php`, assetPhp);
   written.push(`${blockDir}/index.asset.php`);
 
   const styleCss = `/* ${input.title} block styles */\n.wp-block-${slug} { padding: 1rem; }\n`;
-  await target.fileWrite(`${blockDir}/style.css`, styleCss, { backup: false });
+  await emit(`${blockDir}/style.css`, styleCss);
   written.push(`${blockDir}/style.css`);
 
   if (input.render_strategy === "dynamic") {
@@ -95,9 +97,7 @@ $class = 'wp-block-' . sanitize_html_class(${phpQuote(slug)});
   <p><?php echo esc_html(${phpQuote(input.title)}); ?></p>
 </div>
 `;
-    await target.fileWrite(`${blockDir}/render.php`, renderPhp, {
-      backup: false,
-    });
+    await emit(`${blockDir}/render.php`, renderPhp);
     written.push(`${blockDir}/render.php`);
   }
 

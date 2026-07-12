@@ -1,5 +1,7 @@
 import { makeRunId } from "../../artifact/runId.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { writeManagedFile } from "../../companion/managedWrite.js";
+import { escapeBlockComment, phpQuote } from "../../lib/phpEmbed.js";
 import {
   ScaffoldPluginInputSchema,
   ScaffoldPluginOutputSchema,
@@ -27,14 +29,24 @@ export async function wpScaffoldPluginHandler(
   const runId = makeRunId();
   const dir = `wp-content/plugins/${input.slug}`;
   const written: string[] = [];
+  const emit = (path: string, content: string) =>
+    writeManagedFile(target, path, content, {
+      backup: false,
+      sourceTool: "wp_scaffold_plugin",
+    });
+  // Name/description/author land in the PHP plugin-header docblock — neutralize
+  // `*/` so a crafted value can't break out and inject code.
+  const safeName = escapeBlockComment(input.name);
+  const safeDesc = escapeBlockComment(input.description ?? input.name);
+  const safeAuthor = escapeBlockComment(input.author);
 
   // Main plugin file
   const main = `<?php
 /**
- * Plugin Name: ${input.name}
- * Description: ${input.description ?? input.name}
+ * Plugin Name: ${safeName}
+ * Description: ${safeDesc}
  * Version: 0.1.0
- * Author: ${input.author}
+ * Author: ${safeAuthor}
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
@@ -49,7 +61,7 @@ define('${constName(input.slug)}_VERSION', '0.1.0');
 define('${constName(input.slug)}_DIR', plugin_dir_path(__FILE__));
 ${input.features.includes("rest_endpoint") ? "require_once __DIR__ . '/inc/rest-endpoint.php';\n" : ""}${input.features.includes("admin_page") ? "require_once __DIR__ . '/inc/admin-page.php';\n" : ""}${input.features.includes("gutenberg_block") ? "add_action('init', function () { register_block_type(__DIR__ . '/blocks/example'); });\n" : ""}${input.features.includes("cli_command") ? "if (defined('WP_CLI') && WP_CLI) { require_once __DIR__ . '/inc/cli.php'; }\n" : ""}
 `;
-  await target.fileWrite(`${dir}/${input.slug}.php`, main, { backup: false });
+  await emit(`${dir}/${input.slug}.php`, main);
   written.push(`${dir}/${input.slug}.php`);
 
   const readme = `=== ${input.name} ===
@@ -67,7 +79,7 @@ ${input.description ?? input.name}
 
 Scaffolded by rolepod-wplab. Edit this readme + the main PHP file to add your plugin's behavior.
 `;
-  await target.fileWrite(`${dir}/readme.txt`, readme, { backup: false });
+  await emit(`${dir}/readme.txt`, readme);
   written.push(`${dir}/readme.txt`);
 
   const uninstall = `<?php
@@ -76,53 +88,51 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 }
 // Clean up any options the plugin created here.
 `;
-  await target.fileWrite(`${dir}/uninstall.php`, uninstall, { backup: false });
+  await emit(`${dir}/uninstall.php`, uninstall);
   written.push(`${dir}/uninstall.php`);
 
   if (input.features.includes("rest_endpoint")) {
     const rest = `<?php
 add_action('rest_api_init', function () {
-    register_rest_route('${input.slug}/v1', '/ping', [
+    register_rest_route(${phpQuote(input.slug + "/v1")}, '/ping', [
         'methods' => 'GET',
-        'callback' => function () { return ['pong' => true, 'plugin' => '${input.slug}']; },
+        'callback' => function () { return ['pong' => true, 'plugin' => ${phpQuote(input.slug)}]; },
         'permission_callback' => '__return_true',
     ]);
 });
 `;
-    await target.fileWrite(`${dir}/inc/rest-endpoint.php`, rest, {
-      backup: false,
-    });
+    await emit(`${dir}/inc/rest-endpoint.php`, rest);
     written.push(`${dir}/inc/rest-endpoint.php`);
   }
 
   if (input.features.includes("admin_page")) {
+    // User name/slug embed via phpQuote (single-quoted, no breakout) and the
+    // visible title is esc_html'd for the HTML output.
     const admin = `<?php
 add_action('admin_menu', function () {
     add_menu_page(
-        '${input.name}',
-        '${input.name}',
+        ${phpQuote(input.name)},
+        ${phpQuote(input.name)},
         'manage_options',
-        '${input.slug}',
+        ${phpQuote(input.slug)},
         function () {
-            echo '<div class="wrap"><h1>${input.name}</h1><p>Scaffolded admin page.</p></div>';
+            echo '<div class="wrap"><h1>' . esc_html(${phpQuote(input.name)}) . '</h1><p>Scaffolded admin page.</p></div>';
         },
         'dashicons-admin-generic'
     );
 });
 `;
-    await target.fileWrite(`${dir}/inc/admin-page.php`, admin, {
-      backup: false,
-    });
+    await emit(`${dir}/inc/admin-page.php`, admin);
     written.push(`${dir}/inc/admin-page.php`);
   }
 
   if (input.features.includes("cli_command")) {
     const cli = `<?php
-WP_CLI::add_command('${input.slug}', function ($args, $assoc_args) {
-    WP_CLI::success('${input.name}: hello from CLI');
+WP_CLI::add_command(${phpQuote(input.slug)}, function ($args, $assoc_args) {
+    WP_CLI::success(${phpQuote(input.name + ": hello from CLI")});
 });
 `;
-    await target.fileWrite(`${dir}/inc/cli.php`, cli, { backup: false });
+    await emit(`${dir}/inc/cli.php`, cli);
     written.push(`${dir}/inc/cli.php`);
   }
 

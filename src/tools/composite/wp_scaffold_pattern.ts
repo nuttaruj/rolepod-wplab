@@ -1,5 +1,6 @@
 import { makeRunId } from "../../artifact/runId.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { writeManagedFile } from "../../companion/managedWrite.js";
 import {
   ScaffoldPatternInputSchema,
   ScaffoldPatternOutputSchema,
@@ -53,7 +54,10 @@ export async function wpScaffoldPatternHandler(
   ].join("\n");
 
   const file = header + input.content + "\n";
-  await target.fileWrite(relPath, file, { backup: false });
+  await writeManagedFile(target, relPath, file, {
+    backup: false,
+    sourceTool: "wp_scaffold_pattern",
+  });
 
   return ScaffoldPatternOutputSchema.parse({
     run_id: runId,
