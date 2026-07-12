@@ -39,7 +39,7 @@ Plugin-specific config writes. Each adapter detects its plugin (REST namespace p
 ## Iron Rule
 
 <EXTREMELY-IMPORTANT>
-1. NEVER write Yoast post meta via raw `postmeta` calls — Yoast's REST has hooks for analysis recompute + sitemap rebuild; raw writes desync the indexer.
+1. NEVER write Yoast post meta via raw `postmeta` calls — Yoast caches SEO in its own `wp_yoast_indexable` table, so a bare postmeta write is a SILENT no-op on the front end. Use `rolepod_wp_seo_set` / `rolepod_wp_yoast_write`, which delete the post's indexable row (forcing a rebuild) and verify by fetching the rendered `<head>`. These run through companion execute-php and are therefore PRODUCTION-BLOCKED — on a prod target, edit via the Yoast UI (never write raw).
 2. NEVER write Woo products via core `wp/v2/posts` with `type=product` — `/wc/v3/products` runs Woo-side hooks (price index, attribute lookup, stock cache) that the core endpoint skips.
 3. ALWAYS check `detected: true` in the adapter response before chaining a write — adapters return `detected: false` cleanly when the plugin is inactive; writing against a `false` detection throws inscrutable errors at the plugin layer.
 4. NEVER issue a WooCommerce refund through `rolepod_wp_rest_request` — raw writes to `/wc/v*/orders|refunds|coupons` are sealed (WC_MONEY_ENDPOINT_BLOCKED) because a raw refund POST defaults `api_refund=true` and moves real money. Use `rolepod_wp_woo_write(op: create_refund)`, which defaults `api_refund=false` (records the refund WITHOUT touching the gateway); a real gateway refund needs BOTH `api_refund=true` AND `confirm=true` (MONEY_OP_NEEDS_CONFIRM).

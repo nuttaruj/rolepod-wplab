@@ -61,6 +61,20 @@ export async function wpHealthCheckHandler(
     warnings.push(`db probe failed: ${(err as Error).message}`);
   }
 
+  // Search-engine visibility: blog_public=0 tells WP to discourage indexing
+  // (a `noindex` on the whole site + "Discourage search engines" checked). This
+  // is a silent SEO killer that is easy to leave on after a staging→prod move.
+  try {
+    const bp = await target.wpCli(["option", "get", "blog_public"]);
+    if (bp.exitCode === 0 && bp.stdout.trim() === "0") {
+      warnings.push(
+        "SITE IS NOINDEX (blog_public=0) — WordPress is telling search engines NOT to index this site. If this is production, turn OFF Settings → Reading → 'Discourage search engines'.",
+      );
+    }
+  } catch {
+    /* non-fatal — visibility check is best-effort */
+  }
+
   // REST reachability — issue a tiny HEAD-ish probe via target.rest() if
   // available. RestTarget always has rest(); LocalTarget/SshTarget/DockerTarget
   // don't (their reachability is wp-cli-based, captured above).

@@ -18,7 +18,7 @@ export const SeoSetInputSchema = z.object({
 export const wpSeoSetToolDef = {
   name: "rolepod_wp_seo_set",
   description:
-    "Set SEO post meta (focus keyword / meta description / title / canonical / noindex) — auto-detects Yoast or RankMath and writes the right meta keys. Refuses if neither plugin is active. Auto-ledgered.",
+    "Set SEO post meta (focus keyword / meta description / title / canonical / noindex) — auto-detects Yoast or RankMath and writes the right meta keys. For Yoast it ALSO deletes the post's wp_yoast_indexable row so the cached indexable rebuilds (writing postmeta alone leaves the front end serving stale SEO — the G7 silent-no-op bug). Verifies for real by fetching the rendered page and checking the description is in the <head> (desc_in_head), not by echoing back the meta just written. Companion + execute-php only, so it is production-blocked: on a prod target use the plugin UI. Refuses if neither plugin is active. Auto-ledgered.",
   inputSchema: SeoSetInputSchema,
 };
 
@@ -64,7 +64,32 @@ foreach ($mappings as $field => $key) {
     $set[$key] = $val;
   }
 }
-return ['plugin' => $plugin, 'post_id' => ${input.post_id}, 'set' => $set, 'before' => $before];`;
+// G7 fix: Yoast caches SEO meta in its own wp_yoast_indexable table. Writing
+// postmeta alone leaves the front end serving the STALE indexable — a silent
+// no-op. Delete this post's indexable row so Yoast rebuilds it on next load.
+global $wpdb;
+$indexable_rebuilt = false;
+if ($yoast) {
+  $t = $wpdb->prefix . 'yoast_indexable';
+  if ($wpdb->get_var($wpdb->prepare('SHOW TABLES LIKE %s', $t)) === $t) {
+    $wpdb->delete($t, ['object_id' => ${input.post_id}, 'object_type' => 'post']);
+    $indexable_rebuilt = true;
+  }
+}
+// Real verify: fetch the rendered page and confirm the description is actually
+// in the <head>, instead of echoing back the postmeta we just wrote (which
+// proves nothing about what visitors/search engines see).
+$desc_in_head = null;
+$status = get_post_status(${input.post_id});
+if ($status === 'publish' && isset($input['meta_description'])) {
+  $resp = wp_remote_get(get_permalink(${input.post_id}), ['timeout' => 8, 'sslverify' => false]);
+  if (!is_wp_error($resp)) {
+    $head = (string) wp_remote_retrieve_body($resp);
+    $needle = (string) $input['meta_description'];
+    $desc_in_head = ($needle !== '' && strpos($head, $needle) !== false);
+  }
+}
+return ['plugin' => $plugin, 'post_id' => ${input.post_id}, 'set' => $set, 'before' => $before, 'indexable_rebuilt' => $indexable_rebuilt, 'desc_in_head' => $desc_in_head, 'post_status' => $status];`;
 
   const result = await bridge.executePhp(payload);
   if (!result.ok) {
@@ -79,6 +104,9 @@ return ['plugin' => $plugin, 'post_id' => ${input.post_id}, 'set' => $set, 'befo
     post_id?: number;
     set?: Record<string, unknown>;
     before?: Record<string, unknown>;
+    indexable_rebuilt?: boolean;
+    desc_in_head?: boolean | null;
+    post_status?: string;
     error?: string;
     detail?: string;
   };

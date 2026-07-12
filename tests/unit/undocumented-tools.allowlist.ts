@@ -39,7 +39,6 @@ export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_pods_read",
   "rolepod_wp_pods_write",
   "rolepod_wp_render_get",
-  "rolepod_wp_seo_set",
   "rolepod_wp_set_front_page",
   "rolepod_wp_site_scaffold",
   "rolepod_wp_skill_delete",
