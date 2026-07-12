@@ -1,5 +1,6 @@
 import { makeRunId } from "../../artifact/runId.js";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { phpQuote } from "../../lib/phpEmbed.js";
 import {
   ScaffoldBlockInputSchema,
   ScaffoldBlockOutputSchema,
@@ -65,6 +66,16 @@ export async function wpScaffoldBlockHandler(
   await target.fileWrite(`${blockDir}/index.js`, indexJs, { backup: false });
   written.push(`${blockDir}/index.js`);
 
+  // WP looks for <script>.asset.php next to an enqueued script to learn its
+  // dependency handles + version. Our no-build index.js uses the wp-blocks /
+  // wp-block-editor / wp-element globals, so it must be enqueued AFTER them —
+  // without this file WP enqueues with no deps and the globals are undefined.
+  const assetPhp = `<?php return array('dependencies' => array('wp-blocks', 'wp-block-editor', 'wp-element'), 'version' => ${phpQuote(runId)});\n`;
+  await target.fileWrite(`${blockDir}/index.asset.php`, assetPhp, {
+    backup: false,
+  });
+  written.push(`${blockDir}/index.asset.php`);
+
   const styleCss = `/* ${input.title} block styles */\n.wp-block-${slug} { padding: 1rem; }\n`;
   await target.fileWrite(`${blockDir}/style.css`, styleCss, { backup: false });
   written.push(`${blockDir}/style.css`);
@@ -78,10 +89,10 @@ export async function wpScaffoldBlockHandler(
  * @param string $content     Inner HTML (empty for dynamic blocks).
  * @param WP_Block $block     Block instance.
  */
-$class = 'wp-block-' . sanitize_html_class('${slug}');
+$class = 'wp-block-' . sanitize_html_class(${phpQuote(slug)});
 ?>
 <div class="<?php echo esc_attr($class); ?>">
-  <p><?php esc_html_e('${input.title}', '${input.plugin_slug}'); ?></p>
+  <p><?php echo esc_html(${phpQuote(input.title)}); ?></p>
 </div>
 `;
     await target.fileWrite(`${blockDir}/render.php`, renderPhp, {
@@ -102,33 +113,33 @@ $class = 'wp-block-' . sanitize_html_class('${slug}');
   });
 }
 
+/**
+ * No-build editor script. WP enqueues index.js straight to the browser (no
+ * webpack/babel), so it must be plain ES5-ish JS with NO `import` and NO JSX —
+ * both are SyntaxErrors in a browser. We use the wp.* globals + createElement.
+ * User strings are embedded via JSON.stringify (safe in a JS string context).
+ */
 function renderIndexJs(input: ScaffoldBlockInput): string {
-  return `import { registerBlockType } from '@wordpress/blocks'
-import { useBlockProps } from '@wordpress/block-editor'
-
-registerBlockType('${input.block_slug}', {
-  edit: () => {
-    const blockProps = useBlockProps()
-    return (
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      <div {...blockProps}>
-        <p>${input.title} (editor view)</p>
-      </div>
-    )
-  },
-  ${
+  const slugLit = JSON.stringify(input.block_slug);
+  const editorText = JSON.stringify(`${input.title} (editor view)`);
+  const saveText = JSON.stringify(input.title);
+  const saveFn =
     input.render_strategy === "dynamic"
-      ? `// dynamic: render handled server-side in render.php`
-      : `save: () => {
-    const blockProps = useBlockProps.save()
-    return (
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      <div {...blockProps}>
-        <p>${input.title}</p>
-      </div>
-    )
-  },`
-  }
-})
+      ? // Dynamic block: render.php produces the front-end markup, so save() must
+        // return null (persisting markup would double-render / desync).
+        `save: function () { return null; }`
+      : `save: function () {
+      return el('div', useBlockProps.save(), el('p', null, ${saveText}));
+    }`;
+  return `( function ( blocks, blockEditor, element ) {
+  var el = element.createElement;
+  var useBlockProps = blockEditor.useBlockProps;
+  blocks.registerBlockType( ${slugLit}, {
+    edit: function () {
+      return el('div', useBlockProps(), el('p', null, ${editorText}));
+    },
+    ${saveFn}
+  } );
+} )( window.wp.blocks, window.wp.blockEditor, window.wp.element );
 `;
 }
