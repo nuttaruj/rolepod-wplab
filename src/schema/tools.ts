@@ -1375,7 +1375,13 @@ export type CronToolOutput = z.infer<typeof CronToolOutputSchema>;
 
 export const CacheToolInputSchema = z.object({
   target_id: TargetIdSchema,
-  op: z.enum(["inspect", "flush_object", "flush_transients"]),
+  op: z.enum([
+    "inspect",
+    "detect",
+    "flush_object",
+    "flush_transients",
+    "flush_page",
+  ]),
   confirm: z.boolean().default(false),
 });
 export type CacheToolInput = z.infer<typeof CacheToolInputSchema>;
@@ -1386,6 +1392,13 @@ export const CacheToolOutputSchema = z.object({
   transient_count: z.number().int().nonnegative().optional(),
   expired_transient_count: z.number().int().nonnegative().optional(),
   flushed: z.boolean().optional(),
+  // op=detect / op=flush_page
+  layers: z.array(z.record(z.unknown())).optional(),
+  caveat: z.string().optional(),
+  multisite: z.boolean().optional(),
+  purged: z.array(z.string()).optional(),
+  manual_required: z.array(z.string()).optional(),
+  failed: z.array(z.record(z.unknown())).optional(),
 });
 export type CacheToolOutput = z.infer<typeof CacheToolOutputSchema>;
 
@@ -1564,6 +1577,7 @@ export const DiagnoseInputSchema = z.object({
         "large_options",
         "broken_images",
         "php_errors",
+        "page_cache",
       ]),
     )
     .default([

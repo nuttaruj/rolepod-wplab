@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { makeRunId } from "../../artifact/runId.js";
 import { bridgeFor } from "../../companion/Bridge.js";
+import { detectCacheLayers } from "../../lib/cacheLayers.js";
 import {
   DiagnoseInputSchema,
   DiagnoseOutputSchema,
@@ -14,7 +15,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpDiagnoseToolDef = {
   name: "rolepod_wp_diagnose",
   description:
-    "Run a non-destructive diagnostic sweep: plugin_conflict_probe (count active plugins + version drift), slow_queries (largest wp_options rows + biggest postmeta), large_options (top 10 autoload=yes rows), broken_images (sample wp_posts srcs that 404), php_errors (tail debug.log). All scopes read-only. Findings ranked info/warn/critical.",
+    "Run a non-destructive diagnostic sweep: plugin_conflict_probe (count active plugins + version drift), slow_queries (largest wp_options rows + biggest postmeta — a SIZE proxy, it does NOT measure query execution time), large_options (top 10 autoload=yes rows), broken_images (sample wp_posts srcs that 404), php_errors (tail debug.log), page_cache (enumerate object/page-cache-plugin/host cache layers — read-only, points at rolepod_wp_cache_tool to purge). All scopes read-only. Findings ranked info/warn/critical.",
   inputSchema: DiagnoseInputSchema,
 };
 
@@ -52,6 +53,8 @@ export async function wpDiagnoseHandler(
         findings.push(...(await brokenImagesProbe(target)));
       } else if (scope === "php_errors") {
         findings.push(...(await phpErrorsProbe(target)));
+      } else if (scope === "page_cache") {
+        findings.push(...(await pageCacheProbe(target)));
       }
     } catch (err) {
       findings.push({
@@ -142,7 +145,8 @@ async function slowQueriesProbe(target: Target): Promise<Finding[]> {
         {
           scope: "slow_queries",
           severity: "info",
-          message: "top postmeta keys by avg row size",
+          message:
+            "largest postmeta keys by avg row size — a SIZE proxy for bloat; this does NOT measure query execution time (no query timing is collected)",
           detail: result.rows,
         },
       ];
@@ -184,7 +188,7 @@ async function slowQueriesProbe(target: Target): Promise<Finding[]> {
     {
       scope: "slow_queries",
       severity: "info",
-      message: `top postmeta keys by avg row size (TSV: meta_key\\trows\\tavg_bytes)`,
+      message: `largest postmeta keys by avg row size — a SIZE proxy, NOT measured query time (TSV: meta_key\\trows\\tavg_bytes)`,
       detail: rows,
     },
   ];
@@ -378,6 +382,41 @@ async function phpErrorsProbe(target: Target): Promise<Finding[]> {
       },
     ];
   }
+}
+
+async function pageCacheProbe(target: Target): Promise<Finding[]> {
+  const report = await detectCacheLayers(target);
+  const findings: Finding[] = [];
+  if (report.multisite) {
+    findings.push({
+      scope: "page_cache",
+      severity: "info",
+      message:
+        "multisite detected — page-cache detection/purge is single-site only; verify per-site at the host panel",
+    });
+  }
+  const pageLayers = report.layers.filter((l) => l.kind !== "object");
+  if (pageLayers.length === 0) {
+    findings.push({
+      scope: "page_cache",
+      severity: "info",
+      message: `no page-cache plugin or host-cache header detected. ${report.caveat}`,
+    });
+  } else {
+    for (const l of pageLayers) {
+      findings.push({
+        scope: "page_cache",
+        severity: l.manual_required ? "warn" : "info",
+        message: `${l.kind} cache: ${l.name} — ${l.purgeable ? "purge with rolepod_wp_cache_tool(op=flush_page)" : "MANUAL: " + (l.note ?? "clear at the host/plugin panel")}`,
+      });
+    }
+    findings.push({
+      scope: "page_cache",
+      severity: "info",
+      message: report.caveat,
+    });
+  }
+  return findings;
 }
 
 function formatReport(findings: Finding[], fmt: "markdown" | "json"): string {

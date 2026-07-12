@@ -44,6 +44,8 @@ Heavyweight probe + audit. Multi-second, ranks findings by severity, writes a ma
 1. NEVER use `wp-diagnose` as a pre-flight check before every tool call — it is multi-second and writes artifacts; for cheap pre-flight use `wp-health-check`.
 2. NEVER skip the artifact write — the per-run report at `./.rolepod-wplab/artifacts/<run_id>/diagnose-report.md` is the canonical handoff to the user / to ticket systems / to `wp-migrate`.
 3. ALWAYS surface CRITICAL findings before INFO findings — a 6-month-outdated WordPress core with known CVEs hidden under 80 lines of "autoload is 60 KB" wastes the user's first read.
+4. `rolepod_wp_cache_tool` op=flush_object clears the OBJECT cache ONLY — it does NOT clear a page-cache plugin's store or a host/CDN edge cache. Use op=detect to see every layer and op=flush_page to purge the page-cache plugins that have a known wp-cli command; host/CDN layers are reported manual_required. A cache MISS hides its headers, so "no cache detected" never means "no cache exists" — say so. NEVER start mutating content (edit a post, bump a version) just to force a visible change through a stale cache; purge the cache instead.
+5. `slow_queries` reports the largest DB rows as a SIZE proxy for bloat — it does NOT measure query execution time. Do not report it as "slow query timing".
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -57,12 +59,14 @@ Heavyweight probe + audit. Multi-second, ranks findings by severity, writes a ma
 - "Audit these 20 sites" → `audit_many` orchestrator.
 
 Skip when:
+
 - "Is it up?" → `wp-health-check`.
 - "What's in `wp_options` for plugin X?" → `wp-introspect`.
 
 ## Boundary
 
 Owns:
+
 - `rolepod_wp_diagnose` (5 scopes: plugin_conflict_probe / slow_queries / large_options / broken_images / php_errors).
 - `rolepod_wp_audit_security` (core/plugin/theme outdated + weak admins + WP_DEBUG flag).
 - `rolepod_wp_audit_many` (parallel audit across N target_ids).
@@ -73,11 +77,13 @@ Owns:
 - Writing the ranked report artifact.
 
 Does not own:
+
 - Applying fixes → respective edit skills (`wp-content`, `wp-edit-plugin`, `wp-execute-php`, `wp-migrate`).
 - Raw state read (no analysis) → `wp-introspect`.
 - Lightweight ping → `wp-health-check`.
 
 Return / hand off:
+
 - Findings include outdated plugins → user/`wp-content` to update via REST.
 - Findings include weak admins → user task (cannot auto-fix passwords).
 - Findings include WP_DEBUG=true on prod → `rolepod_wp_cli_run` with `["config","set","WP_DEBUG","false","--raw"]` and `allow_destructive=true`. WP_DEBUG is a wp-config.php constant, NOT an option — `option_set` does nothing.
@@ -93,14 +99,14 @@ Return / hand off:
 
 ### 1. Pick scopes by user intent
 
-| User intent | Scopes |
-|---|---|
-| "security audit" | audit_security + user_session_list |
-| "site is slow" | diagnose (slow_queries + large_options) + cache_tool inspect |
-| "plugin conflicts" | diagnose (plugin_conflict_probe + php_errors) |
-| "before migration" | audit_security + diagnose (all scopes) + cron_tool list |
-| "full sweep" | every scope above |
-| "audit 20 sites" | audit_many |
+| User intent        | Scopes                                                       |
+| ------------------ | ------------------------------------------------------------ |
+| "security audit"   | audit_security + user_session_list                           |
+| "site is slow"     | diagnose (slow_queries + large_options) + cache_tool inspect |
+| "plugin conflicts" | diagnose (plugin_conflict_probe + php_errors)                |
+| "before migration" | audit_security + diagnose (all scopes) + cron_tool list      |
+| "full sweep"       | every scope above                                            |
+| "audit 20 sites"   | audit_many                                                   |
 
 ### 2. Run probes
 
@@ -139,6 +145,7 @@ Diagnose report — `templates/diagnose-report.md`. Canonical handoff format.
 ## Examples
 
 Read when picking scopes for an unfamiliar site type or when interpreting a non-trivial finding:
+
 - `examples/diagnose-examples.md` — good vs bad scope pick for "site is slow"; good vs bad reading of audit_security output.
 
 ## References

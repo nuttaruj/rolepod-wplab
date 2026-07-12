@@ -4,6 +4,7 @@ import {
   type CacheToolInput,
   type CacheToolOutput,
 } from "../../schema/tools.js";
+import { detectCacheLayers, purgePageCache } from "../../lib/cacheLayers.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 import type { Target } from "../../runtime/Target.js";
@@ -11,7 +12,7 @@ import type { Target } from "../../runtime/Target.js";
 export const wpCacheToolToolDef = {
   name: "rolepod_wp_cache_tool",
   description:
-    "WP cache + transients: op=inspect (object-cache type + transient counts), op=flush_object (wp cache flush), op=flush_transients (wp transient delete --all --expired). Mutations require confirm=true.",
+    "WP cache + transients. op=inspect (object-cache type + transient counts) · op=detect (read-only: enumerate the object / page-cache-plugin / host-CDN layers, which are purgeable, and which need the host panel) · op=flush_object (wp cache flush — clears the OBJECT cache ONLY, not the page cache) · op=flush_transients · op=flush_page (purge page-cache plugins with a known wp-cli command; host/CDN + unknown plugins are reported manual_required, never faked). Mutations (flush_*) require confirm=true. Every cache report carries a caveat: a cache MISS hides its headers, so 'no cache seen' does not mean 'no cache exists'.",
   inputSchema: CacheToolInputSchema,
 };
 
@@ -49,12 +50,35 @@ export async function wpCacheToolHandler(
     });
   }
 
+  if (input.op === "detect") {
+    const report = await detectCacheLayers(target);
+    return CacheToolOutputSchema.parse({
+      op: "detect",
+      layers: report.layers as unknown as Array<Record<string, unknown>>,
+      caveat: report.caveat,
+      multisite: report.multisite,
+    });
+  }
+
   if (!input.confirm) {
     throw new WplabError(
       "CACHE_CONFIRM_REQUIRED",
       `op=${input.op} requires confirm=true`,
       {},
     );
+  }
+
+  if (input.op === "flush_page") {
+    const report = await detectCacheLayers(target);
+    const result = await purgePageCache(target, report);
+    return CacheToolOutputSchema.parse({
+      op: "flush_page",
+      purged: result.purged,
+      manual_required: result.manual_required,
+      failed: result.failed as unknown as Array<Record<string, unknown>>,
+      caveat: result.caveat,
+      multisite: report.multisite,
+    });
   }
 
   if (input.op === "flush_object") {

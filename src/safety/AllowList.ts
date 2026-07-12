@@ -119,6 +119,12 @@ const DESTRUCTIVE = new Set<string>([
   "search-replace",
   "wpml",
   "gf",
+  // Page-cache plugin purge commands (WS6). Each writes (clears a cache), so
+  // they live behind allow_destructive. Only commands with a verified CLI are
+  // here — see src/lib/cacheLayers.ts.
+  "litespeed-purge",
+  "rocket",
+  "w3-total-cache",
 ]);
 
 const NEVER_ALLOWED = new Set<string>([
