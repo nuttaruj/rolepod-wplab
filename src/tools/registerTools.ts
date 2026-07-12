@@ -414,6 +414,10 @@ import {
   wpMigrateDataToolDef,
 } from "./composite/wp_migrate_data.js";
 import {
+  wpMigrateSiteHandler,
+  wpMigrateSiteToolDef,
+} from "./composite/wp_migrate_site.js";
+import {
   wpWpmlReadHandler,
   wpWpmlReadToolDef,
 } from "./adapter/wp_wpml_read.js";
@@ -947,6 +951,10 @@ const TOOLS: Array<{ def: ToolDef; handler: Handler }> = [
   {
     def: wpMigrateDataToolDef,
     handler: (d, raw) => wpMigrateDataHandler(d.registry, d.prodGuard, raw),
+  },
+  {
+    def: wpMigrateSiteToolDef,
+    handler: (d, raw) => wpMigrateSiteHandler(d.registry, d.prodGuard, raw),
   },
   {
     def: wpWpmlReadToolDef,

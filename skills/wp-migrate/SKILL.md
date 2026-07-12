@@ -14,8 +14,9 @@ End-to-end migration workflow. Owns dryrun, apply, backup, restore, clone. The H
 
 <EXTREMELY-IMPORTANT>
 1. NEVER apply a migration without running `migrate_dryrun` first AND surfacing the plan to the user for explicit OK — apply is irreversible at scale.
-2. NEVER apply without `backup_create` on the destination first — the only reliable rollback is the destination backup, taken IMMEDIATELY before apply, archived locally.
-3. NEVER set destination to production-matched siteurl without `confirm_production: true` AND the user typing back the destination hostname verbatim — most production data loss starts with a fast "yes, go" reply.
+2. NEVER apply without backing up the destination first — the only reliable rollback is the destination backup, taken IMMEDIATELY before apply. The reliable rollback is the DATABASE backup (`rolepod_wp_backup_create` shell / `rolepod_wp_site_backup` companion). For wp-content/file rollback use `rolepod_wp_site_backup` or plain `rsync` — do NOT rely on `rolepod_wp_clone`'s wp-content step as a rollback (it is a best-effort top-level copy, not a faithful tree snapshot).
+3. NEVER set destination to production-matched siteurl without `confirm: true` AND the user typing back the destination hostname verbatim — most production data loss starts with a fast "yes, go" reply.
+4. `rolepod_wp_migrate_site` (REST↔REST host-to-host) already backs up the DEST as its mandatory step 0 and surfaces the rollback id — still confirm with the user before running it against production.
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -27,24 +28,29 @@ End-to-end migration workflow. Owns dryrun, apply, backup, restore, clone. The H
 - "Roll back last week's migration"
 
 Skip when:
+
 - The change is content-only (a few posts) → `wp-content` REST CRUD.
 - The change is a single plugin's config → `wp-edit-plugin`.
 
 ## Boundary
 
 Owns:
+
 - `rolepod_wp_migrate_dryrun` — compute the plan without applying.
-- `rolepod_wp_migrate_data` — apply the plan.
+- `rolepod_wp_migrate_data` — apply a scoped migration. `scope=plugin_versions` (match plugin set) or `scope=options` (copy named `wp_options` keys, serialized-safe; URL/identity keys refused). `users`/`posts` scopes are unsupported (lossy).
+- `rolepod_wp_migrate_site` — REST↔REST host-to-host full-site migration (companion-driven: backup dest → snapshot source → transfer → restore with URL rewrite).
 - `rolepod_wp_backup_create` — pre-apply backup of destination.
 - `rolepod_wp_backup_restore` — rollback path.
-- `rolepod_wp_clone` — full-site copy (db + wp-content + URL rewrite).
+- `rolepod_wp_clone` — full-site copy over SHELL targets (db + wp-content + URL rewrite). For REST↔REST use `rolepod_wp_migrate_site`.
 
 Does not own:
+
 - DNS / SSL / domain switch — those are hosting-panel tasks, out of MCP scope.
 - Content-level edits → `wp-content`.
 - Pre-migration security audit → `wp-diagnose`.
 
 Return / hand off:
+
 - Plan reveals incompatible PHP version on destination → STOP, hand off to user with the version mismatch.
 - Apply fails partway → backup_restore + surface the failure.
 - After successful apply → `wp-health-check` + `wp-diagnose` to confirm.
@@ -70,6 +76,7 @@ Return / hand off:
 ### 3. Confirm with user
 
 Show the plan, ask for explicit OK. If destination is production-matched:
+
 - Ask user to type back the destination hostname literally.
 - Match must be exact, case-sensitive.
 - Refuse to proceed otherwise.
@@ -96,6 +103,18 @@ State: rows migrated, files copied, URLs rewritten, backup file path, verificati
 
 If verification fails: `rolepod_wp_backup_restore { target_id: dest_target_id, artifact_dir: <from step 4> }`. Surface restored state.
 
+## REST↔REST host-to-host migration (companion)
+
+When BOTH targets are `rest` with the rolepod-wp companion (no shell), `rolepod_wp_migrate_site` runs the whole full-site move server-side:
+
+`rolepod_wp_migrate_site { source_target_id, dest_target_id, allow_destructive: true, confirm: true }`
+
+Ordering is enforced and destructive-safe: (0) it backs up the DEST first and returns `dest_rollback_backup_id`; (1) snapshots the source; (2) pulls the archive to this host; (3) pushes it into the dest; (4) restores it there with a serialized-safe URL rewrite (source host → dest host). A production dest without `confirm: true` → `PRODUCTION_BLOCKED`. A shell target → `MIGRATE_UNSUPPORTED_TARGET` (use `rolepod_wp_clone` instead). If any stage fails, the error carries `dest_rollback_backup_id` — restore it with `rolepod_wp_site_restore`.
+
+## Copying specific options between environments
+
+`rolepod_wp_migrate_data { scope: "options", options: ["blogdescription", ...], allow_destructive: true }` copies named `wp_options` keys source → dest (read + written as JSON, so serialized arrays survive). URL/identity keys (`siteurl`, `home`, `blogname`) are refused → `OPTION_MIGRATE_URL_REFUSED`; move the whole site with `rolepod_wp_migrate_site` if you need those.
+
 ## If a matching Rolepod agent is available
 
 - `rolepod:devops-sre` for the full ship gate.
@@ -118,6 +137,7 @@ Migration plan — `templates/migrate-plan.md`. Persists per run at `./.rolepod-
 ## Examples
 
 Read before EVERY production-destination migration — the type-back hostname pattern is in here:
+
 - `examples/migrate-examples.md` — good vs bad confirm flow for prod destination; good vs bad scope picking for a partial migration.
 
 ## References

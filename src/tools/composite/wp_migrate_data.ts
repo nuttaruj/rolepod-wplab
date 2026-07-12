@@ -15,9 +15,14 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpMigrateDataToolDef = {
   name: "rolepod_wp_migrate_data",
   description:
-    "Apply a migration plan between two targets. v0.3 supports scope=plugin_versions only (install/upgrade plugins on dest to match source). Requires allow_destructive=true. Production guard on dest fires unless confirm=true. v0.4 adds options + users + posts scopes.",
+    "Apply a scoped migration between two targets. Scopes: plugin_versions (install/upgrade plugins on dest to match source) · options (copy named wp_options keys source→dest, serialized-safe via JSON round-trip; requires an `options` list; URL/identity keys siteurl/home/blogname are refused — use rolepod_wp_migrate_site) · users/posts (UNSUPPORTED — selective migration is lossy; use rolepod_wp_clone shell↔shell or rolepod_wp_migrate_site rest↔rest for a full copy). Requires allow_destructive=true. Production guard on dest fires unless confirm=true.",
   inputSchema: MigrateDataInputSchema,
 };
+
+// wp_options keys that carry the site's identity / URLs. Copying these onto the
+// dest breaks it (wrong home/siteurl) or lives inside serialized data that a
+// plain option write corrupts. Full-site tools handle the URL rewrite safely.
+const URL_BEARING_OPTIONS = new Set(["siteurl", "home", "blogname"]);
 
 export async function wpMigrateDataHandler(
   registry: TargetRegistry,
@@ -42,6 +47,22 @@ export async function wpMigrateDataHandler(
 
   if (input.scope === "plugin_versions") {
     applied = await migratePluginVersions(source, dest);
+  } else if (input.scope === "options") {
+    const names = input.options ?? [];
+    if (names.length === 0) {
+      throw new WplabError(
+        "OPTIONS_LIST_REQUIRED",
+        "scope=options requires a non-empty `options` list (wp_options keys to copy)",
+        {},
+      );
+    }
+    applied = await migrateOptions(source, dest, names);
+  } else if (input.scope === "users" || input.scope === "posts") {
+    throw new WplabError(
+      "MIGRATE_SCOPE_UNSUPPORTED",
+      `scope=${input.scope} is not supported — selective ${input.scope} migration is lossy (ids/relations/attachments${input.scope === "users" ? "/password hashes" : ""}). Use rolepod_wp_clone (shell↔shell) or rolepod_wp_migrate_site (rest↔rest) for a full-site copy.`,
+      { scope: input.scope },
+    );
   }
 
   const artifactDir = join(process.cwd(), ".rolepod-wplab", "artifacts", runId);
@@ -129,6 +150,51 @@ async function migratePluginVersions(
     }
   }
 
+  return applied;
+}
+
+async function migrateOptions(
+  source: Target,
+  dest: Target,
+  names: string[],
+): Promise<MigrateDataOutput["applied"]> {
+  // Refuse URL/identity options up front — one bad key aborts the whole run
+  // rather than half-applying and pointing the dest at the source's domain.
+  const refused = names.filter((n) => URL_BEARING_OPTIONS.has(n));
+  if (refused.length) {
+    throw new WplabError(
+      "OPTION_MIGRATE_URL_REFUSED",
+      `refusing to migrate URL/identity options (${refused.join(", ")}) — these define the dest's identity and live in serialized data. Use rolepod_wp_migrate_site (full host-to-host) or rolepod_wp_clone with URL rewrite instead.`,
+      { refused },
+    );
+  }
+
+  const applied: MigrateDataOutput["applied"] = [];
+  for (const name of names) {
+    // Read the source value as JSON so serialized arrays/objects round-trip
+    // intact (a plaintext read + write mangles them).
+    const got = await source.wpCli(["option", "get", name, "--format=json"]);
+    if (got.exitCode !== 0) {
+      applied.push({
+        action: "option_set",
+        option: name,
+        ok: false,
+        error: `source has no option '${name}' (or read failed)`,
+      });
+      continue;
+    }
+    const value = got.stdout.trim();
+    const set = await dest.wpCli(
+      ["option", "update", name, value, "--format=json"],
+      { allowDestructive: true },
+    );
+    applied.push({
+      action: "option_set",
+      option: name,
+      ok: set.exitCode === 0,
+      ...(set.exitCode === 0 ? {} : { error: set.stderr.slice(0, 200) }),
+    });
+  }
   return applied;
 }
 

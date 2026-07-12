@@ -8,7 +8,7 @@ One MCP server, 89+ tools, 14 skills, 4 connection kinds (local path / REST + Ap
 
 ## Standalone vs Combined
 
-**Standalone:** complete WordPress operations toolkit. 14 skills + 131 MCP tools
+**Standalone:** complete WordPress operations toolkit. 14 skills + 132 MCP tools
 cover the full lifecycle — connect, introspect, edit, verify, migrate. Use
 directly via skill commands. No external dependencies.
 
@@ -21,23 +21,23 @@ propagation problems across Claude Code's subprocess boundaries.
 
 ### Mode summary
 
-| wplab skill | standalone role | with-rolepod role |
-|---|---|---|
-| `wp-diagnose` | primary debug entry | evidence for parent's `debug-issue` |
-| `wp-health-check` | full smoke test | snapshot for parent's `check-work` |
-| `wp-changes` | change audit | summary for parent's `review-code` |
-| `wp-full` | tour + flow | tool loader (parent owns flow) |
-| `wp-scaffold`, `wp-edit-*` | edit + guide + verify | edit primitives for parent's `implement-plan` |
-| `wp-migrate`, `wp-connect`, `wp-pair-setup`, `wp-introspect`, `wp-execute-php`, `wp-content` | unchanged tools | unchanged tools |
+| wplab skill                                                                                  | standalone role       | with-rolepod role                             |
+| -------------------------------------------------------------------------------------------- | --------------------- | --------------------------------------------- |
+| `wp-diagnose`                                                                                | primary debug entry   | evidence for parent's `debug-issue`           |
+| `wp-health-check`                                                                            | full smoke test       | snapshot for parent's `check-work`            |
+| `wp-changes`                                                                                 | change audit          | summary for parent's `review-code`            |
+| `wp-full`                                                                                    | tour + flow           | tool loader (parent owns flow)                |
+| `wp-scaffold`, `wp-edit-*`                                                                   | edit + guide + verify | edit primitives for parent's `implement-plan` |
+| `wp-migrate`, `wp-connect`, `wp-pair-setup`, `wp-introspect`, `wp-execute-php`, `wp-content` | unchanged tools       | unchanged tools                               |
 
 ### Install combos
 
-| Install | Unlocks |
-|---|---|
-| wplab alone | full WordPress dev toolkit |
-| wplab + rolepod parent | + workflow discipline, evidence handoff, multi-phase gates |
-| wplab + uiproof | + browser-verified WP changes, a11y on themes, visual diff on migrations |
-| all three | full WP dev flow with verified evidence at every phase |
+| Install                | Unlocks                                                                  |
+| ---------------------- | ------------------------------------------------------------------------ |
+| wplab alone            | full WordPress dev toolkit                                               |
+| wplab + rolepod parent | + workflow discipline, evidence handoff, multi-phase gates               |
+| wplab + uiproof        | + browser-verified WP changes, a11y on themes, visual diff on migrations |
+| all three              | full WP dev flow with verified evidence at every phase                   |
 
 Evidence path convention:
 
@@ -59,19 +59,19 @@ Manifest schema (Extension Protocol v1): `src/lib/rolepodEvidence.ts`.
 
 ## The 14 skills
 
-| Skill | Wraps | What it does |
-|---|---|---|
-| `/wp-pair-setup` | `rolepod_wp_pair` | Redeem a companion-issued pair token → mint App Password → store in vault → open Target. Single-use, 60-min TTL. |
-| `/wp-health-check` | `rolepod_wp_health_check` | Versions, db_ok, rest_ok, wp_cli_ok, companion_ok, warnings. |
-| `/wp-scaffold-block` | `rolepod_wp_scaffold_block` | Generate `block.json` + `index.js` + `render.php` (dynamic) into an existing plugin. |
-| `/wp-scaffold-plugin` | `rolepod_wp_scaffold_plugin` | Plugin skeleton (REST endpoint + admin page + Gutenberg + CLI command). |
-| `/wp-scaffold-theme` | `rolepod_wp_scaffold_theme` | Theme skeleton (theme.json + functions.php + style.css + templates). |
-| `/wp-audit-security` | `rolepod_wp_audit_security` | Core/plugin/theme updates + weak admin scan + WP_DEBUG check. Markdown or JSON. |
-| `/wp-audit-woo` | `rolepod_wp_woo_read` | WooCommerce products / orders / settings / shipping / payments. |
-| `/wp-edit-elementor` | `rolepod_wp_elementor_{read,write}` | Dump + replace `_elementor_data` widget tree. Backs up first. |
-| `/wp-introspect` | `rolepod_wp_introspect` | Hooks / transients / options / request-state. Requires companion. |
-| `/wp-execute-php` | `rolepod_wp_execute_php` | PHP eval against the live runtime. Companion + `power` profile + non-prod. AST-screened. |
-| `/wp-migrate-dryrun` | `rolepod_wp_migrate_dryrun` | Plan diff between source + dest target before `migrate_data`. |
+| Skill                 | Wraps                               | What it does                                                                                                     |
+| --------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `/wp-pair-setup`      | `rolepod_wp_pair`                   | Redeem a companion-issued pair token → mint App Password → store in vault → open Target. Single-use, 60-min TTL. |
+| `/wp-health-check`    | `rolepod_wp_health_check`           | Versions, db_ok, rest_ok, wp_cli_ok, companion_ok, warnings.                                                     |
+| `/wp-scaffold-block`  | `rolepod_wp_scaffold_block`         | Generate `block.json` + `index.js` + `render.php` (dynamic) into an existing plugin.                             |
+| `/wp-scaffold-plugin` | `rolepod_wp_scaffold_plugin`        | Plugin skeleton (REST endpoint + admin page + Gutenberg + CLI command).                                          |
+| `/wp-scaffold-theme`  | `rolepod_wp_scaffold_theme`         | Theme skeleton (theme.json + functions.php + style.css + templates).                                             |
+| `/wp-audit-security`  | `rolepod_wp_audit_security`         | Core/plugin/theme updates + weak admin scan + WP_DEBUG check. Markdown or JSON.                                  |
+| `/wp-audit-woo`       | `rolepod_wp_woo_read`               | WooCommerce products / orders / settings / shipping / payments.                                                  |
+| `/wp-edit-elementor`  | `rolepod_wp_elementor_{read,write}` | Dump + replace `_elementor_data` widget tree. Backs up first.                                                    |
+| `/wp-introspect`      | `rolepod_wp_introspect`             | Hooks / transients / options / request-state. Requires companion.                                                |
+| `/wp-execute-php`     | `rolepod_wp_execute_php`            | PHP eval against the live runtime. Companion + `power` profile + non-prod. AST-screened.                         |
+| `/wp-migrate-dryrun`  | `rolepod_wp_migrate_dryrun`         | Plan diff between source + dest target before `migrate_data`.                                                    |
 
 Every skill is **single-backend** — calls the rolepod-wplab server and only this server. If the server is unavailable, the skill fails with a clear diagnostic.
 
@@ -116,7 +116,7 @@ Then **fully restart Cursor** — MCP servers load only at startup. Verify under
 **Update:** re-run the `curl` command above to overwrite `.cursor/mcp.json`, then restart Cursor.
 **Uninstall:** delete `.cursor/mcp.json` (or `~/.cursor/mcp.json` for the global install) and restart.
 
-Skills are not auto-registered under Cursor (no unified plugin format yet). The 131 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+Skills are not auto-registered under Cursor (no unified plugin format yet). The 132 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Codex CLI
 
@@ -163,7 +163,7 @@ args = ["-y", "@rolepod/wplab@latest", "serve"]
 **Update:** no command needed — `npx -y @rolepod/wplab@latest serve` pulls the latest version on every Gemini restart.
 **Uninstall:** remove the `rolepod-wplab` entry from `~/.gemini/settings.json` and restart.
 
-Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 131 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 132 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
 
 ### Direct npm (any MCP-aware tool)
 
@@ -178,7 +178,7 @@ Skills are not auto-registered under Gemini (no unified plugin format yet — `g
 }
 ```
 
-131 MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
+132 MCP tools (`rolepod_wp_*`) will appear in your client. Skills are not surfaced via this path — call the tools by name.
 
 **Update:** `npx -y @rolepod/wplab@latest …` always fetches the latest published version. Pin to an exact version (e.g. `@rolepod/wplab@1.13.0`) if you want lockstep behavior.
 **Uninstall:** remove the `rolepod-wplab` entry from your client's MCP config.
@@ -214,7 +214,7 @@ rolepod-wplab credentials add walnutztudio.com
 # Lead → rolepod_wp_connect_rest { url: "https://walnutztudio.com" }
 ```
 
-Path B works without the companion plugin — you get all 131 MCP tools EXCEPT `execute_php`, `introspect`, `hook_state`, `mail_test` (those need the companion).
+Path B works without the companion plugin — you get all 132 MCP tools EXCEPT `execute_php`, `introspect`, `hook_state`, `mail_test` (those need the companion).
 
 ## Verify your setup
 
@@ -236,7 +236,7 @@ npx rolepod-wplab doctor
 
 ## What's inside
 
-- **131 MCP tools** — connectivity (4 kinds) + wp-cli passthrough + typed CRUD + page-builder adapters (Elementor / Divi / Oxygen / Bricks) + SEO/i18n (Yoast / RankMath / WPML) + WooCommerce + ACF + forms (Gravity / CF7 / WPForms) + cron + cache + mail + clone + backup + diagnose + scaffold (block / plugin / theme / pattern) + REST dump + user sessions + companion-gated (execute_php / introspect / hook_state) + pair (one-click setup). All prefixed `rolepod_wp_*`.
+- **132 MCP tools** — connectivity (4 kinds) + wp-cli passthrough + typed CRUD + page-builder adapters (Elementor / Divi / Oxygen / Bricks) + SEO/i18n (Yoast / RankMath / WPML) + WooCommerce + ACF + forms (Gravity / CF7 / WPForms) + cron + cache + mail + clone + backup + diagnose + scaffold (block / plugin / theme / pattern) + REST dump + user sessions + companion-gated (execute*php / introspect / hook_state) + pair (one-click setup). All prefixed `rolepod_wp*\*`.
 - **4 connection kinds** — `LocalTarget` (filesystem + wp-cli), `RestTarget` (HTTPS + App Password, no shell needed), `SshTarget` (node-ssh), `DockerTarget` (dockerode). Same `Target` interface, same tools.
 - **3 profiles** — `strict` / `personal` / `power`. Profile-gated capability map (`power` required for execute_php; `strict` blocks all destructive ops).
 - **Safety floor that always applies** — wp-cli allow-list (3-token prefix match, hard-block on `db reset`/`db drop`/`core multisite-convert`), DB SELECT-only by default, scoped fs (resolves symlinks; refuses paths outside `wp-content/{themes,plugins,uploads}` + `wp-config.php`), AST screen on every `execute_php` payload (Node side + PHP side), production-host glob match with unconditional block on power tools, HTTPS-only RestTarget, OS-keychain credential vault.

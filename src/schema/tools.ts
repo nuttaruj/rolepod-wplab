@@ -642,7 +642,12 @@ export type AuditManyOutput = z.infer<typeof AuditManyOutputSchema>;
 export const MigrateDataInputSchema = z.object({
   source_target_id: TargetIdSchema,
   dest_target_id: TargetIdSchema,
-  scope: z.enum(["plugin_versions"]).default("plugin_versions"),
+  scope: z
+    .enum(["plugin_versions", "options", "users", "posts"])
+    .default("plugin_versions"),
+  // scope=options: named wp_options keys to copy source → dest, serialized-safe
+  // (read + written as JSON via wp-cli). URL-bearing keys are refused.
+  options: z.array(z.string()).optional(),
   allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
 });
@@ -652,14 +657,24 @@ export const MigrateDataOutputSchema = z.object({
   run_id: RunIdShape,
   scope: z.string(),
   applied: z.array(
-    z.object({
-      action: z.enum(["install", "upgrade", "downgrade", "noop"]),
-      slug: z.string(),
-      from: z.string().optional(),
-      to: z.string(),
-      ok: z.boolean(),
-      error: z.string().optional(),
-    }),
+    z.union([
+      // plugin_versions
+      z.object({
+        action: z.enum(["install", "upgrade", "downgrade", "noop"]),
+        slug: z.string(),
+        from: z.string().optional(),
+        to: z.string(),
+        ok: z.boolean(),
+        error: z.string().optional(),
+      }),
+      // options
+      z.object({
+        action: z.literal("option_set"),
+        option: z.string(),
+        ok: z.boolean(),
+        error: z.string().optional(),
+      }),
+    ]),
   ),
   report_path: z.string(),
 });
@@ -2098,7 +2113,8 @@ export const WpMediaUploadInputSchema = z
   })
   // No silent no-op: featuring an image needs to know which post.
   .refine((v) => !v.set_featured || v.attach_to_post !== undefined, {
-    message: "set_featured=true requires attach_to_post (the post to feature it on)",
+    message:
+      "set_featured=true requires attach_to_post (the post to feature it on)",
     path: ["set_featured"],
   })
   // Each source needs its matching payload field.
@@ -2172,6 +2188,47 @@ export const WpSiteRestoreInputSchema = z.object({
 export type WpSiteRestoreInput = z.infer<typeof WpSiteRestoreInputSchema>;
 export const WpSiteRestoreOutputSchema = z.record(z.unknown());
 export type WpSiteRestoreOutput = z.infer<typeof WpSiteRestoreOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// Host-to-host site migration (WS13-T7) — REST↔REST only, companion-driven.
+// ---------------------------------------------------------------------------
+export const MigrateSiteInputSchema = z.object({
+  source_target_id: TargetIdSchema,
+  dest_target_id: TargetIdSchema,
+  allow_destructive: ConfirmTrueSchema,
+  confirm: z.boolean().default(false),
+  // Which parts of the source to snapshot + push. Defaults to a full site
+  // copy (db + uploads + themes + plugins + muplugins) when omitted.
+  components: BackupComponentsSchema,
+  // Host-side staging path for the transferred archive. Defaults to an OS
+  // temp file when omitted.
+  work_path: z.string().optional(),
+  // Transfer chunk size (raw bytes per round-trip); defaults to 1 MiB.
+  chunk_bytes: z.number().int().min(1).max(5_000_000).optional(),
+  // Bounded wait per async companion stage (each backup + the restore).
+  // Defaults to 15 min; a stage that exceeds it → MIGRATE_TIMEOUT (with the
+  // dest rollback id surfaced so the operator can recover).
+  timeout_ms: z.number().int().min(1000).max(3_600_000).optional(),
+});
+export type MigrateSiteInput = z.infer<typeof MigrateSiteInputSchema>;
+
+export const MigrateSiteOutputSchema = z.object({
+  run_id: RunIdShape,
+  ok: z.boolean(),
+  // The DEST backup taken in step 0 — the rollback pointer if anything downstream
+  // corrupts the destination. Always surfaced, even on failure.
+  dest_rollback_backup_id: z.string(),
+  source_backup_id: z.string(),
+  steps: z.array(
+    z.object({
+      step: z.string(),
+      ok: z.boolean(),
+      detail: z.string().optional(),
+    }),
+  ),
+  report_path: z.string(),
+});
+export type MigrateSiteOutput = z.infer<typeof MigrateSiteOutputSchema>;
 
 // ---------------------------------------------------------------------------
 // rolepod_wp_custom_* (v1.18 — Rolepod Custom plugin scaffolding)

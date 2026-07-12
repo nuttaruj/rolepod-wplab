@@ -48,8 +48,6 @@ export const UNDOCUMENTED_TOOLS: readonly string[] = [
   "rolepod_wp_render_get",
   "rolepod_wp_seo_set",
   "rolepod_wp_set_front_page",
-  "rolepod_wp_site_backup",
-  "rolepod_wp_site_restore",
   "rolepod_wp_site_scaffold",
   "rolepod_wp_skill_delete",
   "rolepod_wp_skill_edit",
