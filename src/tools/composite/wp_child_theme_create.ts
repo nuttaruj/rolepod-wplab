@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { ProdGuard } from "../../safety/ProdGuard.js";
+import { writeManagedFile } from "../../companion/managedWrite.js";
+import { escapeBlockComment } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
@@ -52,10 +54,15 @@ export async function wpChildThemeCreateHandler(
     );
   }
 
-  const childName = input.name ?? `${parentName} — Rolepod child`;
-  const childDescription =
+  // Both land inside a CSS `/* */` header AND a PHP docblock — neutralize any
+  // `*/` so a crafted name/description cannot break out of the comment.
+  const childName = escapeBlockComment(
+    input.name ?? `${parentName} — Rolepod child`,
+  );
+  const childDescription = escapeBlockComment(
     input.description ??
-    `Child theme of ${parentName}, scaffolded by rolepod-wplab.`;
+      `Child theme of ${parentName}, scaffolded by rolepod-wplab.`,
+  );
 
   // 2. Refuse if child already exists.
   const childRootStyle = `wp-content/themes/${input.child_slug}/style.css`;
@@ -107,19 +114,23 @@ add_action('wp_enqueue_scripts', static function (): void {
 // ─── Custom callbacks go below ──────────────────────────────────────────
 `;
 
-  // 5. Write both files via the standard wp_file_write path so they get
-  //    auto-validation, backup, and ledger records.
+  // 5. Write both files through the managed pipeline so they get real
+  //    pre-write validation (php -l on functions.php for rest+companion
+  //    targets) + a ledger row per file — the whole scaffold reverts as a set.
   const childStylePath = `wp-content/themes/${input.child_slug}/style.css`;
   const childFunctionsPath = `wp-content/themes/${input.child_slug}/functions.php`;
 
-  const styleResult = await target.fileWrite(childStylePath, styleCss, {
+  const styleResult = await writeManagedFile(target, childStylePath, styleCss, {
     mode: "overwrite",
     backup: false, // new file — nothing to back up
+    sourceTool: "wp_child_theme_create",
   });
-  const fnResult = await target.fileWrite(childFunctionsPath, functionsPhp, {
-    mode: "overwrite",
-    backup: false,
-  });
+  const fnResult = await writeManagedFile(
+    target,
+    childFunctionsPath,
+    functionsPhp,
+    { mode: "overwrite", backup: false, sourceTool: "wp_child_theme_create" },
+  );
 
   return {
     parent_slug: input.parent_slug,
