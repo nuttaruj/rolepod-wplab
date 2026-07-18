@@ -32,6 +32,14 @@ export interface ElementorReadAPI {
 
   /** Dump the widget tree of a single page from `_elementor_data` meta. */
   getPage(target: Target, postId: number): Promise<ElementorPageDetail>;
+
+  /**
+   * Read the active kit's global design tokens (colors + typography) via
+   * Elementor's OWN REST API (`/elementor/v1/globals`) — read-only. Verified
+   * live: this endpoint returns the resolved globals; there is no safe REST
+   * WRITE path (POST is a silent no-op without an editor nonce).
+   */
+  getKit(target: Target): Promise<{ colors?: unknown; typography?: unknown }>;
 }
 
 const SLUG = "elementor";
@@ -158,6 +166,23 @@ export const elementorAdapter: Adapter<ElementorReadAPI> = {
       throw new Error(
         `elementor.getPage on a RestTarget requires the rolepod-wp companion (post meta access). Enable it on the target.`,
       );
+    },
+
+    async getKit(target) {
+      const res = await target.rest({
+        method: "GET",
+        path: "/elementor/v1/globals",
+      });
+      if (res.status < 200 || res.status >= 300) {
+        throw new Error(
+          `elementor globals returned HTTP ${res.status} — is Elementor active and the auth allowed to read it?`,
+        );
+      }
+      const body = (res.body ?? {}) as {
+        colors?: unknown;
+        typography?: unknown;
+      };
+      return { colors: body.colors, typography: body.typography };
     },
   },
 };

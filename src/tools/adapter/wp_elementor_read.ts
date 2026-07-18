@@ -10,7 +10,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpElementorReadToolDef = {
   name: "rolepod_wp_elementor_read",
   description:
-    "Read Elementor data. Without page_id: lists Elementor-rendered pages of the given type. With page_id: dumps the widget tree from `_elementor_data` meta. Shell targets work directly; RestTarget without companion is limited to list.",
+    "Read Elementor data. kit=true: read the active global kit (global colors + typography) via Elementor's own /elementor/v1/globals REST — read-only. Without page_id: lists Elementor-rendered pages of the given type. With page_id: dumps the widget tree from `_elementor_data` meta. Shell targets work directly; RestTarget without companion is limited to list + kit.",
   inputSchema: ElementorReadInputSchema,
 };
 
@@ -25,6 +25,15 @@ export async function wpElementorReadHandler(
     return ElementorReadOutputSchema.parse({
       mode: input.page_id !== undefined ? "page" : "list",
       detected: false,
+    });
+  }
+
+  if (input.kit) {
+    const kit = await elementorAdapter.read.getKit(target);
+    return ElementorReadOutputSchema.parse({
+      mode: "kit",
+      detected: true,
+      kit,
     });
   }
 

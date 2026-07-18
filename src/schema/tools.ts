@@ -923,14 +923,21 @@ export const ElementorReadInputSchema = z.object({
     .describe("Single page to dump; omit to list."),
   type: z.string().default("page").describe("Post type to query when listing."),
   per_page: z.number().int().min(1).max(100).default(50),
+  kit: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Read the active Elementor global kit (global colors + typography) instead of a page/list. Read-only; takes precedence over page_id.",
+    ),
 });
 export type ElementorReadInput = z.infer<typeof ElementorReadInputSchema>;
 
 export const ElementorReadOutputSchema = z.object({
-  mode: z.enum(["list", "page"]),
+  mode: z.enum(["list", "page", "kit"]),
   detected: z.boolean(),
   pages: z.array(z.unknown()).optional(),
   page: z.unknown().optional(),
+  kit: z.record(z.unknown()).optional(),
 });
 export type ElementorReadOutput = z.infer<typeof ElementorReadOutputSchema>;
 
