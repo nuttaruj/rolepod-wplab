@@ -2,7 +2,7 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — safety chokepoint
+## [2.0.0] — 2026-08-21 — safety chokepoint
 
 ### Changed — BREAKING
 
@@ -43,6 +43,15 @@ activate|deactivate`, `rewrite flush`, `media import`, `media regenerate`,
   SQL rather than by the subcommand.
 
 ### Fixed
+
+- **`credentials add` and `init` silently did nothing over a pipe.** `ask()`
+  created a fresh readline interface per prompt; readline reads stdin in chunks,
+  so the first interface buffered every piped line and `close()` discarded the
+  ones it had not yielded. The second prompt then opened on a drained stream,
+  its `question()` never settled, node saw an empty event loop and exited **0** —
+  reporting success while storing no credential at all. Non-TTY stdin is now
+  drained once and handed out one line per prompt; an exhausted stream yields
+  `""` so the caller's own validation reports it. TTY input is unchanged.
 
 - `rolepod_wp_db_query` never worked on `LocalTarget` — `db query` was not in
   the allow-list, so every call was blocked before it ran.
