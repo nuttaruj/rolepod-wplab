@@ -39,7 +39,12 @@ jobs:
       - name: Test
         run: npm test
 
+      # OIDC trusted publishing needs npm >= 11.5.1; node 22 bundles npm 10.
+      # Pinned rather than @latest so the release path stays deterministic.
+      - name: Upgrade npm for OIDC trusted publishing
+        run: npm install -g npm@11.15.0
+
+      # Auth comes from the OIDC trusted publisher configured on npmjs.com
+      # (repo nuttaruj/rolepod-wplab + this workflow file) — no token secret.
       - name: Publish to npm
         run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_WPLAB }}
