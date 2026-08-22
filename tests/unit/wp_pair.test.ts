@@ -56,7 +56,7 @@ describe("PairOutputSchema — response shape gate", () => {
       username: "admin",
       capabilities: ["introspect_hooks", "execute_php"],
       companion_version: "1.2.0",
-      is_production: false,
+      access_mode: "full",
       app_password_name: "wplab-pair-20260526T000123",
       credential_stored: true,
     });

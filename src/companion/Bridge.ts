@@ -13,8 +13,12 @@ export interface HandshakeResponse {
   wp_version: string;
   php_version?: string;
   siteurl: string;
-  is_production: boolean;
-  production_pattern_matched: string | null;
+  /** Sent by pre-2.24 companions only. */
+  is_production?: boolean;
+  /** Sent by pre-2.24 companions only. */
+  production_pattern_matched?: string | null;
+  /** 2.24+: 'full' | 'guarded' — the owner's access-mode switch. */
+  access_mode?: string;
   capabilities: string[];
   session_token: string;
   session_ttl_seconds: number;
@@ -68,7 +72,6 @@ export class CompanionBridge {
   private token: string | null = null;
   private tokenExpiresAt = 0;
   private capabilities: ReadonlySet<string> = new Set();
-  private isProductionMatched = false;
 
   constructor(target: Target) {
     this.target = target;
@@ -76,10 +79,6 @@ export class CompanionBridge {
 
   hasCapability(cap: string): boolean {
     return this.capabilities.has(cap);
-  }
-
-  isProduction(): boolean {
-    return this.isProductionMatched;
   }
 
   /**
@@ -127,12 +126,11 @@ export class CompanionBridge {
     this.token = body.session_token;
     this.tokenExpiresAt = Date.now() + body.session_ttl_seconds * 1000;
     this.capabilities = new Set(body.capabilities ?? []);
-    this.isProductionMatched = !!body.is_production;
 
     log.debug("companion handshake ok", {
       version: body.companion_version,
       caps: body.capabilities,
-      isProd: this.isProductionMatched,
+      accessMode: body.access_mode ?? "(pre-2.24)",
     });
 
     return body;
@@ -151,17 +149,14 @@ export class CompanionBridge {
     payload: string,
     opts: { timeoutMs?: number } = {},
   ): Promise<ExecutePhpResponse> {
-    // Pre-flight guards (Node side; companion re-screens server side)
-    if (this.isProductionMatched) {
-      throw new ProductionBlockedError(
-        this.target.siteurl,
-        "companion reports prod match",
-      );
-    }
+    // Pre-flight guard (Node side; companion re-screens server side). The
+    // capability is the whole gate: the companion only advertises execute_php
+    // when the owner's full-access toggle is on, and that toggle is their
+    // decision — there is no production second-guess to apply on top of it.
     if (!this.hasCapability("execute_php")) {
       throw new CompanionUnavailableError(
         this.target.id,
-        "execute_php capability not advertised — toggle ON in Settings → WPLab Companion",
+        "execute_php not available — this site is in guarded mode; enable Full access in wp-admin → Rolepod WP → Settings",
       );
     }
     assertPhpPayloadOk(payload, "execute_php");
@@ -392,9 +387,17 @@ export class CompanionBridge {
         error_message?: string;
       } | null;
       if (b?.error_code === "PRODUCTION_BLOCKED") {
+        // Pre-2.24 companions.
         throw new ProductionBlockedError(
           this.target.siteurl,
           b.error_message ?? "production",
+        );
+      }
+      if (b?.error_code === "FULL_ACCESS_REQUIRED") {
+        throw new ProductionBlockedError(
+          this.target.siteurl,
+          b.error_message ??
+            "guarded mode — enable Full access in wp-admin → Rolepod WP → Settings",
         );
       }
       throw new CompanionUnavailableError(

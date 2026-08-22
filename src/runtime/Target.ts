@@ -5,6 +5,16 @@ export type CompanionStatus = {
   enabled: boolean;
   version: string | null;
   capabilities: readonly string[];
+  /**
+   * The owner's one decision, read from the companion at handshake:
+   * 'full' — the full-access toggle is ON, the whole power surface is open;
+   * 'guarded' — toggle OFF, the companion refuses the power surface
+   * server-side and the client mirrors that with its own guard.
+   * Companions older than 2.24 do not send the field; it is then derived
+   * from whether they advertise the execute_php capability, which those
+   * versions only did when the same toggle was on.
+   */
+  accessMode?: "full" | "guarded";
 } | null;
 
 export interface WpCliOpts {

@@ -84,7 +84,13 @@ export async function wpConnectRestHandler(
     );
   }
 
-  const prodGuard = await registry.register(target);
+  // The companion knows the owner's access mode; a target without one falls
+  // back to the legacy probe (WP_ENVIRONMENT_TYPE + ROLEPOD_WPLAB_PROD_HOSTS).
+  const prodGuard = await registry.register(target, {
+    ...(target.companion?.accessMode !== undefined
+      ? { accessMode: target.companion.accessMode }
+      : {}),
+  });
   await vault.touch(lookupKey);
 
   // Surface the active MCP-server profile (default | power) so AI clients

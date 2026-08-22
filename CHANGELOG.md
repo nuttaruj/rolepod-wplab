@@ -2,6 +2,40 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] — 2026-08-22 — One switch: the companion's access mode drives the guard
+
+Companion 2.24 stops guessing whether a site is production; the owner's
+full-access toggle is the whole decision. This release makes the client mirror
+that: 'full' opens the power surface, 'guarded' arms the guard. Major because
+guarded mode now blocks tools that previously ran on unlisted hosts.
+
+### Changed — BREAKING
+
+- **Guarded companion targets arm the production guard.** With the companion's
+  full-access toggle OFF, the client-side guarded tool set (`fs` writes,
+  structural Elementor edits, `site_restore`, `custom_init`, …) refuses with a
+  message naming the fix — enable Full access in wp-admin → Rolepod WP →
+  Settings. Previously these ran whenever the host matched no production
+  pattern, which for most installs meant always. The companion 2.24+ enforces
+  the same boundary server-side; the client guard just fails fast and clear.
+- **Full-access companion targets disarm the guard.** The owner's toggle
+  outranks `ROLEPOD_WPLAB_PROD_HOSTS` patterns and `WP_ENVIRONMENT_TYPE` for
+  that host — second-guessing it only diverted writes onto ledger-less paths
+  like raw execute-php. `Bridge.executePhp()` drops its production pre-flight;
+  the capability advertisement is the gate.
+- **`pair` returns `access_mode: 'full' | 'guarded'` instead of
+  `is_production`.** For pre-2.24 companions the mode is derived from the
+  capability list (`execute_php` advertised ⇔ the same toggle was on), and
+  their `is_production` still arms the guard exactly as before.
+
+### Added
+
+- `prod_guard.reason` values `"guarded"` and `"full_access"`. Health check
+  reports a companion target's mode without probing and no longer warns that
+  the guard is disarmed when that is the owner's explicit choice.
+- Legacy probe path (`WP_ENVIRONMENT_TYPE` via wp-cli + `ROLEPOD_WPLAB_PROD_HOSTS`)
+  is unchanged for targets with no companion to ask: local, SSH, docker, bare REST.
+
 ## [2.0.0] — 2026-08-21 — safety chokepoint
 
 ### Changed — BREAKING

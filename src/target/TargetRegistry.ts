@@ -34,14 +34,24 @@ export class TargetRegistry {
    * is armed. Doing both here means no connect path — including pairing and
    * alias reconnect — can forget to.
    *
-   * `assumeProduction` arms the guard without probing — used when the site
-   * already told us (the companion returns `is_production` at pair time).
+   * `accessMode` comes from the companion and settles the guard without
+   * probing: 'guarded' arms it (the owner kept the safe subset), 'full'
+   * disarms it (the owner opened the power surface — the toggle is their
+   * decision, and the server enforces it independently anyway). When absent
+   * (no companion to ask: local, SSH, docker, bare REST) the legacy probe
+   * path runs: WP_ENVIRONMENT_TYPE via wp-cli plus ROLEPOD_WPLAB_PROD_HOSTS.
+   *
+   * `assumeProduction` arms the guard without probing — used when a pre-2.24
+   * companion reports `is_production` at pair time.
    *
    * Returns null when the registry was built without a ProdGuard (tests).
    */
   async register(
     target: Target,
-    opts: { assumeProduction?: boolean } = {},
+    opts: {
+      assumeProduction?: boolean;
+      accessMode?: "full" | "guarded";
+    } = {},
   ): Promise<ProdGuardStatus | null> {
     if (this.entries.has(target.id)) {
       throw new Error(`target_id collision: ${target.id}`);
@@ -56,6 +66,28 @@ export class TargetRegistry {
     log.debug("target registered", { id: target.id, idleMs: this.idleMs });
 
     if (!this.prodGuard) return null;
+
+    if (opts.accessMode === "full") {
+      this.prodGuard.disarm(target.siteurl);
+      const status: ProdGuardStatus = {
+        env_type: null,
+        armed: false,
+        reason: "full_access",
+      };
+      log.info("prod guard", { id: target.id, ...status });
+      return status;
+    }
+    if (opts.accessMode === "guarded") {
+      this.prodGuard.armGuarded(target.siteurl);
+      const status: ProdGuardStatus = {
+        env_type: null,
+        armed: true,
+        reason: "guarded",
+      };
+      log.info("prod guard", { id: target.id, ...status });
+      return status;
+    }
+
     if (opts.assumeProduction) this.prodGuard.markProduction(target.siteurl);
     const probed = await armProdGuard(guarded, this.prodGuard);
     const status: ProdGuardStatus =

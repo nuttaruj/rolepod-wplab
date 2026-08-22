@@ -11,6 +11,19 @@ export class ProdGuard {
   private readonly patterns: RegExp[];
   /** Hosts the site itself reported as production, added at connect time. */
   private readonly markedHosts = new Set<string>();
+  /**
+   * Hosts whose companion reported guarded mode (full-access toggle OFF).
+   * Armed regardless of any production signal — the owner chose the safe
+   * subset, so the client blocks its risky tools with a clear error instead
+   * of letting each call travel to the server just to collect a 403.
+   */
+  private readonly guardedHosts = new Set<string>();
+  /**
+   * Hosts whose owner enabled full access on the companion. Outranks every
+   * detection signal: the toggle is the owner's decision, and second-guessing
+   * it would only divert writes onto ledger-less paths like execute-php.
+   */
+  private readonly fullAccessHosts = new Set<string>();
 
   constructor(patterns: readonly string[]) {
     this.patterns = patterns.map(globToRegex);
@@ -31,6 +44,24 @@ export class ProdGuard {
     return true;
   }
 
+  /** Arm the guard because the companion reported guarded mode. */
+  armGuarded(siteurl: string): boolean {
+    const host = hostOf(siteurl);
+    if (!host) return false;
+    this.guardedHosts.add(host);
+    this.fullAccessHosts.delete(host);
+    return true;
+  }
+
+  /** Disarm the guard because the owner enabled full access. */
+  disarm(siteurl: string): boolean {
+    const host = hostOf(siteurl);
+    if (!host) return false;
+    this.fullAccessHosts.add(host);
+    this.guardedHosts.delete(host);
+    return true;
+  }
+
   /** True when a write to `siteurl` would need an explicit confirm. */
   isArmedFor(siteurl: string): boolean {
     return this.matches(siteurl).matched;
@@ -41,6 +72,14 @@ export class ProdGuard {
   ): { matched: false } | { matched: true; pattern: string } {
     const host = hostOf(siteurl);
     if (!host) return { matched: false };
+
+    if (this.fullAccessHosts.has(host)) return { matched: false };
+    if (this.guardedHosts.has(host)) {
+      return {
+        matched: true,
+        pattern: `${host} (guarded mode — enable Full access in wp-admin → Rolepod WP → Settings)`,
+      };
+    }
 
     if (this.markedHosts.has(host)) {
       return { matched: true, pattern: `${host} (WP_ENVIRONMENT_TYPE)` };

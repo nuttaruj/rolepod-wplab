@@ -8,7 +8,10 @@ import {
 } from "../../schema/tools.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 import type { ProdGuard } from "../../safety/ProdGuard.js";
-import { armProdGuard } from "../../safety/detectProduction.js";
+import {
+  armProdGuard,
+  type ProdGuardStatus,
+} from "../../safety/detectProduction.js";
 import {
   detectRolepodParent,
   resolveEvidenceDir,
@@ -106,11 +109,20 @@ export async function wpHealthCheckHandler(
 
   const companionOk = target.companion?.enabled === true;
 
-  // Re-probe rather than cache the connect-time answer: WP_ENVIRONMENT_TYPE
-  // can change under us, and a stale "armed" reading is the kind of false
-  // guarantee this tool exists to catch.
-  const prodGuardStatus = await armProdGuard(target, prodGuard);
-  if (!prodGuardStatus.armed) {
+  // A companion target answers from its access mode — the owner's own
+  // switch — so there is nothing to probe and nothing to warn about: both
+  // states are deliberate. Other targets re-probe rather than cache the
+  // connect-time answer: WP_ENVIRONMENT_TYPE can change under us, and a
+  // stale "armed" reading is the kind of false guarantee this tool exists
+  // to catch.
+  const accessMode = target.companion?.accessMode;
+  const prodGuardStatus: ProdGuardStatus =
+    accessMode === "full"
+      ? { env_type: null, armed: false, reason: "full_access" }
+      : accessMode === "guarded"
+        ? { env_type: null, armed: true, reason: "guarded" }
+        : await armProdGuard(target, prodGuard);
+  if (!prodGuardStatus.armed && prodGuardStatus.reason !== "full_access") {
     warnings.push(
       `production guard is DISARMED for this target (${prodGuardStatus.reason}) — destructive tools will not require confirm. Set WP_ENVIRONMENT_TYPE=production on the site, or add the host to ROLEPOD_WPLAB_PROD_HOSTS.`,
     );

@@ -32,6 +32,7 @@ interface RedeemResponseBody {
   companion_version?: string;
   siteurl?: string;
   is_production?: boolean;
+  access_mode?: string;
   error_code?: string;
   error_message?: string;
 }
@@ -132,10 +133,23 @@ export async function wpPairHandler(
     url: `${url.protocol}//${url.host}`,
     credential,
   });
-  // The companion already told us whether this is production. Honour it even
-  // when the raw WP_ENVIRONMENT_TYPE probe cannot run over REST.
+  // The companion's access mode is the owner's decision: 'full' opens the
+  // power surface, 'guarded' keeps the safe subset. Pre-2.24 companions never
+  // send it — for them, advertising execute_php meant the same toggle was on,
+  // so the mode is derived from the capability list; their is_production flag
+  // still arms the guard the way it always did.
+  const accessMode =
+    body.access_mode === "full" || body.access_mode === "guarded"
+      ? body.access_mode
+      : body.access_mode === undefined && body.capabilities !== undefined
+        ? body.capabilities.includes("execute_php")
+          ? "full"
+          : "guarded"
+        : undefined;
   const prodGuard = await registry.register(target, {
-    assumeProduction: body.is_production === true,
+    ...(accessMode !== undefined
+      ? { accessMode }
+      : { assumeProduction: body.is_production === true }),
   });
 
   return PairOutputSchema.parse({
@@ -145,7 +159,7 @@ export async function wpPairHandler(
     username: body.username,
     capabilities: body.capabilities ?? [],
     companion_version: body.companion_version ?? "unknown",
-    is_production: body.is_production ?? false,
+    access_mode: accessMode ?? "guarded",
     app_password_name: body.app_password_name ?? "wplab-pair-unknown",
     credential_stored: credentialStored,
   });

@@ -137,12 +137,20 @@ export class RestTarget implements Target {
           companion_version?: string;
           capabilities?: string[];
           php_version?: string;
+          access_mode?: string;
         };
+        const caps = b.capabilities ?? [];
         companion = {
           installed: true,
           enabled: true,
           version: b.companion_version ?? null,
-          capabilities: b.capabilities ?? [],
+          capabilities: caps,
+          accessMode:
+            b.access_mode === "full" || b.access_mode === "guarded"
+              ? b.access_mode
+              : caps.includes("execute_php")
+                ? "full"
+                : "guarded",
         };
       } else {
         log.debug("companion handshake non-200", { status: hs.status });

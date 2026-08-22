@@ -33,6 +33,8 @@ export const ProdGuardStatusSchema = z
         "Raw WP_ENVIRONMENT_TYPE. Empty string = unset (guard stays disarmed; WordPress' own default of 'production' is deliberately not trusted). null = the probe could not run.",
       ),
     reason: z.enum([
+      "guarded",
+      "full_access",
       "env_type",
       "host_pattern",
       "companion",
@@ -1159,7 +1161,11 @@ export const PairOutputSchema = z.object({
   username: z.string(),
   capabilities: z.array(z.string()),
   companion_version: z.string(),
-  is_production: z.boolean(),
+  access_mode: z
+    .enum(["full", "guarded"])
+    .describe(
+      "The owner's switch on the companion: 'full' opens the whole power surface (execute-php, file writes, destructive wp-cli, structural edits); 'guarded' keeps the safe subset and the companion refuses the rest server-side. Derived from the capability list for pre-2.24 companions.",
+    ),
   prod_guard: ProdGuardStatusSchema.optional(),
   app_password_name: z
     .string()

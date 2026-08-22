@@ -17,8 +17,12 @@ export type ProdGuardReason =
   | "env_type"
   /** siteurl matched ROLEPOD_WPLAB_PROD_HOSTS */
   | "host_pattern"
-  /** the companion reported is_production at pair time */
+  /** the companion reported is_production at pair time (pre-2.24 companions) */
   | "companion"
+  /** the companion reported guarded mode — full-access toggle OFF */
+  | "guarded"
+  /** the owner enabled full access on the companion; guard deliberately off */
+  | "full_access"
   /** the signal is set to something other than production */
   | "not_production"
   /** the signal is unset — guard stays disarmed */
