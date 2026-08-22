@@ -156,7 +156,7 @@ export class CompanionBridge {
     if (!this.hasCapability("execute_php")) {
       throw new CompanionUnavailableError(
         this.target.id,
-        "execute_php not available — this site is in guarded mode; enable Full access in wp-admin → Rolepod WP → Settings",
+        "execute_php not available — this site is in guarded mode. Before asking the user to enable AI Full Control, explain why the task needs it, warn them it hands the AI full control of a live site, and offer rolepod_wp_backup_create first (it works in guarded mode). Toggle: wp-admin → Rolepod WP → Settings",
       );
     }
     assertPhpPayloadOk(payload, "execute_php");

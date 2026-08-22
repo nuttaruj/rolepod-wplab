@@ -66,7 +66,11 @@ describe("ProdGuard — full access vs guarded", () => {
     expect(m.matched).toBe(true);
     if (m.matched) {
       expect(m.pattern).toContain("guarded mode");
-      expect(m.pattern).toContain("Full access");
+      expect(m.pattern).toContain("AI Full Control");
+      // The block must carry its own protocol: warn, then back up BEFORE
+      // the toggle flips — not after the power surface is already open.
+      expect(m.pattern).toContain("back up first");
+      expect(m.pattern).toContain("rolepod_wp_backup_create");
     }
   });
 

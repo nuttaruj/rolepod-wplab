@@ -2,6 +2,25 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.2] — 2026-08-22 — Full Access is requested with a warning and a backup, never as a bare instruction
+
+### Changed
+
+- **Hitting a guarded wall now triggers a request protocol, not a shortcut.**
+  Server instructions, the client-side guard message, the Bridge's
+  missing-capability error, and the `wp-execute-php` skill all direct the
+  agent through the same four steps before the user is asked to enable
+  AI Full Control: say what needs it and why, warn in plain words that ON
+  hands the AI full control of a live site, offer
+  `rolepod_wp_backup_create` FIRST (it works in guarded mode, so the backup
+  exists before the power surface opens), and promise — then deliver — the
+  reminder to turn it back OFF afterwards. Declining is documented as a
+  valid outcome.
+- `wp-execute-php` skill updated off the pre-3.0 production model: the old
+  "production-matched → no override" hand-off is replaced by the guarded-mode
+  protocol, and preconditions now check the advertised `execute_php`
+  capability instead of production matching.
+
 ## [3.0.1] — 2026-08-22 — Plugin-first onboarding
 
 ### Changed

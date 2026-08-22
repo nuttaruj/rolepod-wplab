@@ -52,6 +52,15 @@ Read the skill before a multi-step change. \`rolepod_wp_skill_get\` returns it.
 
 ## Rules that hold everywhere
 
+**A guarded site is the owner's choice — asking for Full Access is a protocol,
+not a sentence.** When a task hits \`FULL_ACCESS_REQUIRED\` (or needs
+\`execute_php\` and the companion does not advertise it), do not just say
+"enable the toggle". Tell the user what needs it and why, warn them in plain
+words that ON means the AI gets full control of a live site (PHP execution,
+file writes, destructive wp-cli), and offer \`rolepod_wp_backup_create\` FIRST —
+it works in guarded mode, so the backup exists before the power surface opens.
+Remind them they can turn it back OFF when the task is done.
+
 **The production guard is only as good as its signal.** \`prod_guard.armed=false\`
 does not mean the target is safe to write — it means nobody told the server
 otherwise. \`health_check\` says why. An unset \`WP_ENVIRONMENT_TYPE\` leaves the

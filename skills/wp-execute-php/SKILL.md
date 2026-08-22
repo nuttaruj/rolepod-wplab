@@ -16,6 +16,7 @@ Last-resort power tool. Bypasses every safer layer (REST, wp-cli, introspect) to
 1. NEVER call `rolepod_wp_execute_php` if the same outcome is reachable through `wp-content` (REST), `wp-edit-plugin` (adapter REST), `wp-introspect` (read), or `wp-execute-php`'s sibling `wp_cli_run`. Power tool = last resort.
 2. NEVER pass `confirm: true` automatically on the user's behalf — the flag exists so the user accepts personal responsibility for the payload; auto-confirming defeats it.
 3. ALWAYS read the AST blocklist in `references/ast-rules.md` before composing a payload. `eval`, `system`, `shell_exec`, `proc_open`, `popen`, dynamic include, out-of-scope file ops, pcntl_*, dl, backtick — all are forbidden on both sides and the screen catches them up front.
+4. NEVER ask the user to flip the AI Full Control toggle as a bare instruction. Run the request protocol below: say WHAT needs it and WHY, deliver the warning (the AI gets full control of a live site), and offer `rolepod_wp_backup_create` FIRST — it works in guarded mode, so the backup exists before the power surface opens.
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -47,7 +48,28 @@ Does not own:
 Return / hand off:
 - AST screen rejected the payload → go back to the user with the specific forbidden token; do not "work around" by encoding/obfuscation.
 - Power profile not set → hand off to user: "set `ROLEPOD_WPLAB_PROFILE=power` env and reconnect."
-- Production-matched siteurl → STOP. There is no override path. Tell user to use a non-prod target.
+- Site in guarded mode (`FULL_ACCESS_REQUIRED` / `execute_php` capability absent) → STOP and run the "Requesting Full Access" protocol below. The toggle is the owner's decision — never pressure, never proceed without it.
+
+## Requesting Full Access
+
+When a task genuinely needs the power surface and the site is guarded, hand
+the user a decision, not an instruction. One message, four parts:
+
+1. **What + why** — the exact task and why no guarded tool covers it
+   (Iron Rule 1 already forced this answer).
+2. **The warning** — plain words: *"เปิดแล้ว AI จะควบคุมเว็บนี้ได้เต็มรูปแบบ —
+   รัน PHP, แก้ไฟล์, สั่ง wp-cli แบบ destructive ได้ ถ้าเว็บนี้เป็นเว็บจริง
+   ความผิดพลาดอาจทำให้เว็บล่ม"* (match the user's language).
+3. **Backup first** — offer `rolepod_wp_backup_create` BEFORE they flip the
+   toggle; it works in guarded mode. Wait for it to finish (`action=status`)
+   and confirm the backup id before proceeding.
+4. **The switch + the way back** — where: wp-admin → Rolepod WP → Settings →
+   AI Full Control → ON. And say up front that you will remind them to turn
+   it back OFF when the task is done — then actually do that.
+
+If the user declines: stop. Suggest the nearest guarded-mode alternative or
+manual steps they can run themselves. Declining is a valid outcome, not an
+obstacle to argue with.
 
 ## Inputs to gather
 
@@ -69,7 +91,7 @@ Check the payload against `references/ast-rules.md`. If any forbidden token appe
 ### 3. Confirm preconditions
 
 - `ROLEPOD_WPLAB_PROFILE=power` env present.
-- Target not production-matched.
+- Site is in Full Access mode (companion advertises `execute_php`). Guarded → run the "Requesting Full Access" protocol first.
 - User explicitly OK'd `confirm: true`.
 
 ### 4. Run

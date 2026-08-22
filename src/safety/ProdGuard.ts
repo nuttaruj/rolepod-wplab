@@ -77,7 +77,7 @@ export class ProdGuard {
     if (this.guardedHosts.has(host)) {
       return {
         matched: true,
-        pattern: `${host} (guarded mode — enable Full access in wp-admin → Rolepod WP → Settings)`,
+        pattern: `${host} (guarded mode — needs AI Full Control: warn the user and back up first with rolepod_wp_backup_create, then wp-admin → Rolepod WP → Settings)`,
       };
     }
 
