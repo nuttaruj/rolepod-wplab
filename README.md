@@ -202,7 +202,11 @@ The pair token is single-use, 60-min TTL. The plugin mints a WP Application Pass
 
 > The WP plugin (`rolepod-wp`) is the WordPress arm of the broader [Rolepod ecosystem](https://github.com/nuttaruj/rolepod), parallel to `rolepod-uiproof`. Source: [`nuttaruj/rolepod-wp`](https://github.com/nuttaruj/rolepod-wp). End users do not need to read that repo — everything they need is on this page.
 
-### Path B — manual (no companion required)
+### Path B — manual App Password (last resort)
+
+Use only when the plugin cannot be installed (no plugin-install rights, host
+blocks uploads) or you explicitly do not want it. Path A is one-click and
+mints + stores the credential for you; here you do those steps by hand.
 
 ```bash
 # 1. Create an App Password: WP admin → Users → Profile → Application Passwords

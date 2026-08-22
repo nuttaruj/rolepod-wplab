@@ -59,7 +59,7 @@ Does not own:
 - Any actual WP operation — pick the right next skill.
 
 Return / hand off:
-- REST + no creds → `wp-pair-setup` for one-click OR manual App Password entry.
+- REST + no creds → `wp-pair-setup` (plugin-first walkthrough). Manual App Password entry is the last resort inside that flow, never the opening offer.
 - Connection opens but companion missing → `wp-health-check` for full report.
 
 ## Inputs to gather
@@ -129,7 +129,7 @@ Load when the user's situation does not match the quick rule:
 
 ## Hard stops
 
-- `CREDENTIALS_MISSING` on REST → STOP. Hand off to `wp-pair-setup` (recommended) or instruct manual `rolepod-wplab credentials add <site>`.
+- `CREDENTIALS_MISSING` on REST → STOP. Hand off to `wp-pair-setup` — it walks the user through installing the plugin and pairing. Suggest manual `rolepod-wplab credentials add <site>` only as the last resort (plugin uninstallable, or the user declined it).
 - `REST_AUTH_FAILED` on a previously-working site → STOP. The App Password was revoked from profile.php. Hand off to `wp-pair-setup`.
 - `require_companion=true` but `companion: null` → STOP. Tell user to install the WP plugin via `wp plugin install https://github.com/nuttaruj/rolepod-wp/releases/latest/download/rolepod-wp.zip --activate`.
 - HTTP, not HTTPS → STOP. RestTarget refuses non-https URLs unconditionally.

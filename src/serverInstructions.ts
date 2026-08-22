@@ -11,9 +11,21 @@ export const SERVER_INSTRUCTIONS = `rolepod-wplab drives real WordPress installs
 ## Start here
 
 1. Connect first — every other tool needs a \`target_id\`.
-   Local install → \`rolepod_wp_connect_local\`. Live site → \`rolepod_wp_pair\`
-   (one-click, mints an Application Password) or \`rolepod_wp_connect_rest\`.
-   SSH and Docker have their own connect tools.
+   Local install → \`rolepod_wp_connect_local\`. Live site already paired →
+   \`rolepod_wp_connect_rest\`. SSH and Docker have their own connect tools.
+
+   **Live site, first time → lead with the plugin, not credentials.** Walk the
+   user through it and give them the pieces directly:
+   1. Install the Rolepod for WordPress plugin (stable URL, always latest):
+      https://github.com/nuttaruj/rolepod-wp/releases/latest/download/rolepod-wp.zip
+      (WP admin → Plugins → Add New → Upload Plugin → Activate)
+   2. Open WP admin → Tools → Rolepod WP Setup → Quick start → Generate pair
+      token, and paste the prompt block back into this chat.
+   3. You then call \`rolepod_wp_pair\` with the token — it mints and stores the
+      Application Password automatically. No manual credential steps.
+   A manually created Application Password (profile.php) is the LAST resort —
+   offer it only when the plugin cannot be installed (no plugin-install rights,
+   host blocks uploads) or the user explicitly declines the plugin.
 2. Then \`rolepod_wp_health_check\`. Read its \`prod_guard\` field before writing.
 3. \`rolepod_wp_memory_recall\` + \`rolepod_wp_conventions_get\` carry context from
    earlier sessions on this site. \`rolepod_wp_skill_catalog\` lists the workflow

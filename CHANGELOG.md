@@ -2,6 +2,24 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] — 2026-08-22 — Plugin-first onboarding
+
+### Changed
+
+- **First-time connection guidance now leads with the plugin, everywhere.**
+  Server instructions, the `CREDENTIALS_MISSING` error, and the `wp-connect` /
+  `wp-pair-setup` skills all walk the user through the same path: install the
+  Rolepod for WordPress plugin (stable zip URL included in the message), open
+  Tools → Rolepod WP Setup, generate a pair token, paste it back — the pair
+  mints and stores the Application Password with no manual steps. Creating an
+  App Password by hand is documented as the LAST resort, offered only when the
+  plugin cannot be installed or the user explicitly declines it. Previously
+  the two paths were presented as near-equals, and agents sometimes steered
+  first-time users through the manual credential dance.
+- `wp-pair-setup` gained a step 0 — the install walkthrough itself — and an
+  Iron Rule forbidding the manual-first suggestion. README Path B is retitled
+  "manual App Password (last resort)".
+
 ## [3.0.0] — 2026-08-22 — One switch: the companion's access mode drives the guard
 
 Companion 2.24 stops guessing whether a site is production; the owner's

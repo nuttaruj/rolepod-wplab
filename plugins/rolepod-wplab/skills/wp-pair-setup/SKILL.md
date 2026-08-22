@@ -1,7 +1,7 @@
 ---
 name: wp-pair-setup
 description: Redeem a `rolepod-wp` companion pair_token, mint a WP Application Password, and open the first Target — the canonical onboarding flow. Phase = Define.
-when_to_use: a user pastes a pair prompt from Tools → Rolepod WP Setup, OR mentions a `rolepod_wp_pair_<hex>` token, OR asks "เชื่อม WordPress" without prior credentials in the vault
+when_to_use: a user pastes a pair prompt from Tools → Rolepod WP Setup, OR mentions a `rolepod_wp_pair_<hex>` token, OR asks "เชื่อม WordPress" without prior credentials in the vault — including when the plugin is not installed yet (this skill owns the install walkthrough)
 tier: 1
 phase: define
 ---
@@ -16,6 +16,7 @@ Onboarding skill. The companion-issued pair_token is a single-use, 60-min, singl
 1. NEVER call `rolepod_wp_pair` twice with the same `pair_token` — it is single-use; the second call returns 410 and burns the user's chance.
 2. NEVER fall back to manual App Password entry without first checking `wp_health_check` after the pair — a half-paired target reads `companion: null` and silently breaks every companion-gated tool.
 3. ALWAYS run `rolepod_wp_health_check` on the returned `target_id` before reporting "ready" — a 200 from `/pair/redeem` only proves the token redeemed, not that the site is workable.
+4. NEVER steer a first-time user toward creating an Application Password by hand before offering the plugin install + pair flow. Manual App Password is the LAST resort — only when the plugin cannot be installed (no plugin-install rights, host blocks uploads) or the user explicitly declines the plugin.
 </EXTREMELY-IMPORTANT>
 
 ## When to use
@@ -26,7 +27,9 @@ Onboarding skill. The companion-issued pair_token is a single-use, 60-min, singl
 
 Skip when:
 - Credentials for the site are already in the vault — use `wp-connect` instead.
-- The user wants manual App Password entry — use `wp-connect` Path B.
+- The plugin genuinely cannot be installed, or the user explicitly declines it
+  after being offered the flow — only then fall back to manual App Password
+  entry (`wp-connect` Path B, the last resort).
 
 ## Session bootstrap (run once, right after connecting)
 
@@ -69,6 +72,22 @@ Return / hand off:
 - (optional) target CLI for the install snippet (Claude Code / Cursor / Codex / Gemini).
 
 ## Workflow
+
+### 0. No pair prompt yet? Walk the user through the plugin first
+
+A first-time user usually arrives with nothing installed. Hand them the whole
+path in one message — link included, no hunting:
+
+1. Install the Rolepod for WordPress plugin (stable URL, always latest):
+   `https://github.com/nuttaruj/rolepod-wp/releases/latest/download/rolepod-wp.zip`
+   — wp-admin → Plugins → Add New → Upload Plugin → Activate
+   (or `wp plugin install <zip-url> --activate` when they have shell access).
+2. Open `<siteurl>/wp-admin/tools.php?page=rolepod-wp-setup` → Quick start →
+   Generate pair token.
+3. Ask them to paste the whole `=== rolepod-wplab one-click pair ===` block back.
+
+Then continue from step 1 below. Do not mention manual Application Passwords
+here — that path exists only for when this one is impossible (Iron Rule 4).
 
 ### 1. Sanity-check the token
 
