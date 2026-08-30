@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/rolepod-wplab-banner.png" alt="Rolepod wplab — WordPress Lab" />
+</p>
+
 # rolepod-wplab
 
 > **🌐 New here? See [what AI can actually do on your WordPress site](https://nuttaruj.github.io/rolepod-wplab/) — plain-English breakdown of the 3 setup tiers.**
