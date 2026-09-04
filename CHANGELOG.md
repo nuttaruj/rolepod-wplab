@@ -2,6 +2,42 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] — 2026-09-04 — Read the recorded fatal before touching anything, and route partial fatals to wp-recovery
+
+Written from a real failure. A site's REST API had been returning 500 on every
+route for thirteen days while the front end, wp-admin and admin-ajax all
+answered 200. The companion's guardian mu-plugin had recorded the exact cause
+the whole time — class, file and line — and `rolepod_wp_recovery_status`
+returns it. Nothing pointed there, so instead: a wrong hypothesis, a live
+security plugin deactivated to test it (which invalidated the admin session and
+could not be put back without the user), a debugging plugin installed, and a
+six-round bisect. The evidence was one call away from the start.
+
+Two routing gaps made that possible, both fixed here.
+
+### Fixed
+
+- **`wp-recovery` was absent from the skill routing table.** `Site is broken,
+  WSOD, fatal` pointed at wp-health-check and wp-changes; the one skill whose
+  Iron Rule is "NEVER guess the culprit — read `rolepod_wp_recovery_status`"
+  was not listed at all. It now leads that row.
+- **A partial fatal did not read as a fatal.** `wp-recovery`'s `when_to_use`
+  said "the site returns a 500 / white screen", which is false when only one
+  surface is dead and every human-visible page is 200 — so the skill never
+  fired. It now names that shape explicitly: a 500 confined to REST, to
+  admin-ajax, or to a single admin screen is still a fatal, and the guardian
+  recorded it.
+
+### Added
+
+- A **cheapest-and-safest-first ladder** in `SERVER_INSTRUCTIONS`: existing
+  recorded evidence → read-only observation → read the configuration →
+  isolation scoped to your own session → reversible site-wide change →
+  anything harder to undo. Stop at the first rung that answers the question,
+  and never open at rung 5. It also warns that a site-wide deactivation can
+  have side effects you did not plan for, naming the session-invalidation case.
+- New routing row for the partial-fatal shape (one surface 500s, the rest 200).
+
 ## [3.1.1] — 2026-09-04 — Make the browser ladder explicit, and say which rung you are on
 
 3.1.0 said "hand the URL to whatever browser automation you have" and listed

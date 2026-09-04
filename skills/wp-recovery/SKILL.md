@@ -1,7 +1,7 @@
 ---
 name: wp-recovery
 description: Recover a WordPress site that is white-screening / 500-ing / fatal after an edit — guardian mu-plugin, safe-mode, disable/restore the culprit — plus safe core/plugin/theme updates and guarded .htaccess edits. Phase = Recover.
-when_to_use: the site returns a 500 / white screen / fatal error (often right after a plugin activation, theme switch, functions.php or .htaccess edit), OR the user wants to update core/plugins/themes or edit .htaccess with an automatic safety net
+when_to_use: the site returns a 500 / white screen / fatal error (often right after a plugin activation, theme switch, functions.php or .htaccess edit), OR a 500 is confined to ONE surface while the rest of the site answers 200 (REST only, admin-ajax only, a single admin screen) — that is still a fatal and the guardian recorded it, OR the user wants to update core/plugins/themes or edit .htaccess with an automatic safety net
 tier: 1
 phase: recover
 ---

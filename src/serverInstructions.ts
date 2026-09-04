@@ -41,7 +41,8 @@ export const SERVER_INSTRUCTIONS = `rolepod-wplab drives real WordPress installs
 | Themes, child themes, safe theme switches | wp-edit-theme |
 | Plugins, mu-plugins, wp-config | wp-edit-plugin |
 | Arbitrary PHP through the companion | wp-execute-php |
-| Site is broken, WSOD, fatal | wp-health-check, wp-changes |
+| Site is broken, WSOD, fatal | wp-recovery first, then wp-health-check, wp-changes |
+| One surface 500s while the rest of the site is 200 — REST only, admin-ajax only, one admin screen | wp-recovery. A partial fatal is still a fatal, and the guardian recorded it |
 | Slow, buggy, or suspicious site | wp-diagnose |
 | Reading the live object graph (hooks, post types, options) | wp-introspect |
 | Moving a site or its data | wp-migrate |
@@ -51,6 +52,35 @@ export const SERVER_INSTRUCTIONS = `rolepod-wplab drives real WordPress installs
 Read the skill before a multi-step change. \`rolepod_wp_skill_get\` returns it.
 
 ## Rules that hold everywhere
+
+**Read what already recorded the failure before you change anything.** Climb
+this ladder and stop at the first rung that answers the question. Each rung
+costs more and risks more than the one above it.
+
+1. **Evidence that already exists** — free, read-only, no side effects.
+   \`rolepod_wp_recovery_status\` is the one people forget: the guardian
+   mu-plugin records every fatal with its class, file and line, and keeps
+   answering while the main plugin is dead. Then \`rolepod_wp_health_check\`,
+   \`rolepod_wp_changes_query\`, \`rolepod_wp_memory_recall\`. A fataling site has
+   usually already written down exactly what broke.
+2. **Observation** — read-only probes that narrow the blast radius. Which
+   surfaces fail and which do not (front end, wp-admin, admin-ajax, REST, and a
+   REST namespace that does not exist) localises a fault far faster than
+   reasoning about which component "should" own it.
+3. **Read the configuration** — \`rolepod_wp_option_get\`,
+   \`rolepod_wp_introspect\`, \`rolepod_wp_file_read\`. Still no writes.
+4. **Isolation scoped to you** — a troubleshooting mode that disables plugins
+   for your session only. Visitors see nothing change.
+5. **Reversible site-wide change** — deactivating a plugin, flipping an option.
+   Say what you are about to do and why, and undo it the moment the test
+   answers. Expect side effects you did not plan: deactivating a security
+   plugin can invalidate your own admin session and leave you unable to put it
+   back.
+6. **Anything harder to undo** — confirm with the user first.
+
+Never open at rung 5. Deactivating a live plugin to test a hypothesis, before
+reading the fatal the site already recorded, is how an afternoon gets spent
+proving the wrong thing.
 
 **Never ask a human to log in for you — walk down this ladder.** When a task
 needs a wp-admin screen (auditing the admin UI, reading a settings page,
