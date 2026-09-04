@@ -2,6 +2,21 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.3] — 2026-09-04 — Name the 403-on-write failure where every MCP client sees it
+
+3.4.1 and 3.4.2 put this in recipe 24, which only clients that read the docs
+will find. The tool description reaches every MCP client, and it is the place
+an agent is told to drive a browser — so it is where the misdiagnosis happens.
+
+### Added
+
+- `rolepod_wp_admin_one_time_link` description now names the failure: an admin
+  POST returning 403 while every GET succeeds is a WAF rule on the user-agent,
+  not an authentication problem. uiproof 0.20.0+ presents a desktop UA by
+  default; older versions need an explicit one, and a host that still refuses
+  may be reading `Sec-CH-UA` client hints, which a user-agent override does not
+  rewrite.
+
 ## [3.4.2] — 2026-09-04 — uiproof 0.20.0 fixes the UA; document the cheap way to get refs
 
 `@rolepod/uiproof@0.20.0` is on npm and presents a desktop Chrome UA in headless
