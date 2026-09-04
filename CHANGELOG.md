@@ -2,6 +2,25 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] — 2026-09-04 — The slow first launch was npm audit, not the package size
+
+3.3.0 credited uiproof 0.19.0's smaller dependency tree for a faster cold
+start. That was the wrong cause. Measured on a cold cache with
+`npm_config_loglevel=http`: `POST /-/npm/v1/security/advisories/bulk` — the
+`npm audit` that `npx` runs on a fresh install — took 190-320s across five
+runs, while fetching and extracting the entire tree took 6-9s. Cutting the
+package count 337 → 108 barely moved the number.
+
+### Changed
+
+- `docs/RECIPES.md` recipe 24 states the real cause and the real fix: uiproof
+  0.19.1 sets `npm_config_audit=false` + `npm_config_fund=false` in every
+  shipped spawn config, which brings a cold connect to ~16s. Below 0.19.1, or
+  in a hand-written spawn config without that env, the multi-minute first
+  launch is still there — the note now says to copy uiproof's env block, and
+  that the flags cannot go in the `npx` args because `npx` reads leading flags
+  as its own.
+
 ## [3.3.0] — 2026-09-04 — Mint the admin session once, reuse it across runs
 
 `@rolepod/uiproof@0.19.0` added `browser_save_state`, which turns the one-time

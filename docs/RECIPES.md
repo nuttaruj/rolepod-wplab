@@ -404,7 +404,7 @@ step yourself and they do not need to log in — otherwise they wait for a promp
 that never comes. On 3, say that no browser automation is available here, so
 this one step needs them.
 
-### Mint once, reuse across runs (uiproof 0.19.0+)
+### Mint once, reuse across runs (uiproof 0.19.0+; install 0.19.1)
 
 An OTL is single-use and expires in 5 minutes, so re-minting per browser
 session gets old. Save the session instead:
@@ -428,9 +428,15 @@ Notes:
   that companion endpoints are on — it does not require AI Full Control.
 - **Asking a person to click the link is the last resort**, for when you have
   no browser automation at all.
-- A first uiproof launch on a machine installs the package and can look like a
-  hang. 0.19.0 dropped the webdriverio tree, so this is far smaller than it was
-  on 0.17.x — if a handoff goes quiet, wait before calling it broken.
+- A first uiproof launch used to look like a hang, and the cause was not the
+  download: `npx` runs `npm audit` on a fresh install, and that one request took
+  190-320s while fetching and extracting the whole tree took 6-9s. uiproof
+  0.19.1 sets `npm_config_audit=false` + `npm_config_fund=false` in every
+  shipped spawn config, which brings a cold connect to ~16s. Below 0.19.1, or
+  with a hand-written spawn config missing that env, expect the old multi-minute
+  first launch — wait it out rather than calling the server broken, and copy the
+  env block from uiproof's README into any config you write yourself. The flags
+  cannot go in the `npx` args; `npx` reads leading flags as its own.
 
 **Security.** Whoever opens the URL holds a full admin session, and the
 artifacts differ in what they carry. Check before sharing any of them.
