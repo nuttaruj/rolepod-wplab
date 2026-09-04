@@ -2,6 +2,23 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] — 2026-09-04 — Warn that a headless user-agent can 403 admin writes
+
+Found while running recipe 24 for real: the one-time link opened, wp-admin
+rendered, the session was authenticated — and the first POST came back 403 from
+nginx. GET worked throughout, which makes it read like an auth failure when it
+is a WAF rule on the user-agent. A/B on the live host with only the UA changed
+turned the same POST into a success.
+
+### Added
+
+- Recipe 24 now tells readers to pass a real desktop `user_agent` on uiproof
+  0.19.1 and below, with the symptom spelled out (every GET fine, first write
+  403) so the failure is recognisable rather than mysterious.
+- uiproof 0.20.0 will default to a desktop UA; the note says so, and keeps one
+  line about `Sec-CH-UA` client hints still reporting HeadlessChrome, since
+  Playwright's override does not rewrite those.
+
 ## [3.4.0] — 2026-09-04 — Sign what the server writes
 
 Someone inheriting a WordPress site had no way to tell which plugins an AI

@@ -428,6 +428,25 @@ Notes:
   that companion endpoints are on — it does not require AI Full Control.
 - **Asking a person to click the link is the last resort**, for when you have
   no browser automation at all.
+- **Pass a real desktop `user_agent` on uiproof 0.19.1 and below.** The default
+  headless UA identifies as `HeadlessChrome/…`, and some hosts' WAFs 403 admin
+  POSTs from it while letting every GET through — so the page loads, you are
+  signed in, and only the first write fails. That asymmetry reads like an
+  authentication problem and is not one. Verified by A/B on a live Plesk host:
+  identical session and payload, only the UA changed, 403 → success.
+
+  ```
+  browser_open {
+    url: <one-time-link>,
+    user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
+                 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
+  }
+  ```
+
+  uiproof 0.20.0 makes this the default. Even then, `Sec-CH-UA` client-hint
+  brands still report HeadlessChrome — Playwright's UA override does not rewrite
+  them — so if a host still 403s a POST after that, check whether its WAF
+  inspects client hints rather than the UA header.
 - A first uiproof launch used to look like a hang, and the cause was not the
   download: `npx` runs `npm audit` on a fresh install, and that one request took
   190-320s while fetching and extracting the whole tree took 6-9s. uiproof
