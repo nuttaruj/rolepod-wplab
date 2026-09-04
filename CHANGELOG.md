@@ -2,6 +2,38 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] — 2026-09-04 — Say when Elementor's own MCP should win
+
+Elementor has announced an official MCP — "coming soon" as of 2026-09-04, not
+shipped — and Premium Addons for Elementor ships one today. Either can be
+connected alongside this server, and then two toolsets offer overlapping
+Elementor operations with nothing telling a model which to reach for.
+
+The answer is routing, not removal. Deleting working tools to make room for a
+server that has not shipped leaves users with nothing in between, and the
+`rolepod_wp_elementor_*` surface is not a straight duplicate: some of it exists
+precisely because Elementor's own render throws information away.
+
+### Added
+
+- `SERVER_INSTRUCTIONS` and the `wp-edit-design` skill now say to prefer an
+  Elementor-native MCP for ordinary page building — creating widgets, editing
+  settings, applying templates — and name the cases where these tools are still
+  the right call: no such server connected; a target only wplab can reach (SSH,
+  Docker, remote REST); `rolepod_wp_elementor_widget_attribute`, which persists
+  `data-*` attributes that Elementor's render strips and that a server building
+  native Elementor structure will not restore; edits that must be revertible
+  through the change ledger; and pre-write validation via
+  `rolepod_wp_elementor_validate_data` / `rolepod_wp_elementor_html_audit`.
+- Both surfaces ask the model to say which server it used, so an Elementor page
+  touched by two toolsets is not a mystery later.
+
+### Fixed
+
+- `serverInstructions.test.ts` read `rolepod_wp_elementor_*` as a citation of a
+  tool that does not exist. A trailing `*` names a family; the gate now drops
+  those at extraction. Verified it still fails on a genuine typo.
+
 ## [3.4.3] — 2026-09-04 — Name the 403-on-write failure where every MCP client sees it
 
 3.4.1 and 3.4.2 put this in recipe 24, which only clients that read the docs

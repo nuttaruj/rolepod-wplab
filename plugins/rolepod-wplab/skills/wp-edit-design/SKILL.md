@@ -202,6 +202,30 @@ For each section of the mockup:
 - `*_write` returns `backup_path: null` → the previous tree was NOT saved (the meta key was empty, or the snapshot never ran). There is no `BACKUP_FAILED` error code; nothing stops you. Decide deliberately before writing forward.
 - Theme.json JSON parse fails server-side → STOP, surface the line/column from `json_last_error`; ask user to confirm the patch.
 
+## When another MCP owns Elementor
+
+Elementor has announced an official MCP — "coming soon" as of 2026-09-04, not
+shipped — and Premium Addons for Elementor ships one today. Either may be
+connected alongside this server, and then two toolsets offer overlapping
+Elementor operations.
+
+**Prefer the Elementor-native server for ordinary page building.** Creating
+widgets, editing their settings, applying templates: it speaks Elementor's own
+model and will track Elementor's changes faster than an outside adapter can.
+
+**Use `rolepod_wp_elementor_*` when:**
+
+| Situation | Why |
+| --- | --- |
+| No Elementor-native MCP is connected | These are the only Elementor tools present |
+| The target is SSH, Docker, or a remote REST site | An in-WordPress MCP runs on one site; wplab reaches whatever it is connected to |
+| `rolepod_wp_elementor_widget_attribute` | Persists `data-*` attributes that Elementor's render strips, via `_rolepod_widget_attrs` meta + a `wp_footer` bridge. A server that builds native Elementor structure is the thing that strips them, so it will not undo this for you |
+| The edit must be revertible | Writes land in the change ledger; `rolepod_wp_changes_query` and `rolepod_wp_changes_panic` can undo them |
+| Pre-write validation | `rolepod_wp_elementor_validate_data` and `rolepod_wp_elementor_html_audit` catch malformed `_elementor_data` before it reaches the database |
+
+**Say which server you used.** An Elementor page edited by two different tools
+is confusing to debug later; naming the one you chose, once, costs a sentence.
+
 ## Full Rolepod enhancement
 
 Full Rolepod adds visual-diff confirmation via the `rolepod-uiproof` sibling (snapshot before + after, surface side-by-side). Standalone, the user reviews live.

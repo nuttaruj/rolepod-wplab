@@ -53,6 +53,19 @@ Read the skill before a multi-step change. \`rolepod_wp_skill_get\` returns it.
 
 ## Rules that hold everywhere
 
+**Another MCP may own Elementor — check before assuming these tools are the
+route.** Elementor has announced an official MCP (not shipped as of 2026-09-04)
+and Premium Addons ships one today. When one of those is connected, prefer it
+for ordinary page building — creating widgets, editing settings, applying
+templates — because it speaks Elementor's own model. Reach for the
+\`rolepod_wp_elementor_*\` tools when no such server is present, when the work
+must run against a target only wplab can reach (SSH, Docker, a remote REST
+site), or for what they uniquely do: \`rolepod_wp_elementor_widget_attribute\`
+persists \`data-*\` attributes that Elementor's own render strips, and every
+write here lands in the change ledger so \`rolepod_wp_changes_query\` can undo
+it. Say which server you are using and why, so nobody has to guess which tool
+made the edit.
+
 **Sign what you write.** Every plugin and theme produced by the scaffold tools
 (\`rolepod_wp_scaffold_plugin\`, \`rolepod_wp_scaffold_theme\`,
 \`rolepod_wp_cpt_scaffold\`, \`rolepod_wp_scaffold_pattern\`) and by

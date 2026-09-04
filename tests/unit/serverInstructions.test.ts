@@ -3,9 +3,19 @@ import { describe, expect, it } from "vitest";
 import { SERVER_INSTRUCTIONS } from "../../src/serverInstructions.js";
 import { createServer } from "../../src/server.js";
 
-/** Every `rolepod_wp_*` name the instructions mention. */
+/**
+ * Every `rolepod_wp_*` name the instructions mention.
+ *
+ * A name written with a trailing `*` — `rolepod_wp_elementor_*` — names a
+ * family of tools, not one that must exist. Those are dropped here rather than
+ * filtered later, so the gate keeps failing on a genuine typo.
+ */
 const CITED_TOOLS = [
-  ...new Set(SERVER_INSTRUCTIONS.match(/rolepod_wp_[a-z_]+/g) ?? []),
+  ...new Set(
+    (SERVER_INSTRUCTIONS.match(/rolepod_wp_[a-z_]+\*?/g) ?? [])
+      .filter((m) => !m.endsWith("*"))
+      .map((m) => m),
+  ),
 ];
 
 /** Every `wp-*` skill name cited in the routing table. */
