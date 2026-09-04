@@ -8,6 +8,10 @@ import {
 } from "../../schema/tools.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  provenancePhpHeader,
+  withProvenanceSuffix,
+} from "../../lib/provenance.js";
 
 export const wpCptScaffoldToolDef = {
   name: "rolepod_wp_cpt_scaffold",
@@ -39,8 +43,9 @@ function buildPluginPhp(input: CptScaffoldInput): string {
   return `<?php
 /**
  * Plugin Name: Rolepod CPT — ${input.plural.replace(/\*\//g, "* /")}
- * Description: Registers the "${input.slug.replace(/\*\//g, "* /")}" custom post type. Scaffolded by rolepod-wplab.
+ * Description: ${withProvenanceSuffix(`Registers the "${input.slug.replace(/\*\//g, "* /")}" custom post type.`)}
  * Version: 1.0.0
+${provenancePhpHeader()}
  */
 
 if (!defined('ABSPATH')) { exit; }

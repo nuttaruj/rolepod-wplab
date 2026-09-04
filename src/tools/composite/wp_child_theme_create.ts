@@ -4,6 +4,10 @@ import { writeManagedFile } from "../../companion/managedWrite.js";
 import { escapeBlockComment } from "../../lib/phpEmbed.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  provenanceCssHeader,
+  withProvenanceSuffix,
+} from "../../lib/provenance.js";
 
 export const ChildThemeCreateInputSchema = z.object({
   target_id: z.string(),
@@ -83,11 +87,12 @@ export async function wpChildThemeCreateHandler(
   const styleCss = `/*
 Theme Name: ${childName}
 Template: ${input.parent_slug}
-Description: ${childDescription}
+Description: ${withProvenanceSuffix(childDescription)}
 Author: rolepod-wplab
 Version: ${parentVersion}-child
 Tags: rolepod
 Text Domain: ${input.child_slug}
+${provenanceCssHeader()}
 */
 `;
 

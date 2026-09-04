@@ -9,6 +9,10 @@ import {
   type ScaffoldThemeOutput,
 } from "../../schema/tools.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  provenanceCssHeader,
+  withProvenanceSuffix,
+} from "../../lib/provenance.js";
 
 export const wpScaffoldThemeToolDef = {
   name: "rolepod_wp_scaffold_theme",
@@ -36,7 +40,9 @@ export async function wpScaffoldThemeHandler(
     });
   // Name/description land in a CSS `/* */` header + PHP docblock — neutralize `*/`.
   const safeName = escapeBlockComment(input.name);
-  const safeDesc = escapeBlockComment(input.description ?? input.name);
+  const safeDesc = escapeBlockComment(
+    withProvenanceSuffix(input.description ?? input.name),
+  );
 
   const styleCss = `/*
 Theme Name: ${safeName}
@@ -46,6 +52,7 @@ Version: 0.1.0
 Requires at least: 6.0
 Requires PHP: 7.4
 Text Domain: ${input.slug}
+${provenanceCssHeader()}
 */
 `;
   await emit(`${dir}/style.css`, styleCss);

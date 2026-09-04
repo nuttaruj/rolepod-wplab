@@ -9,6 +9,10 @@ import {
 } from "../../schema/tools.js";
 import { WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  provenancePhpHeader,
+  withProvenanceSuffix,
+} from "../../lib/provenance.js";
 
 export const wpScaffoldPatternToolDef = {
   name: "rolepod_wp_scaffold_pattern",
@@ -45,8 +49,11 @@ export async function wpScaffoldPatternHandler(
     ` * Slug: ${input.pattern_slug}`,
     ` * Categories: ${input.categories.join(", ")}`,
     ...(input.description
-      ? [` * Description: ${escapeHeader(input.description)}`]
+      ? [
+          ` * Description: ${escapeHeader(withProvenanceSuffix(input.description))}`,
+        ]
       : []),
+    ...provenancePhpHeader().split("\n"),
     " * Block Types: core/post-content",
     " */",
     "?>",

@@ -9,6 +9,10 @@ import {
   type ScaffoldPluginOutput,
 } from "../../schema/tools.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
+import {
+  provenancePhpHeader,
+  withProvenanceSuffix,
+} from "../../lib/provenance.js";
 
 export const wpScaffoldPluginToolDef = {
   name: "rolepod_wp_scaffold_plugin",
@@ -37,7 +41,9 @@ export async function wpScaffoldPluginHandler(
   // Name/description/author land in the PHP plugin-header docblock — neutralize
   // `*/` so a crafted value can't break out and inject code.
   const safeName = escapeBlockComment(input.name);
-  const safeDesc = escapeBlockComment(input.description ?? input.name);
+  const safeDesc = escapeBlockComment(
+    withProvenanceSuffix(input.description ?? input.name),
+  );
   const safeAuthor = escapeBlockComment(input.author);
 
   // Main plugin file
@@ -47,6 +53,7 @@ export async function wpScaffoldPluginHandler(
  * Description: ${safeDesc}
  * Version: 0.1.0
  * Author: ${safeAuthor}
+${provenancePhpHeader()}
  * Requires at least: 6.0
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
