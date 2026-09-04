@@ -2,6 +2,36 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.1] — 2026-09-04 — Artifact-safety wording that is true of both uiproof versions
+
+`@rolepod/uiproof@0.18.0` shipped HAR redaction, so "any HAR, trace or video
+contains the auth cookie" stopped being accurate — and it was never the whole
+story anyway. Overstating a risk is safer than overstating a protection, but it
+is still wrong, and a rule people learn is wrong gets ignored wholesale.
+
+### Changed
+
+- Tool description and `SERVER_INSTRUCTIONS` now separate the artifacts: a
+  Playwright trace carries the auth cookie outright; a HAR carries it on uiproof
+  ≤ 0.17.1 and carries admin page bodies either way; video shows whatever was on
+  screen. Everything recorded during an admin session is at least an internal
+  artifact — check before sharing rather than assuming it was scrubbed.
+- `docs/RECIPES.md` recipe 24 gets a per-artifact table with the same split,
+  including that uiproof's redaction is best-effort and logs
+  `har redaction failed — treat network.har as a credential` when it does not
+  work.
+- Recipe 24 documents `browser_open { storage_state }` (uiproof 0.18.0+) and is
+  explicit that no tool writes that state file yet, so an OTL is still minted
+  per browser session. Do not plan around mint-once-reuse-forever until a save
+  step exists.
+
+### Fixed
+
+- `npm run format:check` had been failing on every commit since 2026-08-22 —
+  eight consecutive red CI runs, invisible because the release workflow is a
+  separate job that stayed green and kept publishing. Five files reformatted,
+  whitespace only; four of them predate this work.
+
 ## [3.2.0] — 2026-09-04 — Read the recorded fatal before touching anything, and route partial fatals to wp-recovery
 
 Written from a real failure. A site's REST API had been returning 500 on every

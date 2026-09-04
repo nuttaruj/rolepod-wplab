@@ -409,7 +409,12 @@ Notes:
 - The token is single-use and expires in 5 minutes. That bounds the handoff,
   not the session: once the cookie is set it lasts as long as the browser
   context. Re-mint whenever the context is recreated (`browser_close`, crash,
-  a new run).
+  a new run) — that is normal, not a failure to report.
+- uiproof 0.18.0+ accepts `browser_open { storage_state }` (an absolute path to
+  a Playwright storageState JSON), so a saved session can be reused across
+  runs. There is no tool that writes that file yet, so in practice you still
+  mint an OTL per browser session. Do not plan around mint-once-reuse-forever
+  until a save step exists.
 - Works on a guarded site. `/admin/one-time-login` checks `manage_options` and
   that companion endpoints are on — it does not require AI Full Control.
 - **Asking a person to click the link is the last resort**, for when you have
@@ -417,7 +422,15 @@ Notes:
 - First uiproof launch on a machine can take several minutes (large npm
   install). A silent handoff is usually a cold start, not a failure.
 
-**Security.** Whoever opens the URL holds a full admin session. Any recording
-of that browser — HAR, Playwright trace, video — captures the auth cookie
-along with it. Treat those artifacts as credentials: do not attach them to an
-issue, a PR, or a shared bucket.
+**Security.** Whoever opens the URL holds a full admin session. What each
+artifact of that session carries differs, so check before sharing any of them:
+
+| Artifact | Carries the session? | Also contains |
+| --- | --- | --- |
+| `trace.zip` | **Yes** — nothing is redacted | raw network + DOM snapshots. Treat it as the session itself. |
+| `network.har` | uiproof ≤ 0.17.1: **yes**. 0.18.0+: redacted best-effort — `Cookie`, `Set-Cookie`, `Authorization`, `Proxy-Authorization` values replaced and `cookies[]` emptied at context close | still mode `full`: every request URL and query string (including the burned one-time-link token) plus embedded response bodies — wp-admin markup, nonces, whatever was on screen. Not a credential on 0.18.0+, still an internal artifact. |
+| video / screenshots | No | whatever admin content was on screen. |
+
+Redaction is best-effort: if it fails, uiproof logs `har redaction failed —
+treat network.har as a credential` and leaves the file alone. Verify before
+sharing rather than assuming.
