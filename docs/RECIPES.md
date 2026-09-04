@@ -391,8 +391,18 @@ Lead:
     → still signed in; the auth cookie lives on the browser context
 ```
 
-Works with any browser automation, not just uiproof — a Chrome-extension MCP,
-Playwright, Puppeteer. The URL is the whole handoff; nothing else is passed.
+The ladder, in order:
+
+1. **rolepod-uiproof** `browser_open` — the intended pair, nothing else needed.
+2. **Any other browser automation on the machine** — a Chrome-extension MCP, a
+   Playwright or Puppeteer MCP. The link is a plain URL and the whole handoff,
+   so not having uiproof blocks nothing.
+3. **A human**, last, only when the machine has no browser automation at all.
+
+Say which rung you are on. On 1 or 2, tell the user you are handling the admin
+step yourself and they do not need to log in — otherwise they wait for a prompt
+that never comes. On 3, say that no browser automation is available here, so
+this one step needs them.
 
 Notes:
 

@@ -52,17 +52,33 @@ Read the skill before a multi-step change. \`rolepod_wp_skill_get\` returns it.
 
 ## Rules that hold everywhere
 
-**Never ask a human to log in for you.** When a task needs a wp-admin screen —
-auditing the admin UI, reading a settings page, reproducing an admin-only bug —
-call \`rolepod_wp_admin_one_time_link\` and open the URL it returns with whatever
-browser automation you have (rolepod-uiproof, a Chrome-extension MCP,
-Playwright). WordPress sets the auth cookie on that browser context, so every
-later navigation in the same session stays signed in as the admin. The token is
-single-use and expires in 5 minutes — re-mint if the context is recreated.
-Handing the link to a person to click is the LAST resort, for when you have no
-browser automation at all. Two things to say out loud when you use it: whoever
-opens the URL holds a full admin session, and any HAR, trace or video recorded
-during it contains the auth cookie, so those artifacts are credentials.
+**Never ask a human to log in for you — walk down this ladder.** When a task
+needs a wp-admin screen (auditing the admin UI, reading a settings page,
+reproducing an admin-only bug), call \`rolepod_wp_admin_one_time_link\` and open
+the URL it returns:
+
+1. **rolepod-uiproof**, if the user has it — \`browser_open\` with the URL. This
+   is the intended pair and needs nothing else.
+2. **Any other browser automation on this machine** — a Chrome-extension MCP, a
+   Playwright or Puppeteer MCP, anything at all that can open a URL. Nothing
+   about the link is uiproof-specific; it is a plain URL, so a missing uiproof
+   blocks nothing. Look at the tools you actually have before giving up.
+3. **A human, last.** Only when this machine has no browser automation at all.
+
+**Say which rung you are on.** On 1 or 2, tell the user you are handling the
+admin step yourself and they do not need to log in — otherwise they sit waiting
+for a prompt that is never coming, which is exactly the failure this rule
+exists to stop. On 3, say plainly that no browser automation is available here,
+so this one step needs them, and hand over the link with what it opens.
+
+WordPress sets the auth cookie on whichever browser context opened the URL, so
+every later navigation in that same session stays signed in as the admin. The
+token is single-use and expires in 5 minutes — re-mint if the context is
+recreated (a close, a crash, a new run); that is not a failure to report.
+
+Two things to say out loud whenever you use it: whoever opens the URL holds a
+full admin session, and any HAR, trace or video recorded during it contains the
+auth cookie, so those artifacts are credentials.
 
 **A guarded site is the owner's choice — asking for Full Access is a protocol,
 not a sentence.** When a task hits \`FULL_ACCESS_REQUIRED\` (or needs

@@ -11,8 +11,9 @@ export const wpAdminOneTimeLinkToolDef = {
   name: "rolepod_wp_admin_one_time_link",
   description:
     "Mint a one-time wp-admin login URL on a connected target. The companion stores a 5-minute single-use transient; the URL form is `<siteurl>/?rolepod_wp_otl=<token>`. Opening it authenticates as the issuing admin, with no password anywhere. " +
-    "OPEN IT YOURSELF. Hand the URL to whatever browser automation you have — rolepod-uiproof `browser_open`, a Chrome-extension MCP, Playwright, Puppeteer — and keep working. WordPress sets the auth cookie on that browser context, so every later navigation in the same session stays signed in: you can audit wp-admin, read a settings screen, or reproduce an admin-only bug without the user logging in at all. Re-mint if the browser context is recreated; the token is single-use and dies after 5 minutes. " +
-    "Asking a person to click the link is the LAST resort — only when no browser automation is available to you. " +
+    "OPEN IT YOURSELF, in this order: (1) rolepod-uiproof `browser_open` if the user has it — the intended pair; (2) otherwise ANY browser automation on this machine — a Chrome-extension MCP, a Playwright or Puppeteer MCP, anything that opens a URL, since the link is a plain URL and nothing about it is uiproof-specific; (3) a human, last, only when this machine has no browser automation at all. " +
+    "Say which rung you are on. On (1) or (2), tell the user you are handling the admin step yourself and they do not need to log in, or they will sit waiting for a prompt that never comes. On (3), say that no browser automation is available here so this one step needs them. " +
+    "WordPress sets the auth cookie on whichever browser context opened the URL, so every later navigation in the same session stays signed in: audit wp-admin, read a settings screen, reproduce an admin-only bug, all without a login. Re-mint if the context is recreated — the token is single-use and dies after 5 minutes; that is not a failure to report. " +
     "Security: whoever opens the URL holds a full admin session. Anything that records that browser (HAR, Playwright trace, video) captures the auth cookie with it, so treat those artifacts as credentials and do not share them.",
   inputSchema: AdminOneTimeLinkInputSchema,
 };

@@ -2,6 +2,30 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] — 2026-09-04 — Make the browser ladder explicit, and say which rung you are on
+
+3.1.0 said "hand the URL to whatever browser automation you have" and listed
+options inline. That reads as a single suggestion, and it leaves two gaps: a
+model with no uiproof can take it as "this needs uiproof", and a model that
+does automate the step never tells the user — so the user sits waiting for a
+login prompt that is never coming, which is the exact failure 3.1.0 set out to
+remove.
+
+### Changed
+
+- The tool description and `SERVER_INSTRUCTIONS` now give an ordered ladder:
+  (1) rolepod-uiproof `browser_open`, (2) **any** other browser automation on
+  the machine — Chrome-extension MCP, Playwright, Puppeteer — since the link is
+  a plain URL and nothing about it is uiproof-specific, so a missing uiproof
+  blocks nothing, (3) a human, last, only when the machine has no browser
+  automation at all.
+- Both surfaces now require saying which rung is in use: on 1 or 2, tell the
+  user the admin step is handled and no login is needed; on 3, say that no
+  browser automation is available here so this step needs them.
+- Re-minting after a browser context is recreated is called out as normal, not
+  a failure to report.
+- README bullet and `docs/RECIPES.md` recipe 24 carry the same ladder.
+
 ## [3.1.0] — 2026-09-04 — Open the admin link yourself; a human clicking it is the last resort
 
 `rolepod_wp_admin_one_time_link` has minted browser-openable admin URLs since
