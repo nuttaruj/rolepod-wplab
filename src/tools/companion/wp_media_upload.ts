@@ -97,7 +97,11 @@ async function bareRestUpload(
   if (input.title) patch["title"] = input.title;
   if (input.caption) patch["caption"] = input.caption;
   if (Object.keys(patch).length > 0 && id > 0) {
-    await target.rest({ method: "POST", path: `/wp/v2/media/${id}`, body: patch });
+    await target.rest({
+      method: "POST",
+      path: `/wp/v2/media/${id}`,
+      body: patch,
+    });
   }
 
   return {
@@ -152,7 +156,8 @@ export async function wpMediaUploadHandler(
       result["featured_set"] =
         res.status >= 200 && res.status < 300 ? input.attach_to_post : false;
       if (res.status < 200 || res.status >= 300) {
-        result["featured_error"] = `setting featured_media returned HTTP ${res.status}`;
+        result["featured_error"] =
+          `setting featured_media returned HTTP ${res.status}`;
       }
     }
   }

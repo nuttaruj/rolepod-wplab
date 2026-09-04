@@ -55,7 +55,9 @@ describe("SERVER_INSTRUCTIONS", () => {
     // `wp-cli` etc. are not skills; only check names that look like skill dirs.
     const unknown = CITED_SKILLS.filter(
       (name) => !onDisk.has(name) && name.startsWith("wp-") && onDisk.size > 0,
-    ).filter((name) => !["wp-admin", "wp-config", "wp-cli", "wp-json"].includes(name));
+    ).filter(
+      (name) => !["wp-admin", "wp-config", "wp-cli", "wp-json"].includes(name),
+    );
     expect(unknown).toEqual([]);
   });
 

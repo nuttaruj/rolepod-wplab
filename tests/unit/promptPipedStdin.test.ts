@@ -10,9 +10,9 @@ import { Readable } from "node:stream";
  */
 
 function pipedStdin(data: string): Readable & { isTTY: boolean } {
-  const stream = Readable.from([
-    Buffer.from(data, "utf8"),
-  ]) as Readable & { isTTY: boolean };
+  const stream = Readable.from([Buffer.from(data, "utf8")]) as Readable & {
+    isTTY: boolean;
+  };
   stream.isTTY = false;
   return stream;
 }
@@ -55,7 +55,9 @@ describe("prompts over piped (non-TTY) stdin", () => {
   });
 
   it("feeds askSecret from the same stream after an ask", async () => {
-    const { ask, askSecret } = await loadPrompt("walnutztudio\nabcd EFGH 1234\n");
+    const { ask, askSecret } = await loadPrompt(
+      "walnutztudio\nabcd EFGH 1234\n",
+    );
     expect(await ask("Username: ")).toBe("walnutztudio");
     expect(await askSecret("Application Password: ")).toBe("abcd EFGH 1234");
   });

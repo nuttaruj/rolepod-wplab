@@ -12,9 +12,8 @@ vi.mock("../../src/companion/Bridge.js", () => ({
   }),
 }));
 
-const { wpSiteBackupHandler } = await import(
-  "../../src/tools/companion/wp_site_backup.js"
-);
+const { wpSiteBackupHandler } =
+  await import("../../src/tools/companion/wp_site_backup.js");
 import type { TargetRegistry } from "../../src/target/TargetRegistry.js";
 
 const target = {
@@ -101,7 +100,12 @@ describe("wp_site_backup — download/import chunked transfer", () => {
         received = Buffer.concat([received, Buffer.from(chunk, "base64")]);
         if (final) {
           finalFilename = filename ?? "";
-          return { ok: true, done: true, id: "imported-1", bytes: received.length };
+          return {
+            ok: true,
+            done: true,
+            id: "imported-1",
+            bytes: received.length,
+          };
         }
         return { ok: true, done: false, received: received.length };
       },
@@ -116,7 +120,12 @@ describe("wp_site_backup — download/import chunked transfer", () => {
 
     expect(received.equals(srcBytes)).toBe(true);
     expect(finalFilename).toBe("to-import.zip");
-    expect(out).toMatchObject({ action: "import", ok: true, done: true, id: "imported-1" });
+    expect(out).toMatchObject({
+      action: "import",
+      ok: true,
+      done: true,
+      id: "imported-1",
+    });
   });
 
   it("download requires dest_path", async () => {

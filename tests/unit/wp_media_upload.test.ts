@@ -9,9 +9,8 @@ vi.mock("../../src/companion/Bridge.js", () => ({
   }),
 }));
 
-const { wpMediaUploadHandler } = await import(
-  "../../src/tools/companion/wp_media_upload.js"
-);
+const { wpMediaUploadHandler } =
+  await import("../../src/tools/companion/wp_media_upload.js");
 import type { TargetRegistry } from "../../src/target/TargetRegistry.js";
 
 const rest = vi.fn();
@@ -83,9 +82,7 @@ describe("wp_media_upload — companion vs bare-REST transport", () => {
       alt: "dog",
     });
 
-    const media = rest.mock.calls.find(
-      (c) => c[0].path === "/wp/v2/media",
-    )![0];
+    const media = rest.mock.calls.find((c) => c[0].path === "/wp/v2/media")![0];
     expect(media.method).toBe("POST");
     expect(media.body).toBeInstanceOf(Uint8Array);
     expect(media.headers["Content-Type"]).toBe("image/png");
