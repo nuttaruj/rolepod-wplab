@@ -2,6 +2,28 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.2] — 2026-09-04 — uiproof 0.20.0 fixes the UA; document the cheap way to get refs
+
+`@rolepod/uiproof@0.20.0` is on npm and presents a desktop Chrome UA in headless
+mode, so 3.4.1's "pass a real `user_agent`" instruction is no longer the first
+thing to do — but the symptom is still worth recognising, because a WAF that
+reads `Sec-CH-UA` client hints is not fixed by a UA override.
+
+### Changed
+
+- Recipe 24 leads with the symptom rather than the workaround: an admin POST
+  that 403s while every GET succeeds is a WAF rule, not an auth failure. The
+  explicit `user_agent` stays as the answer for uiproof ≤ 0.19.1 and as the
+  isolation step (alongside `headless: false`) when a host still refuses.
+
+### Added
+
+- Recipe 24 documents `browser_find` and `browser_wait_for { ref_exists }`
+  (uiproof 0.20.0+) as the way to obtain refs, and says why: a wp-admin
+  accessibility tree costs roughly 10k tokens per `browser_snapshot`, and this
+  recipe points at exactly those screens. Measured while driving a plugin
+  install through the flow — three snapshots to click two buttons.
+
 ## [3.4.1] — 2026-09-04 — Warn that a headless user-agent can 403 admin writes
 
 Found while running recipe 24 for real: the one-time link opened, wp-admin

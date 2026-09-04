@@ -428,25 +428,23 @@ Notes:
   that companion endpoints are on — it does not require AI Full Control.
 - **Asking a person to click the link is the last resort**, for when you have
   no browser automation at all.
-- **Pass a real desktop `user_agent` on uiproof 0.19.1 and below.** The default
-  headless UA identifies as `HeadlessChrome/…`, and some hosts' WAFs 403 admin
-  POSTs from it while letting every GET through — so the page loads, you are
-  signed in, and only the first write fails. That asymmetry reads like an
-  authentication problem and is not one. Verified by A/B on a live Plesk host:
-  identical session and payload, only the UA changed, 403 → success.
-
-  ```
-  browser_open {
-    url: <one-time-link>,
-    user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 \
-                 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"
-  }
-  ```
-
-  uiproof 0.20.0 makes this the default. Even then, `Sec-CH-UA` client-hint
-  brands still report HeadlessChrome — Playwright's UA override does not rewrite
-  them — so if a host still 403s a POST after that, check whether its WAF
-  inspects client hints rather than the UA header.
+- **Getting refs: use `browser_find`, not `browser_snapshot`.** A wp-admin
+  accessibility tree is roughly 10k tokens per snapshot — the left menu alone is
+  ~300 nodes — so snapshotting once per click is the expensive way to drive
+  these screens. `browser_find { query, role?, limit? }` returns ranked
+  `{ref, role, name, value, exact}`, and `browser_wait_for { kind: "ref_exists",
+  query }` now returns `matches` too. A ref from either is valid for the next
+  `browser_click` with no snapshot in between (uiproof 0.20.0+).
+- **If an admin POST 403s while every GET succeeds, suspect the user-agent.**
+  That asymmetry — pages load, you are signed in, only the first write fails —
+  reads like an authentication problem and is not one; it is a WAF rule. uiproof
+  0.20.0+ presents a desktop Chrome UA in headless mode, so this should not
+  happen any more. If a host still 403s, its WAF may be reading `Sec-CH-UA`
+  client hints, which the UA override does not rewrite: pass a full explicit
+  `user_agent` AND try `headless: false` to isolate which one it keys on. On
+  uiproof 0.19.1 and below, pass a desktop `user_agent` from the start — this
+  was verified by A/B on a live Plesk host, identical session and payload, only
+  the UA changed, 403 → success.
 - A first uiproof launch used to look like a hang, and the cause was not the
   download: `npx` runs `npm audit` on a fresh install, and that one request took
   190-320s while fetching and extracting the whole tree took 6-9s. uiproof
