@@ -59,6 +59,7 @@ Manifest schema (Extension Protocol v1): `src/lib/rolepodEvidence.ts`.
 - **Scaffold blocks, plugins, themes, patterns.** `scaffold_block`, `scaffold_plugin`, `scaffold_theme`, `scaffold_pattern` — register-block-type-ready files into existing themes/plugins.
 - **Audit + migrate across many sites.** `audit_security`, `audit_many` (consolidated report for N sites), `migrate_dryrun` + `migrate_data` (plugin version sync dev→staging), `clone` (full db + wp-content + URL rewrite).
 - **Diagnose + back up before risky ops.** `diagnose` (plugin conflicts / slow queries / large autoloads / php errors), `backup_create` + `backup_restore`, `cache_tool`, `cron_tool`, `mail_test`.
+- **Audit wp-admin without anyone logging in.** `rolepod_wp_admin_one_time_link(target_id, destination)` mints a 5-minute single-use URL; hand it straight to your browser automation (rolepod-uiproof `browser_open`, a Chrome MCP, Playwright) and the whole browser session stays signed in as the admin. Asking a person to click it is the last resort. Whoever opens it holds a full admin session, and a HAR or trace recorded during it contains the auth cookie — treat those as credentials.
 - **Safe `execute-php` (companion only).** AST screen on Node side AND PHP side, production-block unconditional, append-only audit log.
 
 ## The 15 skills

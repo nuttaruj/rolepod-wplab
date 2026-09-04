@@ -2,6 +2,52 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] — 2026-09-04 — Open the admin link yourself; a human clicking it is the last resort
+
+`rolepod_wp_admin_one_time_link` has minted browser-openable admin URLs since
+1.8.0, and its description led with "the AI surfaces the URL to the user — they
+click once". Reading exactly that, this assistant still stopped a live
+investigation twice to ask a human to log in. The capability was never the
+problem; the instruction was.
+
+Verified end to end against a live site before writing any of this: minted a
+link, opened it with rolepod-uiproof `browser_open`, landed in wp-admin
+authenticated, and stayed authenticated across a later `browser_navigate` — no
+password, no click.
+
+### Changed
+
+- `rolepod_wp_admin_one_time_link` description now leads with the automation
+  path: hand the URL to whatever browser automation you have (rolepod-uiproof,
+  a Chrome-extension MCP, Playwright, Puppeteer), and note that the auth cookie
+  persists on that browser context for the rest of the session. Asking a person
+  to click is named as the LAST resort. Reaches every MCP client, not just the
+  ones that read skills.
+- `SERVER_INSTRUCTIONS` gains **"Never ask a human to log in for you"** under
+  Rules that hold everywhere, with the 5-minute single-use bound, the re-mint
+  rule when a browser context is recreated, and the note that this works on a
+  guarded site (`/admin/one-time-login` needs `manage_options`, not Full
+  Access).
+
+### Added
+
+- README bullet documenting the tool, which also retires it from
+  `UNDOCUMENTED_TOOLS`.
+- `docs/RECIPES.md` recipe 24 — auditing a wp-admin screen with no human login,
+  including the cold-start caveat that a first uiproof launch can take minutes
+  and looks like a hang.
+
+### Security
+
+- Every surface above now states that whoever opens the URL holds a full admin
+  session, and that a HAR, Playwright trace or video recorded during it captures
+  the auth cookie. Those artifacts are credentials and must not be shared.
+
+### Internal
+
+- `serverInstructions.test.ts` treats `wp-admin` as a WordPress path rather than
+  a missing skill, alongside the existing `wp-config` / `wp-cli` / `wp-json`.
+
 ## [3.0.2] — 2026-08-22 — Full Access is requested with a warning and a backup, never as a bare instruction
 
 ### Changed

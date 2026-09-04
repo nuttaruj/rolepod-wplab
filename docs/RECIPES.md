@@ -368,3 +368,46 @@ $ rolepod-wplab init
   Claude Code:
     claude mcp add rolepod-wplab -- rolepod-wplab serve
 ```
+
+## 24 — Audit a wp-admin screen with no human login (v1.2)
+
+Anything behind wp-admin — the plugin list, a settings screen, an admin-only
+bug — is reachable without asking anyone for a password or a click.
+
+```
+User: "check whether the theme options screen actually renders"
+
+Lead:
+  rolepod_wp_admin_one_time_link {
+    target_id,
+    destination: "https://site.com/wp-admin/themes.php?page=theme_options"
+  }
+    → { url: "https://site.com/?rolepod_wp_otl=<token>", expiresInSeconds: 300 }
+
+  browser_open { url: <that url> }            # rolepod-uiproof
+    → lands in wp-admin, signed in as the issuing admin
+
+  browser_navigate / browser_screenshot / audit_a11y / measure_cwv ...
+    → still signed in; the auth cookie lives on the browser context
+```
+
+Works with any browser automation, not just uiproof — a Chrome-extension MCP,
+Playwright, Puppeteer. The URL is the whole handoff; nothing else is passed.
+
+Notes:
+
+- The token is single-use and expires in 5 minutes. That bounds the handoff,
+  not the session: once the cookie is set it lasts as long as the browser
+  context. Re-mint whenever the context is recreated (`browser_close`, crash,
+  a new run).
+- Works on a guarded site. `/admin/one-time-login` checks `manage_options` and
+  that companion endpoints are on — it does not require AI Full Control.
+- **Asking a person to click the link is the last resort**, for when you have
+  no browser automation at all.
+- First uiproof launch on a machine can take several minutes (large npm
+  install). A silent handoff is usually a cold start, not a failure.
+
+**Security.** Whoever opens the URL holds a full admin session. Any recording
+of that browser — HAR, Playwright trace, video — captures the auth cookie
+along with it. Treat those artifacts as credentials: do not attach them to an
+issue, a PR, or a shared bucket.

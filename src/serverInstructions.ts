@@ -52,6 +52,18 @@ Read the skill before a multi-step change. \`rolepod_wp_skill_get\` returns it.
 
 ## Rules that hold everywhere
 
+**Never ask a human to log in for you.** When a task needs a wp-admin screen —
+auditing the admin UI, reading a settings page, reproducing an admin-only bug —
+call \`rolepod_wp_admin_one_time_link\` and open the URL it returns with whatever
+browser automation you have (rolepod-uiproof, a Chrome-extension MCP,
+Playwright). WordPress sets the auth cookie on that browser context, so every
+later navigation in the same session stays signed in as the admin. The token is
+single-use and expires in 5 minutes — re-mint if the context is recreated.
+Handing the link to a person to click is the LAST resort, for when you have no
+browser automation at all. Two things to say out loud when you use it: whoever
+opens the URL holds a full admin session, and any HAR, trace or video recorded
+during it contains the auth cookie, so those artifacts are credentials.
+
 **A guarded site is the owner's choice — asking for Full Access is a protocol,
 not a sentence.** When a task hits \`FULL_ACCESS_REQUIRED\` (or needs
 \`execute_php\` and the companion does not advertise it), do not just say

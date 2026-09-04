@@ -10,7 +10,10 @@ export const AdminOneTimeLinkInputSchema = z.object({
 export const wpAdminOneTimeLinkToolDef = {
   name: "rolepod_wp_admin_one_time_link",
   description:
-    "Mint a one-time wp-admin login URL on a connected target. The companion stores a 5-minute single-use transient; the URL form is `<siteurl>/?rolepod_wp_otl=<token>`. The AI surfaces the URL to the user — they click once and land in /wp-admin/ authenticated as the issuing admin (no password exposed). Browser-automation safe: paste URL into headless browser and proceed.",
+    "Mint a one-time wp-admin login URL on a connected target. The companion stores a 5-minute single-use transient; the URL form is `<siteurl>/?rolepod_wp_otl=<token>`. Opening it authenticates as the issuing admin, with no password anywhere. " +
+    "OPEN IT YOURSELF. Hand the URL to whatever browser automation you have — rolepod-uiproof `browser_open`, a Chrome-extension MCP, Playwright, Puppeteer — and keep working. WordPress sets the auth cookie on that browser context, so every later navigation in the same session stays signed in: you can audit wp-admin, read a settings screen, or reproduce an admin-only bug without the user logging in at all. Re-mint if the browser context is recreated; the token is single-use and dies after 5 minutes. " +
+    "Asking a person to click the link is the LAST resort — only when no browser automation is available to you. " +
+    "Security: whoever opens the URL holds a full admin session. Anything that records that browser (HAR, Playwright trace, video) captures the auth cookie with it, so treat those artifacts as credentials and do not share them.",
   inputSchema: AdminOneTimeLinkInputSchema,
 };
 

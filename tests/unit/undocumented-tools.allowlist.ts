@@ -7,7 +7,6 @@
  * the gate for a tool you just wrote.
  */
 export const UNDOCUMENTED_TOOLS: readonly string[] = [
-  "rolepod_wp_admin_one_time_link",
   "rolepod_wp_conventions_set",
   "rolepod_wp_custom_init",
   "rolepod_wp_custom_task_list",
