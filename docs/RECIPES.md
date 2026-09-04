@@ -404,33 +404,45 @@ step yourself and they do not need to log in — otherwise they wait for a promp
 that never comes. On 3, say that no browser automation is available here, so
 this one step needs them.
 
+### Mint once, reuse across runs (uiproof 0.19.0+)
+
+An OTL is single-use and expires in 5 minutes, so re-minting per browser
+session gets old. Save the session instead:
+
+```
+  browser_save_state { session_id }
+    → { path: "<artifact run dir>/storage-state.json", cookies: N, origins: N }
+
+  # later run, or after browser_close — no new OTL
+  browser_open { url: "https://site.com/wp-admin/", storage_state: <path> }
+```
+
+On uiproof below 0.19.0 there is no save step, so mint an OTL per session and
+treat re-minting as normal rather than a failure to report.
+
 Notes:
 
-- The token is single-use and expires in 5 minutes. That bounds the handoff,
-  not the session: once the cookie is set it lasts as long as the browser
-  context. Re-mint whenever the context is recreated (`browser_close`, crash,
-  a new run) — that is normal, not a failure to report.
-- uiproof 0.18.0+ accepts `browser_open { storage_state }` (an absolute path to
-  a Playwright storageState JSON), so a saved session can be reused across
-  runs. There is no tool that writes that file yet, so in practice you still
-  mint an OTL per browser session. Do not plan around mint-once-reuse-forever
-  until a save step exists.
+- The 5-minute TTL bounds the handoff, not the session. Once the cookie is set
+  it lasts as long as the browser context.
 - Works on a guarded site. `/admin/one-time-login` checks `manage_options` and
   that companion endpoints are on — it does not require AI Full Control.
 - **Asking a person to click the link is the last resort**, for when you have
   no browser automation at all.
-- First uiproof launch on a machine can take several minutes (large npm
-  install). A silent handoff is usually a cold start, not a failure.
+- A first uiproof launch on a machine installs the package and can look like a
+  hang. 0.19.0 dropped the webdriverio tree, so this is far smaller than it was
+  on 0.17.x — if a handoff goes quiet, wait before calling it broken.
 
-**Security.** Whoever opens the URL holds a full admin session. What each
-artifact of that session carries differs, so check before sharing any of them:
+**Security.** Whoever opens the URL holds a full admin session, and the
+artifacts differ in what they carry. Check before sharing any of them.
 
 | Artifact | Carries the session? | Also contains |
 | --- | --- | --- |
-| `trace.zip` | **Yes** — nothing is redacted | raw network + DOM snapshots. Treat it as the session itself. |
-| `network.har` | uiproof ≤ 0.17.1: **yes**. 0.18.0+: redacted best-effort — `Cookie`, `Set-Cookie`, `Authorization`, `Proxy-Authorization` values replaced and `cookies[]` emptied at context close | still mode `full`: every request URL and query string (including the burned one-time-link token) plus embedded response bodies — wp-admin markup, nonces, whatever was on screen. Not a credential on 0.18.0+, still an internal artifact. |
+| `storage-state.json` | **It is the session.** | cookies + localStorage. Never commit it, attach it, or drop it in a shared drive; delete it when the work is done. |
+| `trace.zip` | 0.19.0+: headers and cookies scrubbed in `trace.network`. Below 0.19.0: **yes, raw** | DOM snapshots and screenshots either way — whatever the authenticated page rendered. |
+| `network.har` | 0.18.0+: scrubbed. Below that: **yes, raw** | mode `full`, so every request URL and query string (including the burned OTL token) plus embedded response bodies — wp-admin markup, nonces. |
 | video / screenshots | No | whatever admin content was on screen. |
 
-Redaction is best-effort: if it fails, uiproof logs `har redaction failed —
-treat network.har as a credential` and leaves the file alone. Verify before
-sharing rather than assuming.
+Scrubbing is best-effort: on failure uiproof logs a warning and leaves the file
+as it is. Verify before sharing rather than assuming. And nothing scrubs page
+bodies or DOM snapshots — those stay readable, so share these artifacts only
+with people cleared to see the admin pages they captured.

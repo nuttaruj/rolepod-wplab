@@ -2,6 +2,36 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] — 2026-09-04 — Mint the admin session once, reuse it across runs
+
+`@rolepod/uiproof@0.19.0` added `browser_save_state`, which turns the one-time
+login from a per-session cost into a one-off. 3.2.1 explicitly told readers not
+to plan around that because no save step existed; it exists now.
+
+### Added
+
+- `docs/RECIPES.md` recipe 24 documents the mint-once flow:
+  `rolepod_wp_admin_one_time_link` → `browser_open { url }` →
+  `browser_save_state` → later `browser_open { storage_state: <path> }` across
+  runs and after a close. Below uiproof 0.19.0 there is no save step, so
+  minting per session stays the guidance there.
+
+### Changed
+
+- Artifact safety is now stated per artifact and per version, because it is no
+  longer one rule: `storage-state.json` **is** the session; `trace.zip` has
+  cookies scrubbed from 0.19.0 and is raw below it; `network.har` is scrubbed
+  from 0.18.0 and raw below it; video and screenshots never carried cookies.
+  Nothing scrubs response bodies, DOM snapshots or screenshots, so every one of
+  these still shows whatever the authenticated page rendered — share only with
+  people cleared to see those admin pages.
+- The tool description and `SERVER_INSTRUCTIONS` carry the short form of the
+  same correction. 3.2.1 said a Playwright trace "carries the auth cookie
+  outright", which stopped being true one release later.
+- The cold-start caveat is softened rather than dropped: uiproof 0.19.0 removed
+  the webdriverio tree that caused it, so a quiet handoff is still worth waiting
+  out but is no longer the multi-minute install it was on 0.17.x.
+
 ## [3.2.1] — 2026-09-04 — Artifact-safety wording that is true of both uiproof versions
 
 `@rolepod/uiproof@0.18.0` shipped HAR redaction, so "any HAR, trace or video

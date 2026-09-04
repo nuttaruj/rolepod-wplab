@@ -108,10 +108,11 @@ recreated (a close, a crash, a new run); that is not a failure to report.
 
 Two things to say out loud whenever you use it. Whoever opens the URL holds a
 full admin session. And anything recorded during that session is at least an
-internal artifact: a Playwright trace carries the auth cookie outright, a HAR
-carries it on older uiproof and carries the admin page bodies either way, and
-video shows whatever was on screen. Check an artifact before sharing it; never
-attach one to a public issue or PR on the assumption it was scrubbed.
+internal artifact: recent uiproof scrubs cookies from HARs and traces on a
+best-effort basis, but nothing scrubs page bodies, DOM snapshots or
+screenshots, and a saved storage-state file IS the session. Check an artifact
+before sharing it; never attach one to a public issue or PR on the assumption
+it was scrubbed.
 
 **A guarded site is the owner's choice — asking for Full Access is a protocol,
 not a sentence.** When a task hits \`FULL_ACCESS_REQUIRED\` (or needs
