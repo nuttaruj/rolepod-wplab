@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const SetFrontPageInputSchema = z.object({
@@ -35,11 +35,7 @@ export async function wpSetFrontPageHandler(
   const input = SetFrontPageInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_set_front_page requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_set_front_page", input.target_id);
   }
   const bridge = await bridgeFor(target);
   const payload = `$prev_show = get_option('show_on_front');

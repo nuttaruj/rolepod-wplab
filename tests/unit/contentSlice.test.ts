@@ -55,3 +55,51 @@ describe("sliceContent", () => {
     expect(r.content).toBe("กก");
   });
 });
+
+import { capStreams } from "../../src/lib/contentSlice.js";
+
+describe("capStreams — the cap rolepod_wp_cli_run / rolepod_wp_db_query apply", () => {
+  it("leaves output under the cap untouched and reports it whole", () => {
+    const r = capStreams("hello", "warn", 1024);
+    expect(r.stdout).toBe("hello");
+    expect(r.stderr).toBe("warn");
+    expect(r.truncated).toBe(false);
+    expect(r.totalBytes).toBe(9);
+    expect(r.returnedBytes).toBe(9);
+  });
+
+  it("cuts stdout from the end and keeps the header row", () => {
+    const rows = [
+      "ID\tpost_title",
+      ...Array.from({ length: 500 }, (_, i) => `${i}\tPost ${i}`),
+    ];
+    const big = rows.join("\n");
+    const r = capStreams(big, "", 200);
+    expect(r.truncated).toBe(true);
+    expect(Buffer.byteLength(r.stdout)).toBeLessThanOrEqual(200);
+    expect(r.stdout.startsWith("ID\tpost_title\n")).toBe(true);
+    expect(r.totalBytes).toBe(Buffer.byteLength(big));
+    expect(r.returnedBytes).toBe(Buffer.byteLength(r.stdout));
+  });
+
+  it("caps stderr too — a PHP stack trace is output as well", () => {
+    const trace = "PHP Fatal error: " + "x".repeat(5000);
+    const r = capStreams("", trace, 100);
+    expect(r.truncated).toBe(true);
+    expect(Buffer.byteLength(r.stderr)).toBeLessThanOrEqual(100);
+    expect(r.totalBytes).toBe(Buffer.byteLength(trace));
+  });
+
+  it("applies the cap per stream, so totals are sums", () => {
+    const r = capStreams("a".repeat(150), "b".repeat(150), 100);
+    expect(r.returnedBytes).toBe(200);
+    expect(r.totalBytes).toBe(300);
+    expect(r.truncated).toBe(true);
+  });
+
+  it("never splits a multibyte character", () => {
+    const r = capStreams("ก".repeat(50), "", 7); // 3 bytes each
+    expect(r.stdout).toBe("กก");
+    expect(() => JSON.stringify(r.stdout)).not.toThrow();
+  });
+});

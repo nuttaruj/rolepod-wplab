@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpJsonArg } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const SiteScaffoldInputSchema = z.object({
@@ -57,11 +57,7 @@ export async function wpSiteScaffoldHandler(
   const input = SiteScaffoldInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_site_scaffold requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_site_scaffold", input.target_id);
   }
   const bridge = await bridgeFor(target);
 

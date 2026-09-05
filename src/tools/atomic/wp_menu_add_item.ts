@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpJsonArg, phpQuote } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const MenuAddItemInputSchema = z.object({
@@ -42,11 +42,7 @@ export async function wpMenuAddItemHandler(
   const input = MenuAddItemInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_menu_add_item requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_menu_add_item", input.target_id);
   }
   if (input.type === "post_type" && !input.object_id) {
     throw new WplabError(

@@ -7,12 +7,13 @@ import {
   type DbQueryOutput,
 } from "../../schema/tools.js";
 import { WplabError } from "../../util/errors.js";
+import { capStreams } from "../../lib/contentSlice.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const wpDbQueryToolDef = {
   name: "rolepod_wp_db_query",
   description:
-    "Run a SQL query via wp-cli `db query`, on every target kind. Default: a single SELECT/SHOW/DESCRIBE/EXPLAIN statement — stacked statements (`SELECT 1; DELETE …`) are rejected, since wp-cli runs every one of them. Set allow_write=true (+ confirm=true when the production guard is armed) to unlock INSERT/UPDATE/DELETE. RestTarget without companion v0.2 throws (no remote wp-cli access).",
+    "Run a SQL query via wp-cli `db query`, on every target kind. Default: a single SELECT/SHOW/DESCRIBE/EXPLAIN statement — stacked statements (`SELECT 1; DELETE …`) are rejected, since wp-cli runs every one of them. Set allow_write=true (+ confirm=true when the production guard is armed) to unlock INSERT/UPDATE/DELETE. RestTarget without companion v0.2 throws (no remote wp-cli access). Output is capped at max_bytes per stream (default 64 KB): when truncated=true, add LIMIT, select fewer columns, or raise max_bytes.",
   inputSchema: DbQueryInputSchema,
 };
 
@@ -56,10 +57,16 @@ export async function wpDbQueryHandler(
     );
   }
 
+  // Cap here, not in Target.wpCli() or guardTarget(): those also serve
+  // internal callers that JSON.parse the result.
+  const capped = capStreams(result.stdout, result.stderr, input.max_bytes);
   return DbQueryOutputSchema.parse({
-    stdout: result.stdout,
-    stderr: result.stderr,
+    stdout: capped.stdout,
+    stderr: capped.stderr,
     exit_code: result.exitCode,
     ...(warnings.length ? { warnings } : {}),
+    total_bytes: capped.totalBytes,
+    returned_bytes: capped.returnedBytes,
+    truncated: capped.truncated,
   });
 }

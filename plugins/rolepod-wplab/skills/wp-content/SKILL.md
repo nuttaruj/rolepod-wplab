@@ -43,9 +43,9 @@ Owns:
 - `rolepod_wp_user_list` (read) + `rolepod_wp_user_write` (create/update/delete).
 - `rolepod_wp_term` for taxonomy terms (category / tag / custom), `rolepod_wp_comment` for comment moderation, `rolepod_wp_cpt_scaffold` to register a custom post type.
 - `rolepod_wp_option_{get,set}` for the WP-allowed settings surface (siteurl, blogname, etc.).
-- `rolepod_wp_db_query` (SELECT only).
+- `rolepod_wp_db_query` (SELECT only). Output is capped at `max_bytes` (default 64 KB, stdout and stderr each) and the result says `total_bytes` / `returned_bytes` / `truncated`. `truncated: true` means add `LIMIT` or select fewer columns — not run it again unchanged.
 - `rolepod_wp_rest_request` for arbitrary `/wp/v2/*` calls.
-- `rolepod_wp_rest_dump` to discover routes.
+- `rolepod_wp_rest_dump` to discover routes — per-namespace counts by default (~1 KB); pass `filter_namespace` for one namespace's path/methods table, or `full: true` for all of them (300+ routes, ~50 KB on a plugin-heavy site).
 
 Does not own:
 

@@ -112,3 +112,44 @@ export function sliceContent(full: string, opts: SliceOpts = {}): SliceResult {
     ...(matchedLines !== undefined ? { matchedLines } : {}),
   };
 }
+
+/** A subprocess's two output streams after capping, and what the cap cost. */
+export interface CappedStreams {
+  stdout: string;
+  stderr: string;
+  /** stdout + stderr bytes before the cap. */
+  totalBytes: number;
+  /** stdout + stderr bytes after the cap. */
+  returnedBytes: number;
+  /** True when either stream was cut. */
+  truncated: boolean;
+}
+
+/**
+ * Cap a subprocess's stdout and stderr at `maxBytes` EACH, keeping the head.
+ *
+ * For `rolepod_wp_cli_run` and `rolepod_wp_db_query`, whose output otherwise
+ * reaches the model verbatim — `SELECT * FROM wp_posts` or `wp option list`
+ * on a real site is hundreds of KB. Keeping the head means a truncated table
+ * still shows its header row, so the columns are known even when the rows
+ * are not.
+ *
+ * Applied in those two handlers only, on purpose. `Target.wpCli()` and
+ * `guardTarget()` also serve internal callers that JSON.parse what comes
+ * back; a cap there would hand them a broken document.
+ */
+export function capStreams(
+  stdout: string,
+  stderr: string,
+  maxBytes: number,
+): CappedStreams {
+  const out = capBytes(stdout, maxBytes);
+  const err = capBytes(stderr, maxBytes);
+  return {
+    stdout: out.text,
+    stderr: err.text,
+    totalBytes: byteLen(stdout) + byteLen(stderr),
+    returnedBytes: byteLen(out.text) + byteLen(err.text),
+    truncated: out.truncated || err.truncated,
+  };
+}

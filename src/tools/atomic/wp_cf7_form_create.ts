@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpJsonArg, phpQuote } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const Cf7FormCreateInputSchema = z.object({
@@ -34,11 +34,7 @@ export async function wpCf7FormCreateHandler(
   const input = Cf7FormCreateInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_cf7_form_create requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_cf7_form_create", input.target_id);
   }
   const bridge = await bridgeFor(target);
 

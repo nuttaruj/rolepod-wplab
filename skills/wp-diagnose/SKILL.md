@@ -86,7 +86,7 @@ Return / hand off:
 
 - Findings include outdated plugins → user/`wp-content` to update via REST.
 - Findings include weak admins → user task (cannot auto-fix passwords).
-- Findings include WP_DEBUG=true on prod → `rolepod_wp_cli_run` with `["config","set","WP_DEBUG","false","--raw"]` and `allow_destructive=true`. WP_DEBUG is a wp-config.php constant, NOT an option — `option_set` does nothing.
+- Findings include WP_DEBUG=true on prod → `rolepod_wp_cli_run` with `["config","set","WP_DEBUG","false","--raw"]` and `allow_destructive=true`. (`rolepod_wp_cli_run` caps output at `max_bytes`, default 64 KB per stream — when `truncated: true`, narrow with `--fields=` / `--format=count` rather than re-running.) WP_DEBUG is a wp-config.php constant, NOT an option — `option_set` does nothing.
 - Findings span 20 sites → `audit_many` for the consolidated index.
 
 ## Inputs to gather

@@ -91,3 +91,79 @@ describe("wpCliRunHandler — allow-list applies to every target kind", () => {
     expect(registry.get).not.toHaveBeenCalled();
   });
 });
+
+describe("wpCliRunHandler — output cap (brief 14)", () => {
+  function bigRegistry(stdout: string, stderr = "") {
+    const wpCli = vi.fn(async () => ({
+      exitCode: 0,
+      stdout,
+      stderr,
+      durationMs: 3,
+    }));
+    const registry = {
+      get: vi.fn(() => ({ id: "tgt_abc12345", kind: "local", wpCli })),
+    } as unknown as TargetRegistry;
+    return { registry, wpCli };
+  }
+
+  it("returns small output whole, with the accounting fields", async () => {
+    const { registry } = bigRegistry("ok");
+    const out = await wpCliRunHandler(registry, {
+      target_id: "tgt_abc12345",
+      args: ["plugin", "list"],
+    });
+    expect(out.stdout).toBe("ok");
+    expect(out.truncated).toBe(false);
+    expect(out.total_bytes).toBe(2);
+    expect(out.returned_bytes).toBe(2);
+  });
+
+  it("caps at 64 KB by default and says so", async () => {
+    const big = "x".repeat(200_000);
+    const { registry } = bigRegistry(big);
+    const out = await wpCliRunHandler(registry, {
+      target_id: "tgt_abc12345",
+      args: ["option", "list"],
+    });
+    expect(out.truncated).toBe(true);
+    expect(out.returned_bytes).toBeLessThanOrEqual(65_536);
+    expect(Buffer.byteLength(out.stdout)).toBe(out.returned_bytes);
+    expect(out.total_bytes).toBe(200_000);
+  });
+
+  it("honours an explicit max_bytes", async () => {
+    const { registry } = bigRegistry("y".repeat(1000));
+    const out = await wpCliRunHandler(registry, {
+      target_id: "tgt_abc12345",
+      args: ["plugin", "list"],
+      max_bytes: 10,
+    });
+    expect(out.stdout).toBe("y".repeat(10));
+    expect(out.truncated).toBe(true);
+    expect(out.total_bytes).toBe(1000);
+  });
+
+  it("caps stderr as well", async () => {
+    const { registry } = bigRegistry("", "e".repeat(1000));
+    const out = await wpCliRunHandler(registry, {
+      target_id: "tgt_abc12345",
+      args: ["plugin", "list"],
+      max_bytes: 10,
+    });
+    expect(out.stderr).toBe("e".repeat(10));
+    expect(out.truncated).toBe(true);
+  });
+
+  it("caps in the handler only — the target call is unchanged", async () => {
+    const { registry, wpCli } = bigRegistry("z".repeat(1000));
+    await wpCliRunHandler(registry, {
+      target_id: "tgt_abc12345",
+      args: ["plugin", "list"],
+      max_bytes: 10,
+    });
+    expect(wpCli).toHaveBeenCalledWith(["plugin", "list"], {
+      allowDestructive: false,
+      timeoutMs: 30_000,
+    });
+  });
+});

@@ -10,7 +10,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpRestDumpToolDef = {
   name: "rolepod_wp_rest_dump",
   description:
-    'Enumerate every registered REST route on the target (GET /wp-json index). Returns namespaces + path/methods table. Optional filter_namespace="wc/v3" narrows to a single plugin namespace.',
+    'Enumerate the REST routes registered on the target (GET /wp-json index). Default returns the namespaces and a route count per namespace (~1 KB) — a plugin-heavy site has 300+ routes, ~50 KB as a table. Pass filter_namespace="wc/v3" for one namespace\'s path/methods table, or full=true for all of them.',
   inputSchema: RestDumpInputSchema,
 };
 
@@ -34,19 +34,26 @@ export async function wpRestDumpHandler(
   };
   const namespaces = body.namespaces ?? [];
   const routes = body.routes ?? {};
-  const out: RestDumpOutput["routes"] = [];
+  const out: NonNullable<RestDumpOutput["routes"]> = [];
+  const byNamespace: Record<string, number> = {};
   for (const [path, info] of Object.entries(routes)) {
     const ns = info.namespace ?? "";
     if (input.filter_namespace !== undefined && ns !== input.filter_namespace)
       continue;
     out.push({ path, namespace: ns, methods: info.methods ?? [] });
+    byNamespace[ns] = (byNamespace[ns] ?? 0) + 1;
   }
+  // Counts by default; the table only when asked for a namespace or for
+  // everything. Measured on a real plugin-heavy site: 371 routes, ~56 KB
+  // pretty-printed, against ~1 KB for the counts.
+  const withRoutes = input.filter_namespace !== undefined || input.full;
   return RestDumpOutputSchema.parse({
     namespaces:
       input.filter_namespace !== undefined
         ? namespaces.filter((n) => n === input.filter_namespace)
         : namespaces,
     route_count: out.length,
-    routes: out,
+    routes_by_namespace: byNamespace,
+    ...(withRoutes ? { routes: out } : {}),
   });
 }

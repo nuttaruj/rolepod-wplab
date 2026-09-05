@@ -47,7 +47,7 @@ export class RestClient {
     if (u.protocol !== "https:") {
       throw new WplabError(
         "REST_REQUIRES_HTTPS",
-        "RestTarget refuses non-https:// URLs",
+        "RestTarget only accepts https:// URLs — reconnect with the https:// form of the site URL. For a local dev site without TLS, use rolepod_wp_connect_local instead.",
         {
           baseUrl: opts.baseUrl,
         },

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpQuote } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const MenuAssignInputSchema = z.object({
@@ -30,11 +30,7 @@ export async function wpMenuAssignHandler(
   const input = MenuAssignInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_menu_assign requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_menu_assign", input.target_id);
   }
   const bridge = await bridgeFor(target);
   const locJson = phpQuote(input.location);

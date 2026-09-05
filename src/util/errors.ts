@@ -1,3 +1,5 @@
+import { COMPANION_INSTALL_URL } from "../companion/constants.js";
+
 export class WplabError extends Error {
   readonly code: string;
   readonly meta: Record<string, unknown>;
@@ -20,9 +22,11 @@ export class WplabError extends Error {
 
 export class TargetNotFoundError extends WplabError {
   constructor(targetId: string) {
-    super("TARGET_NOT_FOUND", `Target ${targetId} not registered or closed`, {
-      targetId,
-    });
+    super(
+      "TARGET_NOT_FOUND",
+      `Target ${targetId} not registered or closed — targets live only as long as the server process. Connect again (rolepod_wp_connect_local / _rest / _ssh / _docker) and use the new target_id.`,
+      { targetId },
+    );
   }
 }
 
@@ -34,10 +38,15 @@ export class WpCliNotFoundError extends WplabError {
 
 export class WpCliBlockedError extends WplabError {
   constructor(args: string[], reason: "not_in_allowlist" | "never_allowed") {
-    super("WPCLI_BLOCKED", `wp-cli subcommand blocked: ${reason}`, {
-      args,
-      reason,
-    });
+    const wayForward =
+      reason === "never_allowed"
+        ? "It is on the never-allowed list (catastrophic data-loss commands and raw eval) and does not run through wp-cli here, on any target. For `eval`, use rolepod_wp_execute_php; the rest are for a person at a shell."
+        : "It is not on the read-only allow-list — pass allow_destructive=true to run a mutating subcommand.";
+    super(
+      "WPCLI_BLOCKED",
+      `wp-cli subcommand blocked (${reason}): ${args.slice(0, 3).join(" ")}. ${wayForward}`,
+      { args, reason },
+    );
   }
 }
 
@@ -54,7 +63,7 @@ export class ProductionBlockedError extends WplabError {
   constructor(siteurl: string, matchedPattern: string) {
     super(
       "PRODUCTION_BLOCKED",
-      `Operation refused — siteurl matches production pattern`,
+      `Operation refused on ${siteurl} — production guard matched: ${matchedPattern}. No confirm flag lifts this one. Way forward: the site owner turns on AI Full Control (wp-admin → Rolepod WP → Settings), which outranks every detection signal; for a host listed in ROLEPOD_WPLAB_PROD_HOSTS with no companion, remove it there and restart the server.`,
       {
         siteurl,
         matchedPattern,
@@ -71,6 +80,21 @@ export class DbWriteBlockedError extends WplabError {
       {
         sql_preview: sql.slice(0, 200),
       },
+    );
+  }
+}
+
+/**
+ * A tool that only works through the companion, called on a target without
+ * one. Names the install and the reconnect so the model hands the user a
+ * link instead of a dead end.
+ */
+export class CompanionRequiredError extends WplabError {
+  constructor(tool: string, targetId: string, why?: string) {
+    super(
+      "COMPANION_REQUIRED",
+      `${tool} requires the rolepod-wp companion${why ? ` (${why})` : ""}, and target ${targetId} has none. Install it — ${COMPANION_INSTALL_URL} via wp-admin → Plugins → Add New → Upload Plugin — pair it (Tools → Rolepod WP Setup → Generate pair token → rolepod_wp_pair), then reconnect with rolepod_wp_connect_rest.`,
+      { targetId, tool, companion_install_url: COMPANION_INSTALL_URL },
     );
   }
 }

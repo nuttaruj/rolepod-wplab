@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpJsonArg } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const SeoSetInputSchema = z
@@ -49,11 +49,7 @@ export async function wpSeoSetHandler(
   const input = SeoSetInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_seo_set requires the rolepod-wp companion.",
-      { targetId: input.target_id },
-    );
+    throw new CompanionRequiredError("wp_seo_set", input.target_id);
   }
   const bridge = await bridgeFor(target);
 

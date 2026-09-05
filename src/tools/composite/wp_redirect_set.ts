@@ -8,7 +8,7 @@ import {
   type RedirectSetInput,
   type RedirectSetOutput,
 } from "../../schema/tools.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const wpRedirectSetToolDef = {
@@ -27,10 +27,10 @@ export async function wpRedirectSetHandler(
   const target = registry.get(input.target_id);
 
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_redirect_set requires the rolepod-wp companion (redirect writes go through execute-php).",
-      { targetId: input.target_id },
+    throw new CompanionRequiredError(
+      "wp_redirect_set",
+      input.target_id,
+      "redirect writes go through execute-php",
     );
   }
   const matched = prodGuard.matches(target.siteurl);

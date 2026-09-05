@@ -230,6 +230,41 @@ export type DisconnectOutput = z.infer<typeof DisconnectOutputSchema>;
 // rolepod_wp_cli_run
 // ---------------------------------------------------------------------------
 
+/**
+ * Default cap on wp-cli output handed back to the model, per stream. 64 KiB
+ * is roughly 16k tokens: room for a full `plugin list`, not enough for
+ * `SELECT * FROM wp_posts` to take the whole context with it.
+ */
+export const WP_CLI_OUTPUT_CAP_DEFAULT = 65_536;
+
+const wpCliMaxBytesSchema = (hint: string) =>
+  z
+    .number()
+    .int()
+    .positive()
+    .default(WP_CLI_OUTPUT_CAP_DEFAULT)
+    .describe(
+      `Cap on returned bytes, applied to stdout and stderr each (default 64 KB). Output past the cap is cut from the end and truncated=true is set — ${hint}`,
+    );
+
+const wpCliOutputCapFields = {
+  total_bytes: z
+    .number()
+    .int()
+    .nonnegative()
+    .describe("Bytes wp-cli produced, stdout + stderr, before the cap."),
+  returned_bytes: z
+    .number()
+    .int()
+    .nonnegative()
+    .describe("Bytes returned, stdout + stderr, after the cap."),
+  truncated: z
+    .boolean()
+    .describe(
+      "True when max_bytes cut stdout or stderr. total_bytes says how much there was.",
+    ),
+};
+
 export const WpCliRunInputSchema = z.object({
   target_id: TargetIdSchema,
   args: z
@@ -237,6 +272,9 @@ export const WpCliRunInputSchema = z.object({
     .min(1, 'wp-cli args required (e.g. ["plugin","list"])'),
   allow_destructive: z.boolean().default(false),
   timeout_ms: z.number().int().positive().max(120_000).default(30_000),
+  max_bytes: wpCliMaxBytesSchema(
+    "narrow the command (`--fields=`, `--format=count`, `--per-page=`) or raise this when you truly need it all.",
+  ),
 });
 export type WpCliRunInput = z.infer<typeof WpCliRunInputSchema>;
 
@@ -245,6 +283,7 @@ export const WpCliRunOutputSchema = z.object({
   stdout: z.string(),
   stderr: z.string(),
   duration_ms: z.number(),
+  ...wpCliOutputCapFields,
 });
 export type WpCliRunOutput = z.infer<typeof WpCliRunOutputSchema>;
 
@@ -476,6 +515,9 @@ export const DbQueryInputSchema = z.object({
     .describe(
       "Required true on production-matched targets when allow_write=true",
     ),
+  max_bytes: wpCliMaxBytesSchema(
+    "add LIMIT, select fewer columns, or raise this when you truly need it all.",
+  ),
 });
 export type DbQueryInput = z.infer<typeof DbQueryInputSchema>;
 
@@ -485,6 +527,7 @@ export const DbQueryOutputSchema = z.object({
   stderr: z.string(),
   exit_code: z.number().int(),
   warnings: z.array(z.string()).optional(),
+  ...wpCliOutputCapFields,
 });
 export type DbQueryOutput = z.infer<typeof DbQueryOutputSchema>;
 
@@ -1553,20 +1596,36 @@ export const RestDumpInputSchema = z.object({
   filter_namespace: z
     .string()
     .optional()
-    .describe('Only include routes under this namespace, e.g. "wc/v3"'),
+    .describe(
+      'Only include routes under this namespace, e.g. "wc/v3". Also switches on the full path/methods table for that namespace.',
+    ),
+  full: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Return the path/methods table for EVERY route. A plugin-heavy site has 300+ routes (~50 KB); the default per-namespace counts are ~1 KB.",
+    ),
 });
 export type RestDumpInput = z.infer<typeof RestDumpInputSchema>;
 
 export const RestDumpOutputSchema = z.object({
   namespaces: z.array(z.string()),
   route_count: z.number().int().nonnegative(),
-  routes: z.array(
-    z.object({
-      path: z.string(),
-      namespace: z.string(),
-      methods: z.array(z.string()),
-    }),
-  ),
+  routes_by_namespace: z
+    .record(z.string(), z.number().int().nonnegative())
+    .describe(
+      "Route count per namespace — the default shape. Pick one and call again with filter_namespace for its routes.",
+    ),
+  routes: z
+    .array(
+      z.object({
+        path: z.string(),
+        namespace: z.string(),
+        methods: z.array(z.string()),
+      }),
+    )
+    .optional()
+    .describe("Present with filter_namespace or full=true."),
 });
 export type RestDumpOutput = z.infer<typeof RestDumpOutputSchema>;
 

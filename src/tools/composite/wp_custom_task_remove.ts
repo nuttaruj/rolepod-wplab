@@ -40,7 +40,7 @@ export async function wpCustomTaskRemoveHandler(
   if (!(await isPluginInstalled(target))) {
     throw new WplabError(
       "CUSTOM_PLUGIN_NOT_INSTALLED",
-      "Rolepod Custom plugin is not installed.",
+      "Rolepod Custom plugin is not installed. Run rolepod_wp_custom_init first.",
       {},
     );
   }

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { bridgeFor } from "../../companion/Bridge.js";
 import { recordChange } from "../../companion/ledger.js";
 import { phpQuote } from "../../lib/phpEmbed.js";
-import { WplabError } from "../../util/errors.js";
+import { CompanionRequiredError, WplabError } from "../../util/errors.js";
 import type { TargetRegistry } from "../../target/TargetRegistry.js";
 
 export const MenuCreateInputSchema = z.object({
@@ -30,10 +30,10 @@ export async function wpMenuCreateHandler(
   const input = MenuCreateInputSchema.parse(raw);
   const target = registry.get(input.target_id);
   if (!target.companion?.enabled) {
-    throw new WplabError(
-      "COMPANION_REQUIRED",
-      "wp_menu_create requires the rolepod-wp companion (uses execute-php for nav menu APIs).",
-      { targetId: input.target_id },
+    throw new CompanionRequiredError(
+      "wp_menu_create",
+      input.target_id,
+      "uses execute-php for nav menu APIs",
     );
   }
   const bridge = await bridgeFor(target);

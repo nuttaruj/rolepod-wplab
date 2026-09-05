@@ -2,6 +2,50 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.0] — 2026-09-06 — Cap what wp-cli hands the model
+
+Two tools returned wp-cli output verbatim: `rolepod_wp_db_query` and
+`rolepod_wp_cli_run`. `SELECT * FROM wp_posts` or `wp option list` on a real
+site is hundreds of KB, and every byte went into the model's context. The
+slicing helper already existed — `rolepod_wp_file_read` and
+`rolepod_wp_render_get` use it — it had just never been applied here. Surfaced
+by an audit of context-mode for the rolepod family; the one idea that survived
+against what was already covered.
+
+### Changed
+
+- `rolepod_wp_db_query` and `rolepod_wp_cli_run` take `max_bytes` (default
+  64 KB, applied to stdout and stderr each) and return `total_bytes`,
+  `returned_bytes` and `truncated`. Truncation keeps the head, so a cut table
+  still shows its header row. The cap lives in the two handlers only:
+  `Target.wpCli()` and `guardTarget()` also serve internal callers that parse
+  JSON, and a cap there would hand them a broken document.
+- `rolepod_wp_rest_dump` returns per-namespace counts by default
+  (`routes_by_namespace`); the path/methods table (`routes`) comes with
+  `filter_namespace` or the new `full: true`. Measured once on a plugin-heavy
+  production site before deciding: 371 routes across 18 namespaces, ~56 KB
+  pretty-printed as a table against ~1 KB as counts, behind a 289 KB raw
+  `/wp-json/` index. Over the ~20 KB line the brief set, so the default
+  changed.
+- Refusals that are really redirects now name the way forward. Every
+  `throw new WplabError(` was read; most already did (`confirm=true`,
+  `allow_write`, `rolepod_wp_woo_write`, the install URL). Rewritten:
+  `WPCLI_BLOCKED` (names `allow_destructive=true`; for never-allowed
+  subcommands, `rolepod_wp_execute_php` for `eval` and a person at a shell for
+  the rest), `PRODUCTION_BLOCKED` on the guard's `enforce()` path (now carries
+  what matched and who lifts it — the owner's AI Full Control toggle, or
+  `ROLEPOD_WPLAB_PROD_HOSTS`), `TARGET_NOT_FOUND` (reconnect; targets do not
+  survive a server restart), `COMPANION_REQUIRED` across nine tools (one
+  `CompanionRequiredError` with the install URL, pairing and reconnect steps),
+  `CUSTOM_PLUGIN_NOT_INSTALLED` on toggle / update / remove (run
+  `rolepod_wp_custom_init` first, as scaffold already said), and
+  `REST_REQUIRES_HTTPS` (the https form, or `rolepod_wp_connect_local`).
+
+### Added
+
+- `capStreams()` in `src/lib/contentSlice.ts`, and tests for the cap on both
+  handlers, the summary-first dump, and the refusal wording.
+
 ## [3.5.0] — 2026-09-04 — Say when Elementor's own MCP should win
 
 Elementor has announced an official MCP — "coming soon" as of 2026-09-04, not
