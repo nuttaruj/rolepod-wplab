@@ -11,7 +11,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpFileWriteToolDef = {
   name: "rolepod_wp_file_write",
   description:
-    "Write a file under wp-content/themes|plugins|uploads/ or wp-config.php on the target. Writes outside that scope require confirm_unsafe_path=true. Backups are created by default.",
+    "Write a file under wp-content/themes|plugins|uploads/ or wp-config.php on the target. Writes outside that scope require confirm_unsafe_path=true. Backups are created by default: `<file>.wplab-bak-<stamp>` next to the target, and only the newest 2 per file are kept (the older ones are deleted on each write). Undo does not depend on them — the Change Ledger stores its own content snapshot — so they are only there for a human restoring by hand.",
   inputSchema: WpFileWriteInputSchema,
 };
 

@@ -471,7 +471,8 @@ export class CompanionBridge {
   /**
    * Write a file under wp-content/{themes,plugins,uploads} (or wp-config.php
    * with confirmUnsafePath) via the companion's /fs-write endpoint.
-   * Optional backup writes `.wplab-bak-YYYYMMDD-HHMMSS` next to the target.
+   * Optional backup writes `.wplab-bak-YYYYMMDD-HHMMSS` next to the target;
+   * the companion prunes each file's backups to the newest 2 after the write.
    */
   async fileWrite(
     path: string,

@@ -121,7 +121,7 @@ Issues: complete-replace overwrites everything (typography, layout, spacing). On
      content: <patched JSON>,
      backup: true
    }
-   → creates `.wplab-bak-YYYYMMDD-HHMMSS` next to theme.json.
+   → creates `.wplab-bak-YYYYMMDD-HHMMSS` next to theme.json (newest 2 kept).
 
 6. After write, hit /wp/v2/global-styles to confirm new palette resolves.
    wp-health-check → REST OK.
@@ -135,4 +135,4 @@ Issues: complete-replace overwrites everything (typography, layout, spacing). On
 | JSON pre-validated | no | yes (server-equivalent parse before write) |
 | Backup | only if backup:true default | yes |
 | Diff shown to user | no | yes |
-| Rollback path | file_write old content | restore from `.wplab-bak-...` |
+| Rollback path | file_write old content | restore from `.wplab-bak-...` (newest 2) or the ledger row |

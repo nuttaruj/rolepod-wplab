@@ -11,7 +11,7 @@ export const ThemeSnapshotInputSchema = z.object({
 export const wpThemeSnapshotToolDef = {
   name: "rolepod_wp_theme_snapshot",
   description:
-    "Snapshot a theme directory as a .tar.gz at wp-content/uploads/rolepod-wp-theme-snapshots/<slug>-<utc-ts>.tar.gz. Used by wp_theme_switch_safe and by any AI-issued theme edit that needs a known-good rollback artifact. Records a ledger row (category=theme, reversible=true) so the snapshot can be replayed via Change Ledger panic/toggle.",
+    "Snapshot a theme directory as a .tar.gz at wp-content/uploads/rolepod-wp-theme-snapshots/<slug>-<utc-ts>.tar.gz. Used by wp_theme_switch_safe and by any AI-issued theme edit that needs a known-good rollback artifact. Records a ledger row (category=theme, reversible=true) so the snapshot can be replayed via Change Ledger panic/toggle. Only the newest 2 snapshots per stylesheet are kept — a tar.gz per theme edit fills uploads/ otherwise — so a snapshot_path from an older session may already be gone.",
   inputSchema: ThemeSnapshotInputSchema,
 };
 

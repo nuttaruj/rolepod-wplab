@@ -13,7 +13,7 @@ import type { TargetRegistry } from "../../target/TargetRegistry.js";
 export const wpFileWriteBatchToolDef = {
   name: "rolepod_wp_file_write_batch",
   description:
-    "Atomic multi-file write. Stages every entry, runs `php -l` on each *.php, walks the cross-file `require`/`include` chain (a missing target is OK if it's in this same batch), then commits all writes via per-file rename. On any failure the whole batch is rolled back from backups. Catches the WSOD class of bugs where you write functions.php before the include it requires exists. Max 100 entries per call. Requires rolepod-wp companion v2.11+.",
+    "Atomic multi-file write. Stages every entry, runs `php -l` on each *.php, walks the cross-file `require`/`include` chain (a missing target is OK if it's in this same batch), then commits all writes via per-file rename. On any failure the whole batch is rolled back from backups; after a successful commit each file's backups are pruned to the newest 2. Catches the WSOD class of bugs where you write functions.php before the include it requires exists. Max 100 entries per call. Requires rolepod-wp companion v2.11+.",
   inputSchema: WpFileWriteBatchInputSchema,
 };
 

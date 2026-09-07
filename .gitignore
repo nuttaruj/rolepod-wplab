@@ -17,6 +17,9 @@ tests/fixtures/wp-data/
 # Reconstructable from conversation context if lost; not part of OSS surface.
 brief/
 
+# CodeGraph index (rebuilt from source; machine-local)
+.codegraph/
+
 # IDE
 .vscode/
 .idea/

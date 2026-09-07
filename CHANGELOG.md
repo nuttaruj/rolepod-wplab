@@ -2,6 +2,44 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.7.0] — 2026-09-07 — Backups stop piling up
+
+Every backed-up file write left one more `.wplab-bak-<stamp>` copy next to the
+target, forever. A theme edited weekly for a year carried 50 copies of
+`functions.php` in the install, and nothing ever collected them. Now each write
+prunes its own file's backups to the newest 2.
+
+### Changed
+
+- `rolepod_wp_file_write` (local target) keeps the newest 2
+  `<file>.wplab-bak-*` copies per file and deletes the rest after each write.
+  `ROLEPOD_WPLAB_BACKUP_KEEP` raises the count; a junk or sub-1 value falls
+  back to 2. `backup: false` still writes nothing and prunes nothing.
+- Backup filenames are now collision-proof: two writes to the same file inside
+  the same millisecond used to share a name, so the second silently overwrote
+  the first. A `-1`, `-2` counter is appended instead.
+- Undo never read these files — the Change Ledger stores its own content
+  snapshot — so pruning costs only what a human would restore by hand. The
+  `rolepod_wp_changes_toggle` description said otherwise; it now says what the
+  revert actually reads.
+- Tool descriptions for `rolepod_wp_file_write`, `rolepod_wp_file_write_batch`
+  and `rolepod_wp_theme_snapshot` state the retention, so a model plans a
+  rollback around what will still be on disk. `wp-scaffold` and
+  `wp-edit-design` skills carry the same note.
+
+### Removed
+
+- `E2E-GAP-REPORT.md` — an internal round-by-round gap report from the v1.9/v1.10
+  era (it also named a throwaway demo host). The repo keeps README, CHANGELOG,
+  `docs/` and the shipped skills; working notes stay out of it.
+
+### Companion
+
+Requires rolepod-wp 2.26.0 for the same retention on REST targets — the
+companion writes and prunes its own backups (`FsWrite`, `FsWriteBatch`) and
+keeps the newest 2 theme snapshots per stylesheet. An older companion still
+works; its backups just keep accumulating as before.
+
 ## [3.6.0] — 2026-09-06 — Cap what wp-cli hands the model
 
 Two tools returned wp-cli output verbatim: `rolepod_wp_db_query` and

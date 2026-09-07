@@ -11,7 +11,7 @@ export const ChangesToggleInputSchema = z.object({
 export const wpChangesToggleToolDef = {
   name: "rolepod_wp_changes_toggle",
   description:
-    "Toggle a single AI Change Ledger row applied=true|false. Re-applies the underlying revert/re-apply via the per-category dispatcher in the companion. Side effects vary by category: hook = wrapper flag flip (instant); option = re-write old value; layout = restore postmeta; file = restore .wplab-bak; plugin = (de)activate; theme = switch.",
+    "Toggle a single AI Change Ledger row applied=true|false. Re-applies the underlying revert/re-apply via the per-category dispatcher in the companion. Side effects vary by category: hook = wrapper flag flip (instant); option = re-write old value; layout = restore postmeta; file = re-write the content snapshot held in the ledger row (not the .wplab-bak file, which retention may have pruned); plugin = (de)activate; theme = switch.",
   inputSchema: ChangesToggleInputSchema,
 };
 

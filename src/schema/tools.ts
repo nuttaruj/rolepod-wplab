@@ -1768,7 +1768,12 @@ export const WpFileWriteInputSchema = z.object({
   path: z.string().min(1).describe("Path relative to WP install root"),
   content: z.string(),
   mode: z.enum(["overwrite", "append"]).default("overwrite"),
-  backup: z.boolean().default(true),
+  backup: z
+    .boolean()
+    .default(true)
+    .describe(
+      "Copy the current file to <file>.wplab-bak-<stamp> before writing. Only the newest 2 backups per file survive; set ROLEPOD_WPLAB_BACKUP_KEEP (local target) or the rolepod_wp_backup_keep filter (companion) to keep more.",
+    ),
   confirm_unsafe_path: z.boolean().default(false),
 });
 export type WpFileWriteInput = z.infer<typeof WpFileWriteInputSchema>;
