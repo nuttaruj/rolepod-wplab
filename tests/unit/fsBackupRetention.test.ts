@@ -94,9 +94,9 @@ describe("per-file backup retention", () => {
     }
 
     const names = await readdir(dir);
-    expect(names.filter((n) => n.startsWith("style.css.wplab-bak-"))).toHaveLength(
-      3,
-    );
+    expect(
+      names.filter((n) => n.startsWith("style.css.wplab-bak-")),
+    ).toHaveLength(3);
     expect(names).toContain("notes.txt");
     expect(
       names.filter((n) => n.startsWith("functions.php.wplab-bak-")),
