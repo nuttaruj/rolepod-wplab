@@ -17,9 +17,22 @@ config block wires both: `opencode mcp add` for the server, and the new
   the package version so a release refreshes the cached skills without a
   config change. `npm run skills:index` regenerates it;
   `tests/unit/opencodeSkillCatalog.test.ts` fails when it drifts from disk.
-- README "opencode" install section: `opencode mcp add rolepod-wplab -- npx
-  -y @rolepod/wplab@latest serve`, then `"skills": ["https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/skills/"]`.
-  Verified on opencode v2.0.12 (`mcp.servers.<name>` shape).
+- `scripts/install-opencode.sh` — one-line install:
+  `curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/scripts/install-opencode.sh | bash`
+  (flags `--project` / `--uninstall`; `ROLEPOD_WPLAB_REF=vX.Y.Z` pins a
+  release). It merges the `mcp.servers.rolepod-wplab` entry (npx `@latest`
+  `serve`, npm audit/fund off, `codemode: false`) and the catalog URL into
+  `~/.config/opencode/opencode.json` (or `./.opencode/opencode.json`), keeps
+  every other key, backs the file up as `*.rolepod-wplab-bak`, refuses
+  non-plain JSON instead of rewriting it, replaces a stale v1-shaped entry,
+  and removes only its own entries on uninstall. From a checkout, `--project`
+  spawns the local build. `codemode: false` is required: opencode's default
+  Code Mode hides MCP tools behind `execute`/`query`, so skills that call
+  `rolepod_wp_*` by name never resolve. Test:
+  `tests/unit/opencodeInstallScript.test.ts` (bash; skipped on Windows).
+- README "opencode" install section: the one-liner above, the hand-paste
+  config it writes, and why each field is there. Verified on opencode
+  v2.0.12 (`mcp.servers.<name>` shape).
 - `rolepod-wplab init` names the opencode command in its next steps.
 
 ## [3.7.0] — 2026-09-07 — Backups stop piling up

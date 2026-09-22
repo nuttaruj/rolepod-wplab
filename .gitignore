@@ -38,3 +38,6 @@ bun.lockb
 
 # Browser-driven UI verification artifacts (consolidated namespace, local-only)
 .rolepod/
+
+# opencode per-project config written by scripts/install-opencode.sh --project (machine-specific path)
+.opencode/

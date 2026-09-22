@@ -172,23 +172,36 @@ Skills are not auto-registered under Gemini (no unified plugin format yet — `g
 
 ### opencode
 
-opencode reads MCP servers from `opencode.json` (project root, or `~/.config/opencode/opencode.json` for every project) and loads skills from an HTTP catalog, so one config block wires both — no clone, nothing copied into your project.
-
-**Step 1 — MCP server.** Writes the project `opencode.json`; add `--global` for the user-wide file:
+One command wires both the MCP server and the skills: it merges a `rolepod-wplab` server entry and this repo's skill catalog into opencode's config and touches nothing else. Install and update are the same command:
 
 ```bash
-opencode mcp add rolepod-wplab -- npx -y @rolepod/wplab@latest serve
+# Global (every project) → ~/.config/opencode/opencode.json
+curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/scripts/install-opencode.sh | bash
+
+# This project only → ./.opencode/opencode.json
+curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/scripts/install-opencode.sh | bash -s -- --project
+
+# Remove (only the rolepod-wplab entry and its catalog URL are touched)
+curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/scripts/install-opencode.sh | bash -s -- --uninstall
+
+# Pin a release tag instead of @latest + main (the variable goes on bash, not on curl)
+curl -fsSL https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/scripts/install-opencode.sh | ROLEPOD_WPLAB_REF=vX.Y.Z bash
 ```
 
-**Step 2 — Skills.** Add the catalog URL to the same file. The finished config:
+Then `opencode service restart`. The first prompt in a project connects the server; after that `opencode mcp list` shows `rolepod-wplab connected` (before it, the command reports the service's not-yet-loaded instance as `No MCP servers configured`). Tools surface as `rolepod-wplab_<tool>`, e.g. `rolepod-wplab_rolepod_wp_health_check`; skills as `/wp-health-check` etc., or the model loads one through its `skill` tool.
+
+What the script writes — paste it by hand if you'd rather not run it:
 
 ```jsonc
 {
+  "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "servers": {
       "rolepod-wplab": {
         "type": "local",
-        "command": ["npx", "-y", "@rolepod/wplab@latest", "serve"]
+        "command": ["npx", "-y", "@rolepod/wplab@latest", "serve"],
+        "environment": { "npm_config_audit": "false", "npm_config_fund": "false" },
+        "codemode": false
       }
     }
   },
@@ -196,15 +209,15 @@ opencode mcp add rolepod-wplab -- npx -y @rolepod/wplab@latest serve
 }
 ```
 
-Start a new opencode session in that project and check `opencode mcp list` — `rolepod-wplab` should show as connected. The catalog is [`skills/index.json`](skills/index.json) in this repo: opencode fetches every `skills/<name>/SKILL.md` it lists (plus each skill's `references/`, `examples/` and `templates/`) and caches them by `version`, so a new release refreshes the skills without touching your config. Invoke them as `/wp-health-check` etc., or let the model load one through its `skill` tool.
-
-**Update:** `npx -y @rolepod/wplab@latest serve` pulls the latest server on every opencode restart; the skills refresh when the catalog `version` changes.
-**Uninstall:** remove the `rolepod-wplab` entry and the catalog URL from `opencode.json`.
-
 **Notes:**
 
-- Verified on opencode v2.0.12 (v2 config shape: `mcp.servers.<name>`, `environment`, `disabled`). A v1-style entry (`mcp.<name>` with `enabled`) is still normalized by v2.
-- Prefer local files? opencode also discovers `.opencode/skills/`, `.claude/skills/` and `.agents/skills/` in the project (and their `~/` equivalents) — `cp -r skills/* ~/.config/opencode/skills/` works, but stops tracking releases.
+- Needs `node` (the MCP server runs on Node ≥20 anyway) and a plain-JSON config: a file with comments or trailing commas is refused, never rewritten. The previous file is kept as `opencode.json.rolepod-wplab-bak`.
+- Skills come from [`skills/index.json`](skills/index.json), an opencode HTTP catalog: opencode fetches every `skills/<name>/SKILL.md` it lists (plus each skill's `references/`, `examples/` and `templates/`) and caches them by `version`, so a new release refreshes the skills without touching your config.
+- **Why `codemode: false`:** opencode v2 wraps MCP servers in Code Mode by default — the model gets a generic `execute`/`query` pair and none of the tools by name, so the skills' by-name calls (`rolepod_wp_pair`, `rolepod_wp_health_check`, …) never resolve. With Code Mode off the tools are exposed directly, the same as in every other CLI.
+- **Why the `environment` block:** a cold `npx` runs `npm audit` against the registry, which can take minutes and blows opencode's 30 s startup timeout. With audit and fund off the cold start is seconds.
+- A shell that exports `OPENCODE_CONFIG_DIR` starts opencode with that directory read as well, at higher priority than the global one; the script installs globally and says so, and `ROLEPOD_WPLAB_OPENCODE_TARGET="$OPENCODE_CONFIG_DIR"` installs there instead.
+- From a checkout of this repo, `scripts/install-opencode.sh --project` points the server at the checkout's own build (`npm run build` first) — inside this repo `npx @rolepod/wplab@<v>` resolves to the local package and fails.
+- Verified on opencode 2.0.12 (v2 config shape: `mcp.servers.<name>`, `environment`, `disabled`). A v1-style entry (`mcp.<name>` with `enabled`) is still normalized by v2; the script replaces one if present.
 
 ### Direct npm (any MCP-aware tool)
 
