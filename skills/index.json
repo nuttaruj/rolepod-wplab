@@ -1,0 +1,135 @@
+{
+  "skills": [
+    {
+      "name": "wp-changes",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/changes-examples.md"
+      ]
+    },
+    {
+      "name": "wp-connect",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "references/connect-kinds.md"
+      ]
+    },
+    {
+      "name": "wp-content",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/content-examples.md"
+      ]
+    },
+    {
+      "name": "wp-diagnose",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/diagnose-examples.md",
+        "templates/diagnose-report.md"
+      ]
+    },
+    {
+      "name": "wp-edit-design",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/design-examples.md",
+        "references/builder-formats.md",
+        "references/builders/bricks.md",
+        "references/builders/divi.md",
+        "references/builders/elementor.md",
+        "references/builders/gutenberg.md",
+        "references/builders/oxygen.md",
+        "references/patterns.md"
+      ]
+    },
+    {
+      "name": "wp-edit-plugin",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "references/adapter-detection.md"
+      ]
+    },
+    {
+      "name": "wp-edit-theme",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/theme-examples.md",
+        "references/template-hierarchy.md",
+        "references/theme-json-schema.md"
+      ]
+    },
+    {
+      "name": "wp-execute-php",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/php-examples.md",
+        "references/ast-rules.md"
+      ]
+    },
+    {
+      "name": "wp-full",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "wp-health-check",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "templates/health-report.md"
+      ]
+    },
+    {
+      "name": "wp-introspect",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "references/introspect-scopes.md"
+      ]
+    },
+    {
+      "name": "wp-migrate",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/migrate-examples.md",
+        "templates/migrate-plan.md"
+      ]
+    },
+    {
+      "name": "wp-pair-setup",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/pair-examples.md"
+      ]
+    },
+    {
+      "name": "wp-recovery",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md"
+      ]
+    },
+    {
+      "name": "wp-scaffold",
+      "version": "3.8.0",
+      "files": [
+        "SKILL.md",
+        "examples/scaffold-examples.md",
+        "templates/scaffold-manifest.md"
+      ]
+    }
+  ]
+}

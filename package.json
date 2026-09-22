@@ -1,6 +1,6 @@
 {
   "name": "@rolepod/wplab",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "description": "Production-grade WordPress operations toolkit for AI coding agents — default-safe wp-cli + REST + scoped fs, opt-in companion for execute-php + runtime introspection. MIT, rolepod ecosystem.",
   "keywords": [
     "mcp",
@@ -11,7 +11,8 @@
     "ai-agents",
     "claude-code",
     "cursor",
-    "codex"
+    "codex",
+    "opencode"
   ],
   "homepage": "https://github.com/nuttaruj/rolepod-wplab",
   "bugs": "https://github.com/nuttaruj/rolepod-wplab/issues",
@@ -57,6 +58,7 @@
     "format:check": "prettier --check \"src/**/*.ts\" \"tests/unit/**/*.ts\" \"tests/smoke/**/*.ts\"",
     "doctor": "node ./dist/bin/rolepod-wplab.js doctor",
     "smoke": "node ./dist/bin/rolepod-wplab.js smoke",
+    "skills:index": "node ./scripts/opencode-skill-index.mjs",
     "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {

@@ -2,6 +2,26 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.0] — 2026-09-22 — opencode support
+
+opencode users had the MCP server (any `mcpServers`-style config worked) but
+none of the 15 skills, and no install path in the README said so. Now one
+config block wires both: `opencode mcp add` for the server, and the new
+`skills/index.json` catalog for the skills.
+
+### Added
+
+- `skills/index.json` — an opencode (v2) HTTP skill catalog served from the
+  raw GitHub view of `skills/`. Every skill directory is listed with all of
+  its files (`SKILL.md`, `references/`, `examples/`, `templates/`), keyed by
+  the package version so a release refreshes the cached skills without a
+  config change. `npm run skills:index` regenerates it;
+  `tests/unit/opencodeSkillCatalog.test.ts` fails when it drifts from disk.
+- README "opencode" install section: `opencode mcp add rolepod-wplab -- npx
+  -y @rolepod/wplab@latest serve`, then `"skills": ["https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/skills/"]`.
+  Verified on opencode v2.0.12 (`mcp.servers.<name>` shape).
+- `rolepod-wplab init` names the opencode command in its next steps.
+
 ## [3.7.0] — 2026-09-07 — Backups stop piling up
 
 Every backed-up file write left one more `.wplab-bak-<stamp>` copy next to the

@@ -6,7 +6,7 @@
 
 > **🌐 New here? See [what AI can actually do on your WordPress site](https://nuttaruj.github.io/rolepod-wplab/) — plain-English breakdown of the 3 setup tiers.**
 
-**rolepod-wplab gives Claude Code, Cursor, Codex CLI, and Gemini CLI a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
+**rolepod-wplab gives Claude Code, Cursor, Codex CLI, Gemini CLI, and opencode a full WordPress operations toolkit — so the AI can actually wp-cli, edit page builders, audit security, migrate dev→staging, and (opt-in) run guarded `execute-php` against any WordPress site instead of guessing.**
 
 One MCP server, 89+ tools, 15 skills, 4 connection kinds (local path / REST + App Password / SSH / Docker). Default-safe — runs wp-cli + REST + scoped fs out of the box. Install the [`rolepod-wp`](https://github.com/nuttaruj/rolepod-wp) WordPress plugin to unlock `execute-php` + runtime introspection + the **one-click pair** setup wizard.
 
@@ -169,6 +169,42 @@ args = ["-y", "@rolepod/wplab@latest", "serve"]
 **Uninstall:** remove the `rolepod-wplab` entry from `~/.gemini/settings.json` and restart.
 
 Skills are not auto-registered under Gemini (no unified plugin format yet — `gemini-extension.json` is still in flux). The 139 MCP tools are still available; invoke them by name in chat (`Use rolepod_wp_pair to …`).
+
+### opencode
+
+opencode reads MCP servers from `opencode.json` (project root, or `~/.config/opencode/opencode.json` for every project) and loads skills from an HTTP catalog, so one config block wires both — no clone, nothing copied into your project.
+
+**Step 1 — MCP server.** Writes the project `opencode.json`; add `--global` for the user-wide file:
+
+```bash
+opencode mcp add rolepod-wplab -- npx -y @rolepod/wplab@latest serve
+```
+
+**Step 2 — Skills.** Add the catalog URL to the same file. The finished config:
+
+```jsonc
+{
+  "mcp": {
+    "servers": {
+      "rolepod-wplab": {
+        "type": "local",
+        "command": ["npx", "-y", "@rolepod/wplab@latest", "serve"]
+      }
+    }
+  },
+  "skills": ["https://raw.githubusercontent.com/nuttaruj/rolepod-wplab/main/skills/"]
+}
+```
+
+Start a new opencode session in that project and check `opencode mcp list` — `rolepod-wplab` should show as connected. The catalog is [`skills/index.json`](skills/index.json) in this repo: opencode fetches every `skills/<name>/SKILL.md` it lists (plus each skill's `references/`, `examples/` and `templates/`) and caches them by `version`, so a new release refreshes the skills without touching your config. Invoke them as `/wp-health-check` etc., or let the model load one through its `skill` tool.
+
+**Update:** `npx -y @rolepod/wplab@latest serve` pulls the latest server on every opencode restart; the skills refresh when the catalog `version` changes.
+**Uninstall:** remove the `rolepod-wplab` entry and the catalog URL from `opencode.json`.
+
+**Notes:**
+
+- Verified on opencode v2.0.12 (v2 config shape: `mcp.servers.<name>`, `environment`, `disabled`). A v1-style entry (`mcp.<name>` with `enabled`) is still normalized by v2.
+- Prefer local files? opencode also discovers `.opencode/skills/`, `.claude/skills/` and `.agents/skills/` in the project (and their `~/` equivalents) — `cp -r skills/* ~/.config/opencode/skills/` works, but stops tracking releases.
 
 ### Direct npm (any MCP-aware tool)
 

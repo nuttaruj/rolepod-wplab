@@ -142,6 +142,8 @@ export async function runInit(_argv: string[]): Promise<number> {
       "    claude mcp add rolepod-wplab -- rolepod-wplab serve\n\n" +
       "  Cursor:\n" +
       '    Settings → MCP → Add server → { "command": "rolepod-wplab", "args": ["serve"] }\n\n' +
+      "  opencode:\n" +
+      "    opencode mcp add rolepod-wplab -- rolepod-wplab serve\n\n" +
       "  Then in your AI CLI:\n" +
       `    "Connect to ${url.host} and run health_check."\n\n`,
   );

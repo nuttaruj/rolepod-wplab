@@ -69,7 +69,7 @@ Return / hand off:
 
 - `siteurl` — extracted from the prompt's `Site URL:` line.
 - `pair_token` — the literal `rolepod_wp_pair_<48 hex>` string.
-- (optional) target CLI for the install snippet (Claude Code / Cursor / Codex / Gemini).
+- (optional) target CLI for the install snippet (Claude Code / Cursor / Codex / Gemini / opencode).
 
 ## Workflow
 
