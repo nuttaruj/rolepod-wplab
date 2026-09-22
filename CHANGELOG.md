@@ -6,8 +6,9 @@ All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Cha
 
 opencode users had the MCP server (any `mcpServers`-style config worked) but
 none of the 15 skills, and no install path in the README said so. Now one
-config block wires both: `opencode mcp add` for the server, and the new
-`skills/index.json` catalog for the skills.
+command wires both: `scripts/install-opencode.sh` writes the server entry
+(with the two fields `opencode mcp add` leaves out — see below), and the new
+`skills/index.json` catalog carries the skills.
 
 ### Added
 
