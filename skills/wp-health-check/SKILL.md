@@ -104,8 +104,8 @@ Fill `templates/health-report.md`. If the user just asked "is it healthy?" — a
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:qa-tester` for verification chains across multiple sites.
-- `rolepod:devops-sre` for host-side warnings (exec disabled, mod_security, perm rules).
+- `rolepod:rolepod-qa` for verification chains across multiple sites.
+- `rolepod:rolepod-builder` for host-side warnings (exec disabled, mod_security, perm rules).
 
 ## If no matching agent is available
 

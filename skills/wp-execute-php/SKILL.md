@@ -105,7 +105,7 @@ State the return_value, php_warnings count, duration, audit_id. The audit_id is 
 ## If a matching Rolepod agent is available
 
 - `rolepod:debug-issue` for the broader debug context this fits into.
-- `rolepod:backend-developer` for PHP-level investigation.
+- `rolepod:rolepod-builder` for PHP-level investigation.
 
 ## If no matching agent is available
 

@@ -102,8 +102,8 @@ If user already said what to do → hand off immediately. Otherwise ask.
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:devops-sre` for SSH key / Docker config issues.
-- `rolepod:backend-developer` for follow-up REST work.
+- `rolepod:rolepod-builder` for SSH key / Docker config issues.
+- `rolepod:rolepod-builder` for follow-up REST work.
 
 ## If no matching agent is available
 

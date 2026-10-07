@@ -115,8 +115,8 @@ State the next concrete action for the user (fill in REST callback, register blo
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:backend-developer` for the post-scaffold logic fill-in.
-- `rolepod:ui-ux-designer` for the new block's CSS / patterns.
+- `rolepod:rolepod-builder` for the post-scaffold logic fill-in.
+- `rolepod:rolepod-builder` for the new block's CSS / patterns.
 
 ## If no matching agent is available
 

@@ -110,8 +110,8 @@ State the siteurl, target_id, capabilities, and `is_production` flag back to the
 ## If a matching Rolepod agent is available
 
 Delegate to the closest specialist:
-- `rolepod:backend-developer` for follow-up REST work
-- `rolepod:devops-sre` for infra-side companion install issues
+- `rolepod:rolepod-builder` for follow-up REST work
+- `rolepod:rolepod-builder` for infra-side companion install issues
 
 ## If no matching agent is available
 

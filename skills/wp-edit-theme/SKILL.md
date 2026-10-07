@@ -140,9 +140,10 @@ If validation throws, do NOT retry the same content. Read the error, fix the pay
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:ui-ux-designer` for theme.json palette / typography decisions + accessibility audit.
-- `rolepod:frontend-developer` for template + functions.php logic.
-- `rolepod:backend-developer` for complex callbacks in functions.php.
+- `rolepod:rolepod-builder` for theme.json palette / typography decisions.
+- `rolepod:rolepod-reviewer` with `lens: ui` for accessibility audit.
+- `rolepod:rolepod-builder` for template + functions.php logic.
+- `rolepod:rolepod-builder` for complex callbacks in functions.php.
 
 ## If no matching agent is available
 

@@ -136,7 +136,7 @@ For every toggle action, surface: id + category/subcategory + side-effect detail
 ## If a matching Rolepod agent is available
 
 - `rolepod:debug-issue` for the broader debug context this rollback fits into.
-- `rolepod:devops-sre` for prod-recovery flows.
+- `rolepod:rolepod-builder` for prod-recovery flows.
 
 ## If no matching agent is available
 

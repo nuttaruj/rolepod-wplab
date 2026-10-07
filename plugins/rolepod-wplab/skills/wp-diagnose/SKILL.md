@@ -126,9 +126,9 @@ Print TOP 5 findings (sorted by severity) + path to artifact. Do not dump all fi
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:security-engineer` for the audit_security pass interpretation.
-- `rolepod:performance-engineer` for slow_queries + large_options + cache findings.
-- `rolepod:qa-tester` for the full sweep + ticket creation.
+- `rolepod:rolepod-reviewer` with `lens: security` for the audit_security pass interpretation.
+- `rolepod:rolepod-builder` for slow_queries + large_options + cache findings.
+- `rolepod:rolepod-qa` for the full sweep + ticket creation.
 
 ## If no matching agent is available
 

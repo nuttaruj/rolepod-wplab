@@ -117,8 +117,8 @@ Ordering is enforced and destructive-safe: (0) it backs up the DEST first and re
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:devops-sre` for the full ship gate.
-- `rolepod:security-engineer` for the pre-flight + post-flight audit pass.
+- `rolepod:rolepod-builder` for the full ship gate.
+- `rolepod:rolepod-reviewer` with `lens: security` for the pre-flight + post-flight audit pass.
 
 ## If no matching agent is available
 

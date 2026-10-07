@@ -132,8 +132,8 @@ State the operation, the `id` (post / user / option / attachment), and any warni
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:content-strategist` (audience: user) for copy quality.
-- `rolepod:backend-developer` for non-trivial REST orchestration.
+- `rolepod:rolepod-builder` with `domain: writing` (audience: user) for copy quality.
+- `rolepod:rolepod-builder` for non-trivial REST orchestration.
 
 ## If no matching agent is available
 

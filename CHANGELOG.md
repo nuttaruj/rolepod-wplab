@@ -2,6 +2,13 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.8.1] — 2026-10-08 — parent agent names
+
+The 13 skills' hand-off lines name the parent rolepod's 4 agent types
+(rolepod v2.221.0): `rolepod:rolepod-builder` (with `domain: writing` for
+copy), `rolepod:rolepod-reviewer` with `lens: security` / `lens: ui`, and
+`rolepod:rolepod-qa`. No behavior change.
+
 ## [3.8.0] — 2026-09-22 — opencode support
 
 opencode users had the MCP server (any `mcpServers`-style config worked) but

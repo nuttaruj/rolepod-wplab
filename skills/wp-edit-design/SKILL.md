@@ -138,8 +138,9 @@ Call `wp-health-check`. If the change touched theme.json or global-styles → al
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:ui-ux-designer` for layout decisions + accessibility checks.
-- `rolepod:frontend-developer` for component-level JS/CSS.
+- `rolepod:rolepod-builder` for layout decisions.
+- `rolepod:rolepod-reviewer` with `lens: ui` for accessibility checks.
+- `rolepod:rolepod-builder` for component-level JS/CSS.
 
 ## If no matching agent is available
 

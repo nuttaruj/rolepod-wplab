@@ -74,7 +74,7 @@ If the introspect reveals a problem worth diagnosing in depth → `wp-diagnose`.
 ## If a matching Rolepod agent is available
 
 - `rolepod:debug-issue` (Rolepod parent skill) for the broader debug workflow this introspect feeds into.
-- `rolepod:backend-developer` for hook-callback investigation.
+- `rolepod:rolepod-builder` for hook-callback investigation.
 
 ## If no matching agent is available
 

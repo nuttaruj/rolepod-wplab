@@ -117,8 +117,8 @@ The adapter call surfaces the plugin's native validation errors with their codes
 
 ## If a matching Rolepod agent is available
 
-- `rolepod:content-strategist` for SEO copy quality (Yoast / RankMath).
-- `rolepod:billing-engineer` for Woo pricing / payment-gateway tuning.
+- `rolepod:rolepod-builder` with `domain: writing` for SEO copy quality (Yoast / RankMath).
+- `rolepod:rolepod-builder` for Woo pricing / payment-gateway tuning.
 
 ## If no matching agent is available
 
