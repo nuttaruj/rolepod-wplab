@@ -1883,7 +1883,13 @@ export class CompanionBridge {
       typeof b["error_message"] === "string"
         ? (b["error_message"] as string)
         : `${path} returned HTTP ${res.status}`,
-      { status: res.status, path },
+      {
+        status: res.status,
+        path,
+        ...(typeof b["expected_offset"] === "number"
+          ? { expected_offset: b["expected_offset"] }
+          : {}),
+      },
     );
   }
 

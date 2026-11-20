@@ -5,6 +5,7 @@ import type { CompanionBridge } from "./Bridge.js";
 import { WplabError } from "../util/errors.js";
 
 export const DEFAULT_CHUNK = 1_048_576;
+const IMPORT_RETRIES = 5;
 
 /**
  * Pull an archive from WordPress to a local path, chunk by chunk, reassembling
@@ -79,16 +80,37 @@ export async function importBackup(
   const filename = basename(srcPath);
   let offset = 0;
   let last: Record<string, unknown> = {};
+  let retries = 0;
   while (offset < buf.length) {
     const slice = buf.subarray(offset, offset + chunkBytes);
     const isFinal = offset + slice.length >= buf.length;
-    last = await bridge.backupImportChunk({
-      upload_id: uploadId,
-      offset,
-      chunk: slice.toString("base64"),
-      final: isFinal,
-      ...(isFinal ? { filename } : {}),
-    });
+    try {
+      last = await bridge.backupImportChunk({
+        upload_id: uploadId,
+        offset,
+        chunk: slice.toString("base64"),
+        final: isFinal,
+        ...(isFinal ? { filename } : {}),
+      });
+    } catch (e) {
+      // A proxy 5xx can land after the chunk was appended. The companion
+      // only accepts a chunk at the staging file's exact end, so resend and
+      // let OFFSET_MISMATCH report where the file really ends. The final
+      // chunk is never retried: the companion consumes the staging file.
+      if (isFinal || retries >= IMPORT_RETRIES || !(e instanceof WplabError)) {
+        throw e;
+      }
+      const expected = e.meta?.["expected_offset"];
+      if (e.code === "OFFSET_MISMATCH" && typeof expected === "number" && expected >= 0 && expected <= buf.length) {
+        offset = expected;
+      } else if (!/^COMPANION_HTTP_5\d\d$/.test(e.code)) {
+        throw e;
+      }
+      retries++;
+      await new Promise((r) => setTimeout(r, 1000 * retries));
+      continue;
+    }
+    retries = 0;
     offset += slice.length;
   }
   return { action: "import", src_path: srcPath, ...last };
