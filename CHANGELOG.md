@@ -2,6 +2,21 @@
 
 All notable changes to `@rolepod/wplab` are documented here. Follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format and [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.9.0] — 2026-11-20 — backup languages + import retry
+
+### Added
+- `rolepod_wp_site_backup` and `rolepod_wp_migrate_site` take a `languages`
+  component (`wp-content/languages`, default on). Needs rolepod-wp 2.27.0+;
+  older companions ignore the key.
+
+### Fixed
+- Backup import (`action: "import"`, and the dest hop of `migrate_site`) no
+  longer fails outright when one chunk hits a transient proxy 5xx. A non-final
+  chunk is resent with backoff (5 tries per chunk, 20 per upload); when the
+  502 arrived after the companion had appended the chunk, the resend's
+  `OFFSET_MISMATCH` carries `expected_offset` and the upload resumes there.
+  The final chunk is never resent. Seen moving a 589 MB backup onto Plesk.
+
 ## [3.8.1] — 2026-10-08 — parent agent names
 
 The 13 skills' hand-off lines name the parent rolepod's 4 agent types

@@ -55,4 +55,31 @@ describe("importBackup retry", () => {
     const f = fakeBridge(new Set([8]), false);
     await expect(importBackup(f.bridge, src(10), 4)).rejects.toThrow("bad gateway");
   });
+
+  it("gives up on a chunk after its retry budget", async () => {
+    let calls = 0;
+    const bridge = {
+      async backupImportChunk() {
+        calls++;
+        throw new WplabError("COMPANION_HTTP_502", "bad gateway", { status: 502 });
+      },
+    } as never;
+    await expect(importBackup(bridge, src(10), 4)).rejects.toThrow("bad gateway");
+    expect(calls).toBe(6);
+  }, 30000);
+
+  it("rethrows a non-5xx error and an out-of-range expected_offset", async () => {
+    const forbidden = {
+      async backupImportChunk() {
+        throw new WplabError("COMPANION_HTTP_403", "forbidden", { status: 403 });
+      },
+    } as never;
+    await expect(importBackup(forbidden, src(10), 4)).rejects.toThrow("forbidden");
+    const beyond = {
+      async backupImportChunk() {
+        throw new WplabError("OFFSET_MISMATCH", "mismatch", { status: 409, expected_offset: 10 });
+      },
+    } as never;
+    await expect(importBackup(beyond, src(10), 4)).rejects.toThrow("mismatch");
+  });
 });
