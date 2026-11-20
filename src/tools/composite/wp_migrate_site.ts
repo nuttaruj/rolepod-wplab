@@ -188,6 +188,7 @@ export async function wpMigrateSiteHandler(
     themes: input.components?.themes ?? true,
     plugins: input.components?.plugins ?? true,
     muplugins: input.components?.muplugins ?? true,
+    languages: input.components?.languages ?? true,
   };
   const chunkBytes = input.chunk_bytes ?? DEFAULT_CHUNK;
   const timeoutMs = input.timeout_ms ?? DEFAULT_TIMEOUT_MS;

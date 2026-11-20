@@ -2268,6 +2268,7 @@ const BackupComponentsSchema = z
     themes: z.boolean().optional(),
     plugins: z.boolean().optional(),
     muplugins: z.boolean().optional(),
+    languages: z.boolean().optional(),
   })
   .optional();
 
@@ -2326,7 +2327,7 @@ export const MigrateSiteInputSchema = z.object({
   allow_destructive: ConfirmTrueSchema,
   confirm: z.boolean().default(false),
   // Which parts of the source to snapshot + push. Defaults to a full site
-  // copy (db + uploads + themes + plugins + muplugins) when omitted.
+  // copy (db + uploads + themes + plugins + muplugins + languages) when omitted.
   components: BackupComponentsSchema,
   // Host-side staging path for the transferred archive. Defaults to an OS
   // temp file when omitted.
