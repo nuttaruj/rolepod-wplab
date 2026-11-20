@@ -109,7 +109,12 @@ export async function importBackup(
         throw e;
       }
       const expected = e.meta?.["expected_offset"];
-      if (e.code === "OFFSET_MISMATCH" && typeof expected === "number" && expected >= 0 && expected < buf.length) {
+      if (
+        e.code === "OFFSET_MISMATCH" &&
+        typeof expected === "number" &&
+        expected >= 0 &&
+        expected < buf.length
+      ) {
         offset = expected;
       } else if (!/^COMPANION_HTTP_5\d\d$/.test(e.code)) {
         throw e;
